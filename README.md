@@ -44,7 +44,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | 技能 | 作用 |
 |---|---|
 | `medical-research-plan` | 医学与医疗 AI 科研开题：逐轮访谈、文献锚点、数据与伦理可行性、假设反证，产出可交给编程 agent 的研究与工程计划 |
-| `medimg-experiment` | 从研究计划建立 Windows 本地医学影像实验：锁定数据划分与测试集、评价与统计规则、运行预算，经受管控制器训练、监控、恢复与归档 |
+| `medimg-experiment` | Windows 本地2D/3D分类/分割：在首次授权和固定数据/评价边界内，真实调用Codex提案与新会话审查，按结果自动改方法、代码和当前计划，受管重训、正式比较/消融、冻结测试与归档；兼容人工逐步执行 |
 | `socratic-project-manager` | 用苏格拉底式问答把开发项目、研究或复杂想法推进到需求、设计与可执行交接方案 |
 
 ## 前置条件
@@ -55,6 +55,15 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 - 可选：Arial 字体（期刊默认字体；缺失时 matplotlib 回退到 DejaVu Sans 并给出警告）。
 - `medfig-illustrator` 另需：Windows、Adobe Illustrator CC 2019（23.x）或更新版本并已打开目标文档；它的 PowerShell 脚本按 `CELL_LCT_PYTHON` → `py` 启动器 → PATH 上的 `python.exe` 的顺序找 Python（需含 Pillow 与 fontTools）。PATH 上只有 Microsoft Store 占位程序时，请设置用户级环境变量：`[Environment]::SetEnvironmentVariable("CELL_LCT_PYTHON", "<python.exe 的完整路径>", "User")`。
 - `medical-sci-references` 另需：Zotero 10（建议 ≥10.0.5，本地 API 写入）并启用“允许其他应用程序与本机 Zotero 通信”；Word 内需启用 Zotero 插件。缺失时技能会在就绪检查处停下，不会自行启动或修改 Zotero。
+- 自动实验另需Windows、Git、经真实调用核验的本地Codex CLI及该课题批准的训练环境。PyTorch/CUDA依赖按课题环境核验，不由本仓库通用依赖静默安装；公开检索与新增研究源码/权重下载的权限分别登记。
+
+## 研究计划到自动实验
+
+`medical-research-plan`先形成可实施计划并完成G1/G2/G3；作者首次确认具体效果规则、数据/科学边界、累计训练预算、修订/故障上限、整体截止和正式复核预留，再授予自动委托。`medimg-experiment`负责代码实现、新上下文审查、可信基线、初筛、正式至少3seed、比较与贡献消融；负结果可在授权内驱动方法/代码/计划修订，不重新划分数据或降低贡献目标。
+
+正式门全部通过即冻结并执行预定测试；测试成绩只报告，不用于继续搜索。当前计划、总索引与PROJECT在关键事件后更新，旧文档唯一归档，study原始运行证据留在原位；依赖变化使下游图表、正文、引用和投稿材料需返工。投稿第13步和独立稿件入口继续保留，准备材料不代表允许实际投稿。`auto-optimize`不是依赖。
+
+自动模式入口见 [实验执行协议](medimg-experiment/references/adaptive-execution.md)；模板空值必须按具体课题确认后填写。合成GPU/自动流程验收只证明其执行协议，不能替代真实患者数据、科学/临床有效性或外部泛化验证。
 
 ## 安装 / 更新 / 卸载
 
@@ -115,6 +124,8 @@ python -m pytest medfig-schematic/scripts -q -p no:cacheprovider
 python -m pytest medfig-illustrator/tests -q -p no:cacheprovider       # 布局闸门、画布/文字规则
 python -m pytest scipilot-medimg-figure-skill/tests -q -p no:cacheprovider   # 影像 panel / 样式 / 导出冒烟测试
 ```
+
+受管实验控制器使用Windows Job Object，独立回归在Windows执行：进入`medimg-experiment/`后运行`python -B -X utf8 -m unittest discover -s tests -v`。GitHub Actions另有Windows作业；通用pytest不收集这些Windows专用测试及训练入口脚本。真实GPU夹具需要实际CUDA环境，不能用CI的CPU协议测试替代。
 
 测试全部使用合成数据；安装器测试只写入临时目录。`medfig-render` 的部分测试需要先运行 `python install.py`（它们调用已安装的 scipilot 脚本），未安装时这些测试会跳过。
 

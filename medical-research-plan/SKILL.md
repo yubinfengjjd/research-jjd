@@ -2,7 +2,7 @@
 name: medical-research-plan
 description: "Use when planning a medical or medical-AI research project (医学课题设计、开题讨论、研究计划细化或审查): run structured interviews, anchor the literature, verify data and ethics feasibility, stress-test assumptions, and produce a Markdown research and engineering plan that a coding agent can execute. Not for running experiments, writing manuscript prose, or drawing figures."
 metadata:
-  version: "0.2.1"
+  version: "0.3.0"
 ---
 
 # 医学科研开题与工程规划
@@ -12,7 +12,7 @@ metadata:
 ## 项目约定（检测到 PROJECT.md 时）
 
 - 从工作目录或作者给出的路径向上查找 `PROJECT.md`；找到时，计划与记录写入 `00_plan/`，文件名沿用本技能既有记录命名；完成后在 `PROJECT.md` 第 0 行备注写计划路径。
-- 计划确认后，若项目代码与结果尚未整理，交接给 medpaper-pipeline 的“代码接收与整理”子流程，按本计划整理进 `01_analysis/`；本技能不执行任何代码复制或目录整理。
+- 计划确认后，若项目代码与结果尚未整理，交接给 medpaper-pipeline 的“代码接收与整理”子流程；已有 `01_analysis/<study-id>/` 只登记，不复制、搬家或重命名。本技能不执行代码整理或训练。
 
 没有 `PROJECT.md` 时保持原有行为，不新建它。
 
@@ -36,6 +36,7 @@ metadata:
 - 选定方向后：读 [研究设计](references/research-design.md)，按 AI/预测/诊断或临床分析适配方法、统计、样本量和可信性。
 - 涉及医学影像（CT/MR/X 线/超声/OCT/眼底/病理/内镜等）的 AI 课题：另读 [医学影像 DL 专章](references/imaging-dl.md)。
 - 方案确认与交接：读 [工程与质量](references/engineering-and-quality.md)。
+- 首次约定自适应实验或根据受管实验事件修订计划：另读 [授权内方法修订与回写](references/adaptive-handoff.md)。实验执行交给 `medimg-experiment`，不在本技能另造训练引擎。
 
 ## 三个科学确认节点
 
@@ -46,6 +47,8 @@ G2 方向、任务与定位：选定方向及被拒候选、精确任务契约�
 G3 实验与可行性：主要比较、消融/敏感性、主要评价与统计、样本量依据、可信性、资源与时间、执行边界。
 
 只有用户明确答复才可确认相应对象与版本。关键可行性证据 PROVISIONAL/UNKNOWN/CONFLICTED 时不冻结相关节点，即使用户表达偏好也不能据此标为已核验。未检验的研究假设本身是计划，不是阻塞项。G3 后编译完整计划；此前可维护草案。交付复核若改变主要科学定义或约束，回退受影响节点重确认，保留其他决定和历史。
+
+作者首次真实确认 G1/G2/G3 并另行授权有界自适应执行后，网络、模块、损失、方法假设与策略可在该授权内自动修订。记录为“依据原授权的自动修订”，保留初始确认原文和版本；不伪称作者确认了新假设。任务、标签、患者划分、评价定义、贡献目标与全局预算不可随成绩修改，越界或测试暴露后的评价纠错仍交作者。
 
 ## 输出和质量
 

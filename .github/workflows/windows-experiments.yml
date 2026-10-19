@@ -1,0 +1,22 @@
+name: Windows experiment controller
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  experiments:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install synthetic fixture dependency
+        run: python -m pip install numpy
+      - name: Run managed experiment regressions
+        working-directory: medimg-experiment
+        run: python -B -X utf8 -m unittest discover -s tests -v
+      - name: Check experiment package
+        run: python -B -X utf8 medimg-experiment/scripts/check_package.py medimg-experiment

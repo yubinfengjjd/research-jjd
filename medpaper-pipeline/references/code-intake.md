@@ -71,6 +71,7 @@ python -X utf8 scripts/intake_check.py <项目根>
 - study 根默认 `01_analysis/<study-id>/`，作者另行指定优先；全新目录，不与原数据/源代码目录重叠，`init` 会创建父目录。
 - S2 核对 study 目录存在、`plans/`、`state.json`、`report.md` 与登记；内部结构由控制器管理，不要求来源映射表。核验脚本按 `plans/` 与 `state.json` 识别 study，并检查总 README 提到其目录名；report 与锁定测试状态由本流程核对，不冒充脚本已核验。
 - 在 `01_analysis/README.md` 与 PROJECT.md 目录说明登记 study 路径、`report.md` 与锁定测试状态，不写阶段状态表。作者指定项目外 study 时在 README 写明外部路径，本流程按授权核对，脚本不沿外部引用读取。
+- 自适应 study 的后续计划/索引更新按 [实验状态衔接](adaptive-state.md)。最新尝试、当前有效证据、最终冻结方案分别索引；原位保留失败/负结果和失效链。不对 study 应用来源代码的文件序号、映射重命名或“半成品归档后重做”规则，不因同步中断重跑训练。
 - 增量接收不重排既有来源；新来源加目录并更新总 README。以来源目录为执行单位；未完成不登记 PROJECT.md，重入时先将半成品归档，再按已确认方案重做；方案变化须重新确认。
 
 ## 5. 下游衔接

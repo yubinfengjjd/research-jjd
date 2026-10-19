@@ -35,6 +35,7 @@ description: Use when running or resuming the medical SCI paper pipeline from fi
 - Discussion 的前置是硬门槛：medical-sci-discussion 在 Methods、图注、Results、Introduction 任一缺失或为 `未开始`/`进行中`/`需返工` 时拒绝起草，作者坚持也不跳过。
 - Abstract 在 Discussion 后面：medical-sci-abstract 要求 Methods、图注、Results、Introduction、Discussion 五类正文完整；任一缺失、实质占位或为 `未开始`/`进行中`/`需返工` 时停止，不交付暂定初稿。流水线正常推进要求 5–9 已确认。
 - 开题（medical-research-plan）和实验（medimg-experiment）不在编排内，由作者单独调用；第 0 步只检查它们的产物。实验 study 与外部代码由第 0 步的代码接收与整理子流程核验并登记。
+- 已授权自适应 study 的关键事件同步按 [实验状态衔接](references/adaptive-state.md) 更新当前计划、总索引与 PROJECT 目录/变更记录；不新增实验阶段行，不重复索取授权内方法修订的作者确认。训练及其预算、审查和测试门仍归 `medimg-experiment`。
 - 第 2 步只在规格中有示意图或架构图时进行；没有就在状态表写“不适用”。
 
 ## 工作流程
@@ -43,7 +44,7 @@ description: Use when running or resuming the medical SCI paper pipeline from fi
    - 没有：确认项目名和项目根位置后，按约定第 1 节建目录骨架和 `PROJECT.md`、`04_manuscript/作者决定.md`、空的 `口径表.md` 与 `_process/冲突台账.md`（格式见防线第 2、4 节）。已有材料散落在别处时，先列出“旧路径 → 新路径”的迁移清单请作者确认，确认后复制（不移动、不删除原目录），并在 `PROJECT.md` 目录说明中记下原路径。
    - 有：读状态表，核对表中“当前产物”路径都存在；不一致时先报告，不往下做。
 2. **确定本次阶段**：作者点名阶段时直接用；只说“下一步”时取状态表中第一个未确认的阶段。检查前置条件，不满足时说明缺什么，建议先做哪一步；作者坚持跳过时在备注栏记下。
-3. **入口检查（阶段 0）**：确认 `00_plan/` 有研究计划或作者给的研究问题说明，`01_analysis/` 有结果资产或指向外部仓库的 README。缺了就告诉作者，不代写。代码与结果尚未整理时，按 references/code-intake.md 执行代码接收与整理（读思路 → 盘点 → 整理方案 → 作者确认 → 拷贝整理 → 登记）；无代码可整理时在备注写“代码整理：不适用”。
+3. **入口检查（阶段 0）**：确认 `00_plan/` 有研究计划或作者给的研究问题说明，`01_analysis/` 有结果资产或指向外部仓库的 README。缺了就告诉作者，不代写。代码与结果尚未整理时，按 references/code-intake.md 执行代码接收与整理（读思路 → 盘点 → 整理方案 → 作者确认 → 拷贝整理 → 登记）；无代码可整理时在备注写“代码整理：不适用”。已有 study 只核验登记，不能套用来源代码的复制/重命名；读当前有效证据及最终冻结状态，不能把最新尝试当作最终结果。
 4. **调用阶段技能**：阶段 5（Methods）、8（Introduction）、9（Discussion）都须把项目根 `PROJECT.md` 的“写作目标”小节原文及项目根路径交给被调技能；缺少时明确传入通用缺省：全稿 55、Introduction ≥20（综述层 ≥10）、Discussion ≥20、Methods ≥15，并在报告中说明。作者可随时修改登记值；Methods 配额仅用于全稿统计，不给 Methods 技能增加数量规则。配额是软门槛，检索穷尽仍不足时如实报告实际 vs 目标、缺口及检索主题，请作者提供或确认，不凑数、不因此停工。统计和核验表约定见 [引用配额与统计](references/citation-quotas.md)。
    用 Skill 调用该阶段的技能，把项目约定下的材料路径和输出路径一并交给它；按该技能自己的流程做完，包括它要求的确认节点。
 5. **收尾**：核对产物落在约定目录、文件名正确；被替换的旧版已按约定第 2 节归档；过程文件在 `_process/<阶段>/`。运行 `python -X utf8 scripts/consistency_check.py <项目根>`（防线第 5 节；禁用别名、关键计数、疑似丢失小数点，以及各节/全稿已核验引用统计与配额缺口），命中项在本阶段修掉或登记到 `_process/冲突台账.md`；本阶段的写作技能还会各自运行 `scripts/manuscript_check.py <章节> …`，其 ERROR 清零、WARN 已说明后才能收尾。把被调用技能核查说明中的新冲突并入台账（防线第 4 节）。把状态表该行更新为 `待确认`，写入当前产物、版本和备注。
@@ -58,6 +59,7 @@ description: Use when running or resuming the medical SCI paper pipeline from fi
 - 作者裁决写入 `04_manuscript/作者决定.md` 的对应节（约定第 4 节）；涉及术语、量的定义或计数的裁决同时写入 `口径表.md`。
 - 材料冲突按防线第 1 节的权威顺序取舍：代码与回执 > source.json 数值与 definitions > 成图图面 > Methods > 详细图注 > 大纲与规格叙述 > 下游成稿。
 - 上游阶段返工（如重出某张图）后，把依赖它的下游阶段改为 `需返工`，并在汇报中列出受影响的阶段。
+- 实验事件改变当前有效证据时，按依赖标记受影响的出图、写作、引用及第13步投稿材料 `需返工`；同步不授权重画或改写，也不自动授予论文阶段“已确认”。
 - 不删除任何文件；替换一律先归档。不修改技能目录或全局配置。
 
 ## 第12步参考文献

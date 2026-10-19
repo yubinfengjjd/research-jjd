@@ -151,10 +151,30 @@ class OwnedProcess:
 
     def __init__(self, argv: list[str], cwd: str, env: dict[str, str], log_path: str):
         _require_windows()
+        from pathlib import Path
+        if argv and Path(argv[0]).stem.lower() in ('python','python3','pythonw') and len(argv)>1 and argv[1]!='-X':
+            argv=[argv[0],'-X','utf8',*argv[1:]]
         self._argv = list(argv)
         self._process = None
         self._job = None
         self._returncode = None
+        self._adaptive_root = None
+        if env.get('ME_CONTRACT_PATH'):
+            from pathlib import Path
+            for parent in Path(env['ME_CONTRACT_PATH']).resolve().parents:
+                if (parent/'adaptive'/'state.json').is_file():
+                    self._adaptive_root = parent
+                    break
+            if self._adaptive_root and env.get('ME_PHASE')!='test':
+                from .common import read_json, require, safe_path
+                import hashlib
+                record=read_json(Path(env['ME_CONTRACT_PATH']).parent/'record.json')
+                recovery=record.get('recovery',{})
+                if recovery.get('strategy')=='resume_full_state':
+                    checkpoint=safe_path(recovery['checkpoint'])
+                    require(checkpoint.is_relative_to(self._adaptive_root/'runs'/recovery['source_run_id']), '恢复路径越出原run')
+                    require(hashlib.sha256(checkpoint.read_bytes()).hexdigest()==recovery['checkpoint_sha256'], '恢复checkpoint已改变')
+                    env={**env,'ME_RESUME_PATH':str(checkpoint),'ME_RECOVERY_SOURCE_RUN':recovery['source_run_id']}
         thread = None
         try:
             self._job = _checked(_kernel.CreateJobObjectW(None, None))
@@ -189,6 +209,13 @@ class OwnedProcess:
         return self._token
 
     def poll(self) -> int | None:
+        if self._adaptive_root is not None and self._returncode is None:
+            from .common import read_json
+            from .adaptive import utc
+            from datetime import datetime, timezone
+            state=read_json(self._adaptive_root/'adaptive'/'state.json')
+            if state['status'] in ('paused','stopped','awaiting_human') or datetime.now(timezone.utc)>=utc(state['deadline_utc']):
+                self.terminate()
         if self._returncode is None and self._process is not None:
             if _winapi.WaitForSingleObject(self._process, 0) == _winapi.WAIT_OBJECT_0:
                 self._returncode = _winapi.GetExitCodeProcess(self._process)

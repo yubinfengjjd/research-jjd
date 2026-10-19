@@ -1,5 +1,7 @@
 # 独立只读审查
 
+> 本页的人工派发/登记适用于逐步模式。自动闭环由 [adaptive-execution.md](adaptive-execution.md) 的真实 Codex CLI 新会话完成相同审查门并保存调用证据；不得以自填记录冒充已执行。
+
 每个候选在训练前需要一个新建、独立上下文的审查子代理。按宿主实际能力派发：
 
 - Claude Code：用 Agent 工具新建子代理（不用 fork，不继承实现上下文），提示中给出原始文件路径与只读任务；`reviewer` 记 `claude-independent` 或 `independent-subagent`，`agent_id` 记返回的代理 ID。

@@ -10,7 +10,7 @@
 ├─ 口径表.md                 术语、量的定义、关键计数的唯一来源（consistency-guards.md 第 2 节）
 ├─ 00_plan/                  开题计划（medical-research-plan 产物或作者提供）
 ├─ 01_analysis/              实验代码与结果（代码接收与整理后的结构，见 code-intake.md）
-│  ├─ README.md              总索引：各来源一览、与 00_plan 的对应、待核项
+│  ├─ README.md              总索引：来源与计划对应；study 最新/有效/冻结证据、待核项
 │  ├─ <来源名>/               每个代码来源：README.md、映射表.md、code/、results/、receipts/
 │  ├─ <study-id>/            medimg-experiment study（受控结构；结束登记，不搬家）
 │  └─ （外部仓库且作者不迁移时：只放 README.md 写明路径与 commit）
@@ -44,13 +44,13 @@
 
 ## 2. 替换与归档
 
-成稿被新版本替换时，按顺序：
+当前文档被新版本替换时（包括 `00_plan/project-plan.md`、计划/review 记录、`01_analysis/README.md`、`PROJECT.md` 与成稿），按顺序：
 
-1. 把旧文件移到 `_archive/<今天日期>/<原相对路径>`（如 `_archive/2026-10-20/04_manuscript/Methods/Methods_EN.md`）；同一天多次替换时在日期后加 `_2`、`_3`。
+1. 先把旧版本完整归档到 `_archive/<今天日期>/<原相对路径>`（如 `_archive/2026-10-20/04_manuscript/Methods/Methods_EN.md`），校验后才发布新文件；同一天多次替换时在日期后加 `_2`、`_3`，选择未用的归档批次，不能覆盖旧归档。自动同步宜复制旧版并验证哈希后原子替换当前文件，避免中断时当前路径丢失。
 2. 写入新文件，文件名不变。
 3. 更新 `PROJECT.md` 状态表的版本、日期，并在变更记录追加一行。
 
-不删除旧版本；`_archive/` 只增不改。
+不删除旧版本；`_archive/` 只增不改。study 的 `plans/` 初始快照、候选、runs、tests、审查/诊断/负结果是原位历史证据，不按此条搬入归档或重命名。失效以状态与索引记录，不删除。自适应事件的可重入多文件同步见 [实验状态衔接](adaptive-state.md)。
 
 ## 3. PROJECT.md 格式
 

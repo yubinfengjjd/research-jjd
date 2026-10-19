@@ -4,12 +4,20 @@ import json
 import sys
 from medexp.common import safe_path
 from medexp import engine
+from medexp import adaptive, scheduler
 
 
 def main():
     if hasattr(sys.stdout,'reconfigure'):sys.stdout.reconfigure(encoding='utf-8')
     p=argparse.ArgumentParser(description='本地医学影像实验控制，先确认再训练')
     commands=p.add_subparsers(dest='action',required=True)
+    for name in ('adaptive-init','adaptive-step','adaptive-start','adaptive-status','adaptive-pause',
+                 'adaptive-resume','adaptive-correct','adaptive-export','adaptive-reconcile'):
+        sp=commands.add_parser(name);sp.add_argument('--root',required=True)
+        if name=='adaptive-init':
+            sp.add_argument('--contract',required=True);sp.add_argument('--delegation',required=True)
+        if name in ('adaptive-init','adaptive-pause','adaptive-resume'):sp.add_argument('--statement',required=True)
+        if name in ('adaptive-correct','adaptive-reconcile'):sp.add_argument('--record',required=True)
     for name in ['init','approve','audit','candidate','review','run','test','status','reported','recover','resume','export']:
         sp=commands.add_parser(name);sp.add_argument('--root',required=True)
         if name in ('init','resume'):sp.add_argument('--contract',required=True)
@@ -25,7 +33,16 @@ def main():
     args=p.parse_args()
     try:
         root=safe_path(args.root)
-        if args.action=='init':r=engine.init(root,args.contract)
+        if args.action=='adaptive-init':r=adaptive.init(root,args.contract,args.delegation,args.statement)
+        elif args.action=='adaptive-step':r=adaptive.step(root)
+        elif args.action=='adaptive-start':r=scheduler.start(root)
+        elif args.action=='adaptive-status':r=adaptive.status(root)
+        elif args.action=='adaptive-pause':r=adaptive.pause(root,args.statement)
+        elif args.action=='adaptive-resume':r=adaptive.resume(root,args.statement)
+        elif args.action=='adaptive-correct':r=adaptive.correct(root,args.record)
+        elif args.action=='adaptive-export':r=adaptive.export(root)
+        elif args.action=='adaptive-reconcile':r=adaptive.reconcile_review(root,args.record)
+        elif args.action=='init':r=engine.init(root,args.contract)
         elif args.action=='approve':r=engine.approve(root,args.statement)
         elif args.action=='audit':r=engine.audit(root)
         elif args.action=='candidate':r=engine.candidate(root,args.id,args.phase,args.command,args.description,args.entry)
@@ -42,7 +59,11 @@ def main():
                    'verification_required':'探索结果达标，仍需完成正式复核','accepted':'当前契约的正式复核已通过，实际研究有效性另行验证',
                    'awaiting_report':'异常已停止并保全，先向用户汇报再回退','reported':'已登记汇报，接下来执行受管回退与失败记录',
                    'awaiting_direction':'失败处理完成，等待用户选择方向与确认新契约','budget_exhausted':'预算或无改善上限已达，目标尚未达成',
-                   'testing':'锁定测试集评估运行中；结果只报告，不用于选择','matrix_complete':'实验矩阵全部条目完成复核，可做锁定测试与导出'}
+                   'testing':'锁定测试集评估运行中；结果只报告，不用于选择','matrix_complete':'实验矩阵全部条目完成复核，可做锁定测试与导出',
+                   'stopped':'自动流程已停止；查看报告中的原因，不可继续训练或测试',
+                   'paused':'自动流程已暂停；等待明确恢复，原预算和截止时间保留',
+                   'awaiting_human':'自动流程已停止，等待报告所列的具体人工决定',
+                   'completed':'自动流程交付已完成；测试结果只报告，不回流方法选择'}
         r['summary_zh']=summaries.get(r.get('status'), '受管操作完成；请结合返回的候选、审查或报告路径检查结果')
         if args.action=='audit':r['summary_zh']='划分审计通过：分组单位跨划分无重叠；标签质量与重复图像仍需审查'
         print(json.dumps(r,ensure_ascii=False,allow_nan=False))

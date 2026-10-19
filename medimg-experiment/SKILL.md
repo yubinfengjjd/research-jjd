@@ -1,42 +1,41 @@
 ---
 name: medimg-experiment
-description: "Use when establishing or running a managed Windows local medical-imaging classification or segmentation experiment from a research plan and optional code (实际实验执行、模型代码探索、异常后续跑): confirm splits, lock the test set, fix metrics and statistics, set a run budget, then train, monitor, recover, test and archive through a managed controller with independent review. Not for manuscript writing, literature search, or drawing figures."
+description: Use when implementing or running an authorized Windows-local medical-imaging AI experiment from a confirmed research plan, including bounded autonomous method, code and plan revision, fresh-context review, actual training, multi-seed comparisons, freezing and final testing. Supports 2D/3D classification and segmentation.
 ---
 
 # 医学影像实验
 
-把研究计划转成有证据的本地实验。先厘清意图：只解释计划或检查环境时完成对应只读工作；用户要实际运行时才准备实验契约。自然语言触发和技能调用都不等于训练许可。
+先读取作者实际计划与数据、代码和环境证据。仅解释计划或检查环境时只做对应工作；执行训练须有真实的契约确认和授权。训练本地运行，数据只读，保留原计划和失败结果。
 
-## 项目约定（检测到 PROJECT.md 时）
+## 选择执行方式
 
-- 从工作目录或作者给出的路径向上查找 `PROJECT.md`；找到时，study 根默认用 `01_analysis/<study-id>/`，作者另行指定的路径优先。仍须满足控制器规则：全新目录、不位于原数据目录内、不与源代码目录重叠；目录不存在即可，`init` 会创建父目录。
-- 结束后（`export` 或阶段性交付时），在 `01_analysis/README.md` 登记 study 目录、`report.md` 与锁定测试状态，并在 `PROJECT.md` 的目录说明写一行；不写阶段状态表（实验不在阶段表内）。
-- 论文项目侧由 medpaper-pipeline 的代码接收与整理子流程核验登记，只核验不搬家；本技能的目录结构、契约与控制器行为不变。
+- **授权内自动闭环**：作者希望无人值守地读结果、诊断、换方法和重训时，读取 [adaptive-execution.md](references/adaptive-execution.md)。使用 schema-v2 `matrix` 契约加单独的 `AdaptiveDelegation@1` 委托、真实本地 Codex CLI 和后台 supervisor。首次确认后，授权内不反复要求作者确认；遇到固定边界、下载资源、预算或测试后纠错等关口停下。不要将单候选 worker 当作完整闭环。
+- **人工逐步执行**：作者要逐候选决定，或没有可用的自动调用后端时，使用原有 `matrix`（基线/主方法/消融/比较）或 `search`（基线→探索→正式复核）。读取 [setup-contracts.md](references/setup-contracts.md)、[execution-protocol.md](references/execution-protocol.md) 和 [recovery.md](references/recovery.md)。此方式异常仍走汇报→回退→等待新方向，不冒充自动闭环。
 
-没有 `PROJECT.md` 时保持下文原有行为，不新建它。
+自动闭环首版仅支持显式 `matrix`。`auto-optimize` 不是依赖；它的通用优化循环不能替代本技能的数据、统计、测试和证据门。
 
-## 选择模式
+## 固定的科学边界
 
-- `matrix`（论文实验，推荐）：执行计划中预定义的实验清单——基线、主方法、逐组件消融、近邻对比。每个条目同代码规则、全部 seed、与参照基线做患者级配对区间；不自动择优。来自 `medical-research-plan` 的实验设计通常用此模式。
-- `search`（调优/探索）：基线 → 爬山式探索 → 同代码多 seed 正式复核。适合在固定评价下找可用配置；最终结论仍以锁定测试为准，并报告候选数。
+1. 先核验患者等分组 ID、标签来源与 train/val/test。已有划分冻结；缺划分时按作者确认的分组规则生成、审计、首次确认后冻结。缺 ID、泄漏或标签定义不清时停止，不能猜测或重新划分以提高成绩。
+2. 任务、标签、分组划分、主指标及计算单位、checkpoint 规则、正式 seed、对照与贡献目标固定。网络、核心模块和损失可以在委托范围内替换。整体效果好但模块没有贡献时继续核验/改方法；不能删掉贡献目标来宣布达标。
+3. 合理基线先成立。文献数字只在条件可比时辅助设定预期；不能用未核验的偏弱本地基线宣布优势。低于预期先查数据适配、训练和评价，再讨论方法。
+4. 开发只看训练/验证。初筛不能当论文证据；有希望或难判断的候选再充分训练、≥3 seed、正式比较与消融，按预先确认的患者级统计规则判断。
+5. 正式规则全部达到即停止探索、冻结方案、统一测试。测试低分保留并报告，不再回流搜索。已见测试后发现评价错误，须新上下文审查和作者具体确认修复/复算，保留全部测试历史。
 
-用户一步步推进时，结果不好可停止、调整并以新契约版本重来；每个版本的证据独立保留。
+## 开始与推进
 
-## 流程
+先核实真实 Python、Git、设备、精确依赖版本、磁盘与可读数据。使用宿主指定解释器（使用已确认的真实解释器绝对路径，并启用 UTF-8），拒绝 WindowsApps 的占位程序；不把 CUDA 不可用静默改为 CPU。
 
-1. 在用户指定的新课题输出目录中工作，保留原始计划；有现成代码时只复制必要代码配置，没有代码时由当前代理在受管工程中实现。固定患者等分组单位、标签来源、train/val/test 划分、评价协议及冻结文件（划分、评价、测试脚本）。
-2. 训练前取得对完整契约的明确确认：模式与矩阵条目、主要指标与 checkpoint 规则（last/best）、护栏指标、基线来源与调参对等、成功标准与最小效应、异常阈值、≥3 个 seed、配对 bootstrap 规则、测试集策略、允许修改的文件及参数、预算、解释器、设备和精确依赖版本。缺项保持待确认；数值不套通用默认。新环境或依赖安装另需具体方案批准。
-3. `approve` 后先 `audit`：冻结的审计脚本列出各划分分组 ID 与类别计数，控制器拒绝任何跨划分重叠。
-4. 当前代理提出模型代码或参数候选并保存不可覆盖的快照。每个候选先交给新的独立只读审查子代理，记录实际读取的文件；通过后才用控制器启动一个受管训练。后台监控器只执行当前候选、检查指标、停止和保全，不设计模型、不启动下一个候选。
-5. 验收：每个候选全部 seed 完成，seed 与聚合值在正常范围、seed 样本标准差达标、护栏指标未超出允许恶化；search 的复核还需聚合达标且相对基线的患者级配对 bootstrap CI 下限满足规则。matrix 条目只需稳定性与完整性，比较结果如实报告（消融变差是正常结果）。
-6. 锁定测试集只在 search 的基线、`accepted` 最终版本，或 matrix 全部完成后评估；每候选每版本一次，用冻结的测试脚本在被测提交的独立检出中运行，结果只报告、不回流选择，查看次数累计登记。
-7. 异常必须先在当前对话汇报，再登记 `reported`，再 `recover`。到 `awaiting_direction` 后停止；只有用户选定新方向并确认新契约才 `resume`。导出时区分已实现、已运行、契约达标与未验证，保留全部负结果。
+由 `medical-research-plan` 提供可实施计划。提出完整契约和自动委托供作者首次确认：科学规则、允许修改文件/参数、训练总时长、方法修订轮数、故障重试次数、整体截止时间、正式复核预留和当前环境。每课题设数值，不编通用门槛。普通依赖可按已经批准的隔离安装范围处理；研究代码、预训练权重下载必须具体确认，不能借依赖安装绕过。
 
-## 按任务读取
+候选代码改变后，先用新上下文只读审查实际源码和命令，审查通过才允许受管训练。同代码仅换 seed 可复用绑定的审查。自动执行由控制器真实调用 `codex exec`，保存真实会话标识和日志；不能伪造审查记录，也不把同模型家族审查等同独立科学验证。人工模式见 [independent-review.md](references/independent-review.md)。
 
-- 首次使用、环境检查或填契约：[setup-contracts.md](references/setup-contracts.md)，使用 [contract-template.json](assets/contract-template.json)。
-- 建候选、训练器协议、测试、导出：[execution-protocol.md](references/execution-protocol.md)。
-- 异常、离线重入、预算结束或恢复：[recovery.md](references/recovery.md)。
-- 派发审查子代理与登记结果：[independent-review.md](references/independent-review.md)。
+训练错误、OOM、NaN 和“训练正常但无优势”分别记录。授权内排查、修复、重新审查并重跑，所有失败和预算累计保留。可靠完整 checkpoint 经协议核验后续训；否则以新 run 重跑当前 seed。主动暂停必须等作者明确恢复。对未覆盖的外部环境故障，不宣称已可靠恢复。
 
-所有控制命令调用本技能目录下的 `scripts/controller.py`（按技能实际安装位置解析，Claude Code 与 Codex 路径不同），不直接运行 `scripts/worker.py`。本技能不调用外部模型 API，不上传研究数据，不读取、调用或引用外部流程套件的资源；如需要额外隔离，可在环境变量 `MEDEXP_BLOCKED_ROOTS` 中登记禁止根目录。训练代码同样必须本地运行、数据只读。控制器约束只覆盖经它执行的受管操作，不是操作系统沙箱；审批、汇报及审查身份由调用方记录，不能独立认证人类批准。同模型家族审查不构成科学有效性证明。
+## 项目计划与资产
+
+检测到 `PROJECT.md` 时，study 默认 `01_analysis/<study-id>/`，保持受管目录原位。关键事件后实质更新 `00_plan/project-plan.md` 的当前方法/技术路线、真实状态、有效结果、预算和下一步；不能只在末尾追加“改过了”。旧文档按 `medpaper-pipeline` 规则存入 `_archive/<日期或日期_2>/<原相对路径>`，原始 runs、权重和失败证据不搬家。
+
+同时同步 `01_analysis/README.md` 和 `PROJECT.md` 目录说明/变更记录，不新增实验阶段行；区分最新尝试、当前有效结果和最终冻结。条件不变的旧结果可沿用并标来源，受代码、评价、预处理或环境影响的结果失效/重算。影响下游时标需返工，不自动改写正文或图表。自动投影有事件回执，重复/中断重入先核对并补全。没有 `PROJECT.md` 则保持独立 study，不擅自新建论文项目。
+
+所有操作从实际安装目录的 `scripts/controller.py` 进入，不直接运行 worker。资源见 [contract-template.json](assets/contract-template.json) 和 [adaptive-contract-template.json](assets/adaptive-contract-template.json)。演示验证见 [真实合成 GPU fixture](assets/gpu_synthetic/README.md)，只证明执行能力。控制器不是操作系统安全沙箱，不能独立认证人类确认或审查质量。原始数据和测试结果不进入模型提示；源码和必要脱敏元数据经用户配置的 Codex 服务处理。禁止调用其他模型 API、上传研究数据，或读取被明确隔离的工程资源。

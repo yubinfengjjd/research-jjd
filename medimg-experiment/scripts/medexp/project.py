@@ -7,9 +7,14 @@ from .common import require, safe_path, inside, GateError
 
 
 def git(directory, *args):
+    timeout=60
+    for parent in (Path(directory),*Path(directory).parents):
+        if (parent/'adaptive'/'state.json').is_file():
+            from .adaptive import deadline_timeout
+            timeout=deadline_timeout(parent,timeout);break
     r = subprocess.run(['git', '-C', str(directory), *args], capture_output=True,
                        encoding='utf-8', errors='replace', env={**os.environ, 'GIT_TERMINAL_PROMPT': '0'},
-                       creationflags=0x08000000 if os.name == 'nt' else 0)
+                       creationflags=0x08000000 if os.name == 'nt' else 0, timeout=timeout)
     require(r.returncode == 0, 'Git操作失败: ' + r.stderr[-2000:])
     return r.stdout.strip()
 

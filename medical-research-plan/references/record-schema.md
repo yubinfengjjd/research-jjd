@@ -24,6 +24,8 @@ CONFIRMED 记录需 source.kind=USER、decision=CONFIRM、scope 包含相应 G �
 
 结构检查仅检查已登记 provenance 的形状与关系，不会认证答复真的是用户说的；审查必须回查源记录。用户确认研究假设不等于假设已实证成立。
 
+自适应模式不改本 schema 的 CONFIRM 语义，也不把 DELEGATE 填入 CONFIRMED 来绕过它。初始 G1/G2/G3 的确认对象包括固定边界和明确可变的研究部分；授权内修订记录在方法/实验/任务及修订历史中，注明原授权来源，不给新假设造 USER/CONFIRM。`state.changes` 仅能保留原人类决定（包括原先明确同意的可变范围），不能声称变化后的假设已由用户确认；原决定确已改变就标受影响并回到真实确认。运行时的授权、冻结身份与跨版本余额由 `medimg-experiment` 实际契约管理。本检查器不核验这些运行时门，结构通过不能启动自适应训练。
+
 ## 方法、主张与实验
 
 METHOD 链接 dataset_ids、required_inference_inputs、evidence_ids；可用模态或变量必须满足使用时输入。CLAIM 链接方法、证据和 experiment_ids，明确 falsification。EXPERIMENT 链接主张、方法、数据、metric_ids 和 task_ids。METRIC 明确 target/definition/unit/aggregation/uncertainty/primary。

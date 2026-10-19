@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "authorization": null,
+  "deadline_utc": null,
+  "project_root": null,
+  "downstream_stages": null,
+  "budgets": {
+    "training_seconds": null,
+    "max_method_revisions": null,
+    "max_fault_retries": null,
+    "formal_reserve_seconds": null,
+    "step_timeout_seconds": null,
+    "poll_seconds": null
+  },
+  "rules": {
+    "baseline_floor": null,
+    "target": null,
+    "min_effect": null,
+    "ci_lower_bound": null,
+    "screening_floor": null,
+    "required_contributions": [
+      {"id": null, "claim": null, "falsification": null, "boundary": null, "ablation": null, "min_effect": null, "ci_lower_bound": null}
+    ],
+    "comparisons": [
+      {"entry": null, "min_effect": null, "ci_lower_bound": null}
+    ]
+  },
+  "entry_dependencies": null,
+  "evaluator_implementation_paths": [],
+  "codex": {"executable": null},
+  "recovery": null
+}

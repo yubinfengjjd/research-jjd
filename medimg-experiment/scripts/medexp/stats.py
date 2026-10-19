@@ -69,8 +69,9 @@ def aggregate(mode, values, higher):
     return min(values) if higher else max(values)
 
 
-def paired_bootstrap(statistic, runs_a, runs_b, higher, mode, resamples, level, seed):
+def paired_bootstrap(statistic, runs_a, runs_b, higher, mode, resamples, level, seed, checkpoint=None):
     """runs_* are per-seed case dicts. Effect = A better than B (direction-adjusted)."""
+    if checkpoint:checkpoint()
     ids = sorted(runs_a[0])
     for r in runs_a + runs_b:
         require(sorted(r) == ids, '配对比较要求所有运行使用同一组病例')
@@ -89,7 +90,8 @@ def paired_bootstrap(statistic, runs_a, runs_b, higher, mode, resamples, level, 
     require(point is not None, '完整病例集无法计算配对效应')
     rng = random.Random(seed)
     draws, skipped = [], 0
-    for _ in range(resamples):
+    for draw in range(resamples):
+        if checkpoint and draw%32==0:checkpoint()
         sample = [ids[rng.randrange(len(ids))] for _ in ids]
         e = effect(sample)
         if e is None:
@@ -97,7 +99,9 @@ def paired_bootstrap(statistic, runs_a, runs_b, higher, mode, resamples, level, 
         else:
             draws.append(e)
     require(skipped <= resamples * 0.1, 'bootstrap重采样中单一类别过多，病例数不足以估计区间')
+    if checkpoint:checkpoint()
     draws.sort()
+    if checkpoint:checkpoint()
     alpha = (1 - level) / 2
     lo = draws[max(0, math.floor(alpha * len(draws)))]
     hi = draws[min(len(draws) - 1, math.ceil((1 - alpha) * len(draws)) - 1)]

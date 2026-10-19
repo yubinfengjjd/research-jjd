@@ -34,10 +34,16 @@ def check(root):
             raise ValueError('Unsupported generated metadata line: '+line)
     if '$medimg-experiment' not in yaml or 'allow_implicit_invocation: true' not in yaml:raise ValueError('Invocation metadata missing')
     json.loads((root/'assets'/'contract-template.json').read_text(encoding='utf-8'))
-    for name in ['controller.py','worker.py','medexp/process.py','medexp/stats.py']:
+    json.loads((root/'assets'/'adaptive-contract-template.json').read_text(encoding='utf-8'))
+    for name in ['controller.py','worker.py','medexp/process.py','medexp/stats.py',
+                 'medexp/adaptive.py','medexp/agent_runner.py','medexp/scheduler.py','medexp/projection.py','medexp/recovery.py','medexp/review_adapter.py']:
         if not (root/'scripts'/name).is_file():raise ValueError('Missing runtime file: '+name)
     for name in ['synth_data.py','audit_split.py','evaluate_test.py','model.py','train.py']:
         if not (root/'assets'/'synthetic'/name).is_file():raise ValueError('Missing demo file: '+name)
+    for name in ['synth_data.py','audit_split.py','evaluate_test.py','model.py','train.py',
+                 'torch_runtime.py','sampler.py','validate_resume.py','verify_run.py','README.md']:
+        if not (root/'assets'/'gpu_synthetic'/name).is_file():raise ValueError('Missing GPU fixture file: '+name)
+    if not (root/'tests'/'run_gpu_acceptance.py').is_file():raise ValueError('Missing GPU acceptance driver')
     return {'valid':True,'validator':'dependency-free generated-metadata subset + resource links; not official quick_validate',
             'name':meta['name'],'references_checked':len(files),'implicit_discovery':True}
 

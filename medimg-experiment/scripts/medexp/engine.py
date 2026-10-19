@@ -1,4 +1,5 @@
 import json
+import hashlib
 import math
 import os
 from pathlib import Path
@@ -37,6 +38,7 @@ def init(root, contract_path):
              'audit': None, 'matrix_done': {}, 'tests': [], 'test_looks': 0,
              'spent_seconds': 0, 'candidate_count': 0, 'no_improvement': 0,
              'baseline_value': None, 'verification_source': None, 'created_at': timestamp()}
+    state['original_plan_sha256']=hashlib.sha256((root/'plans'/'original.md').read_bytes()).hexdigest()
     save_state(root, state, 'initialized')
     write_plan(root, state, '初始化；原始计划未修改')
     return state
@@ -88,9 +90,11 @@ def audit(root):
         out = root/'evidence'/'audit'/f'audit-{uuid.uuid4().hex[:8]}.json'
         argv = [str(safe_path(c['environment']['python'])) if a == '{python}' else str(out) if a == '{output}' else a
                 for a in c['split_audit']['command']]
+        argv=argv[:1]+['-X','utf8']+argv[1:]
         env = {**os.environ, 'PYTHONUTF8': '1', 'ME_PHASE': 'audit', 'ME_CONTRACT_PATH': str(root/'plans'/f'contract-{state["revision"]:03d}.json')}
+        from .adaptive import deadline_timeout
         r = subprocess.run(argv, cwd=str(root/'worktree'), capture_output=True, text=True, encoding='utf-8', errors='replace',
-                           timeout=c['split_audit']['timeout_seconds'], env=env, creationflags=0x08000000 if os.name == 'nt' else 0)
+                           timeout=deadline_timeout(root,c['split_audit']['timeout_seconds']), env=env, creationflags=0x08000000 if os.name == 'nt' else 0)
         (out.with_suffix('.log')).write_text(r.stdout[-20000:] + '\n--- stderr ---\n' + r.stderr[-20000:], encoding='utf-8')
         require(r.returncode == 0, '划分审计脚本失败: ' + r.stderr[-1000:])
         require(frozen_hashes(root, c) == hashes, '审计期间固定文件被改动')
@@ -133,7 +137,7 @@ def candidate(root, ident, phase, command_path, description, entry=None):
             require(entry not in state['matrix_done'], '该矩阵条目本版本已完成，不重复建立')
             for existing in (root/'candidates').glob('*.json'):
                 old = read_json(existing)
-                require(not (old['revision'] == state['revision'] and old.get('entry') == entry and old['runs']),
+                require(not (old['revision'] == state['revision'] and old.get('entry') == entry and old['runs'] and old.get('evidence_level') != 'screening'),
                         '该条目已有运行中的候选；补跑seed请用原候选，异常重试走恢复流程')
         else:
             require(entry is None, 'search模式不使用--entry')
@@ -146,7 +150,7 @@ def candidate(root, ident, phase, command_path, description, entry=None):
         sha = project.snapshot(root, c, state['frozen_commit'], phase)
         for existing in (root/'candidates').glob('*.json'):
             old = read_json(existing)
-            require(not (old['revision']==state['revision'] and old['phase']==phase and old['commit']==sha and old['command']==command and old.get('entry')==entry),
+            require(not (old['revision']==state['revision'] and old['phase']==phase and old['commit']==sha and old['command']==command and old.get('entry')==entry and old.get('evidence_level') not in ('screening','classification_only')),
                     '相同代码、参数和阶段的候选已存在；使用原候选完成不同seed，不能换名称重试')
         if state['frozen_commit'] is None:
             state['frozen_commit'] = sha
@@ -161,11 +165,11 @@ def candidate(root, ident, phase, command_path, description, entry=None):
     return record
 
 
-def validate_command(root, c, command):
+def validate_command(root, c, command, available_files=()):
     require(isinstance(command, list) and len(command) >= 2 and all(isinstance(a, str) and a for a in command), '命令必须为非空argv数组，不使用shell')
     require(command[0] == '{python}', '必须使用契约解释器占位符{python}')
     require(command[1].endswith('.py') and not command[1].startswith('-'), '必须直接运行受管Python脚本')
-    require(inside(root/'worktree', command[1]).is_file(), '训练脚本不在受管工程')
+    require(inside(root/'worktree', command[1]).is_file() or command[1] in available_files, '训练脚本不在受管工程')
     switches=[a for a in command[2:] if a=='--seed' or a.startswith('--seed=')]
     require(switches==['--seed'] and command.count('{seed}') == 1 and command.index('--seed')+1 < len(command)
             and command[command.index('--seed')+1] == '{seed}', 'seed必须由复核协议注入一次，禁止重复或--seed=覆盖')
@@ -194,6 +198,7 @@ def review(root, record_path):
         save_state(root, state, 'independent_review_recorded')
     return cand
 def environment_check(root, c):
+    from .adaptive import deadline_timeout
     env = c['environment']
     require(shutil.disk_usage(root).free >= env['min_free_bytes'], '可用空间低于确认的存储余量')
     for p in c['data']['paths']:
@@ -201,14 +206,14 @@ def environment_check(root, c):
         require(path.exists() and os.access(path, os.R_OK), '数据不可读取')
     script = ('import json,sys,importlib.metadata as m; '
               'print(json.dumps({"python":sys.version,"dependencies":{k:m.version(k) for k in '+repr(list(env['dependencies']))+'}}))')
-    r = subprocess.run([str(safe_path(env['python'])), '-c', script], capture_output=True,
-                       text=True, encoding='utf-8', errors='replace', timeout=30,
+    r = subprocess.run([str(safe_path(env['python'])), '-X', 'utf8', '-c', script], capture_output=True,
+                       text=True, encoding='utf-8', errors='replace', timeout=deadline_timeout(root,30),
                        env={**os.environ,'PYTHONUTF8':'1'}, creationflags=0x08000000)
     require(r.returncode == 0, '解释器或依赖不可用；先提出独立环境方案: '+r.stderr[-1000:])
     result = json.loads(r.stdout)
     require(result['dependencies'] == env['dependencies'], '依赖版本与已确认契约不同')
     if env['device'] == 'cuda':
-        r = subprocess.run([str(safe_path(env['python'])), '-c', 'import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))'], capture_output=True, text=True, timeout=30, creationflags=0x08000000)
+        r = subprocess.run([str(safe_path(env['python'])), '-X', 'utf8', '-c', 'import torch; assert torch.cuda.is_available(); print(torch.cuda.get_device_name(0))'], capture_output=True, text=True, timeout=deadline_timeout(root,30), creationflags=0x08000000)
         require(r.returncode == 0, '契约CUDA设备不可用；不自动切换CPU')
         result['gpu'] = r.stdout.strip()
     return result
@@ -234,6 +239,8 @@ def run(root, ident, seed):
         require(cand.get('entry') not in state['matrix_done'], '该矩阵条目本版本已完成')
         require(project.clean(root) and project.commit(root) == cand['commit'], '代码变更导致审查失效')
         require(cand.get('review') and cand['review']['verdict'] == 'pass' and cand['review']['commit'] == cand['commit'], '缺少通过的独立审查')
+        from .adaptive import effective_run_contract
+        c = effective_run_contract(root, c, cand)
         require(seed in c['verification']['seeds'], 'seed不在确认的复核协议中')
         for run_id in cand['runs']:
             old = read_json(root/'runs'/run_id/'record.json')
@@ -246,11 +253,14 @@ def run(root, ident, seed):
         except Exception as e:
             incident(root,state,None,'preflight_environment',str(e))
             raise GateError(str(e))
+        c=effective_run_contract(root,current_contract(root,state),cand)
         run_id = 'r-'+uuid.uuid4().hex[:12];directory = root/'runs'/run_id;directory.mkdir()
         record = {'run_id': run_id, 'candidate_id': ident, 'entry': cand.get('entry'), 'phase': cand['phase'], 'revision': state['revision'],
                   'commit': cand['commit'], 'seed': seed, 'status': 'queued', 'created_at': timestamp(),
                   'environment': env_evidence, 'worker_pid': None, 'worker_token': None,
                   'training_pid': None, 'training_token': None, 'value': None, 'guards': {}}
+        if cand.get('recovery') and cand['recovery']['seed']==seed:
+            record['recovery']=cand['recovery']
         write_json(directory/'record.json',record);write_json(directory/'contract.json',c)
         # A reconstructable bundle survives any later working-tree rollback.
         project.git(root/'code','bundle','create',str(directory/'code.bundle'),'refs/medexp/candidates/'+ident)
@@ -261,7 +271,7 @@ def run(root, ident, seed):
         state['active_run']=run_id;state['status']='running';save_state(root,state,'training_reserved')
         worker = Path(__file__).resolve().parents[1]/'worker.py'
         try:
-            owner=spawn_detached([sys.executable,str(worker),'--root',str(root),'--run-id',run_id],str(root),str(directory/'monitor.log'))
+            owner=spawn_detached([sys.executable,'-X','utf8',str(worker),'--root',str(root),'--run-id',run_id],str(root),str(directory/'monitor.log'))
             record.update(worker_pid=owner['pid'],worker_token=owner['token']);write_json(directory/'record.json',record)
         except Exception as e:
             incident(root,state,record,'worker_start',str(e))
@@ -339,8 +349,12 @@ def run_cases(c, root, run_ids, subdir=None):
 
 def paired(c, root, a_ids, b_ids, subdir_a=None, subdir_b=None):
     ci = c['verification']['ci']
+    checkpoint=None
+    if (root/'adaptive'/'state.json').is_file():
+        from .adaptive import deadline_timeout
+        checkpoint=lambda:deadline_timeout(root,1)
     return stats.paired_bootstrap(ci['statistic'], run_cases(c, root, a_ids, subdir_a), run_cases(c, root, b_ids, subdir_b),
-                                  higher(c), c['verification']['aggregation'], ci['resamples'], ci['level'], ci['seed'])
+                                  higher(c), c['verification']['aggregation'], ci['resamples'], ci['level'], ci['seed'],checkpoint=checkpoint)
 
 
 def finish(root,record,value,result,elapsed):
@@ -351,6 +365,12 @@ def finish(root,record,value,result,elapsed):
         record.update(status='completed',value=value,elapsed_seconds=elapsed,finished_at=timestamp(),artifacts=result['artifacts'])
         write_json(root/'runs'/record['run_id']/'record.json',record)
         cand=read_json(root/'candidates'/f'{record["candidate_id"]}.json')
+        if cand.get('evidence_level') == 'screening':
+            record['evidence_level'] = 'screening'
+            write_json(root/'runs'/record['run_id']/'record.json',record)
+            state['status']='ready'
+            save_state(root,state,'screening_completed_not_formal_evidence')
+            return
         if record['phase']=='explore':
             baseline=state['baseline_value']
             effect=(value-baseline) if higher(c) else (baseline-value)
@@ -394,6 +414,7 @@ def finish(root,record,value,result,elapsed):
                     incident(root,state,record,'formal_validation','完整复核不满足：'+'；'.join(problems))
                     return
                 stable={**s,'commit':cand['commit'],'revision':state['revision'],'verified_at':timestamp(),'candidate_id':cand['id'],'entry':cand.get('entry')}
+                if cand.get('condition_fingerprint'):stable['condition_fingerprint']=cand['condition_fingerprint']
                 write_json(root/'evidence'/'stable'/f'{cand["id"]}.json',stable)
                 if record['phase']=='matrix':
                     state['matrix_done'][cand['entry']]=stable
@@ -522,7 +543,7 @@ def test(root, ident, rationale):
         save_state(root, state, 'locked_test_started')
         worker = Path(__file__).resolve().parents[1]/'worker.py'
         try:
-            owner = spawn_detached([sys.executable, str(worker), '--root', str(root), '--test-id', test_id], str(root), str(directory/'monitor.log'))
+            owner = spawn_detached([sys.executable, '-X', 'utf8', str(worker), '--root', str(root), '--test-id', test_id], str(root), str(directory/'monitor.log'))
             meta.update(worker_pid=owner['pid'], worker_token=owner['token']);write_json(directory/'test.json', meta)
         except Exception as e:
             close_test(root, state, meta, None, '测试后台启动失败: ' + str(e))
@@ -644,3 +665,19 @@ def export(root):
         'accepted / matrix_complete 只表示本契约规则达标；真实医学结论、GPU/PyTorch表现或临床效用需另行验证。失败、拒绝与负结果分别保存，不删除不利证据。']
     (root/'report.md').write_text('\n'.join(L)+'\n',encoding='utf-8')
     return {'report_json':str(root/'report.json'),'report_markdown':str(root/'report.md'),'status':state['status']}
+
+
+def _adaptive_guarded(function):
+    from functools import wraps
+    @wraps(function)
+    def guarded(root,*args,**kwargs):
+        from .adaptive import guard
+        guard(root,function.__name__)
+        return function(root,*args,**kwargs)
+    return guarded
+
+
+# Worker result/incident reconciliation remains available; manual actions cannot
+# reset or evade a delegated study's cross-revision ledger or frozen-test gate.
+for _name in ('approve','audit','candidate','review','run','test','reported','recover','resume'):
+    globals()[_name]=_adaptive_guarded(globals()[_name])

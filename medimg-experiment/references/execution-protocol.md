@@ -1,5 +1,7 @@
 # 候选、训练协议与证据
 
+> 本页为人工逐步模式与底层训练输出协议。自动闭环由 [adaptive-execution.md](adaptive-execution.md) 的 supervisor 调用底层控制器，不混用手动命令绕过累计预算、初筛或正式门。
+
 ## CLI
 
 用已核实的 Python 运行技能实际位置下的 `controller.py`；不要假定当前目录就是技能目录，也不要用 WindowsApps 的 python 占位程序。Git Bash 示例（PowerShell 同理改变量语法）：

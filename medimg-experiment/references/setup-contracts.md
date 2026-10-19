@@ -1,5 +1,7 @@
 # 建工程与确认契约
 
+> 本页描述人工逐步模式。授权内自动闭环使用 [adaptive-execution.md](adaptive-execution.md) 的双材料与 adaptive-* 命令；已批准范围内的普通依赖与方法修订按原委托执行，不逐次重问。
+
 入口：`controller.py init --root <新输出目录> --contract <实际契约.json>`。`--root` 是每个课题显式指定的全新目录；不写在契约内，不能位于原数据目录内，也不能与源代码目录重叠。`init` 只建立工程与证据，不启动训练。既有目录被拒绝。
 
 ## 现有环境
