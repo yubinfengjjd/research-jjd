@@ -20,7 +20,10 @@ from tests.test_controller import contract, FIXTURE, AUDIT
 
 class AdaptiveTests(unittest.TestCase):
     def setUp(self):
-        self.tmp=tempfile.TemporaryDirectory(prefix='adaptive-test-'); self.base=Path(self.tmp.name)
+        self.tmp=tempfile.TemporaryDirectory(prefix='adaptive-test-')
+        # Match controller.py: resolve Windows short-name/junction temp aliases
+        # before comparing managed roots or observing canonical write targets.
+        self.base=Path(self.tmp.name).resolve()
         self.src=self.base/'src'; self.src.mkdir(); self.data=self.base/'data';self.data.mkdir()
         for name,content in [('train.py',FIXTURE),('evaluate.py','# fixed definition\n'),('audit.py',AUDIT)]:
             (self.src/name).write_text(content,encoding='utf-8')
