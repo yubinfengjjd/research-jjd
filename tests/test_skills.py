@@ -14,7 +14,7 @@ SKILLS = ["medfig-suite", "medfig-plan", "medfig-render", "medfig-orchestrate", 
           "medfig-illustrator"]
 # medical writing suite: format / reference-link / leak checks (no evals/ shipped for these yet)
 WRITING_SKILLS = ["medical-sci-methods", "medical-sci-legends", "medical-sci-results", "medical-sci-introduction",
-                  "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references",
+                  "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references", "medical-sci-submission",
                   "medpaper-pipeline"]
 # research planning / managed experiments / Socratic project interview
 EXTRA_SKILLS = ["medical-research-plan", "medimg-experiment", "socratic-project-manager"]

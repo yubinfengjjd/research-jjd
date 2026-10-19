@@ -1,6 +1,6 @@
 ---
 name: medpaper-pipeline
-description: Use when the user wants to run or resume the whole medical SCI paper production line in order — figure planning, figure rendering, writing outline, then Methods, figure legends, Results, Introduction, Discussion, Abstract, final Word assembly and polishing — or to set up, check or migrate a paper project's standard directory layout and PROJECT.md status table, such as 从出图到写作按顺序走、论文流水线、下一步该做什么、整理项目目录与代码、新建论文项目、项目进度. Calls the medfig-* and medical-sci-* skills one stage at a time and stops for author confirmation after each stage. Do not use for a single isolated task that one skill already covers (call that skill directly), or for research planning and experiments.
+description: Use when running or resuming the medical SCI paper pipeline from figures through writing, final Word assembly, Zotero references and journal adaptation/submission materials, or setting up, checking or migrating a paper project's layout and PROJECT.md status (论文流水线、下一步、整理项目目录、项目进度). Calls medfig-* and medical-sci-* one stage at a time with author confirmation. For one isolated task use its skill directly; standalone journal adaptation uses medical-sci-submission without upstream gates. Research planning and experiments are separate.
 ---
 
 # 医学论文出图与写作编排
@@ -28,6 +28,7 @@ description: Use when the user wants to run or resume the whole medical SCI pape
 | 10 | Abstract | medical-sci-abstract | 5、6、7、8、9 已确认 | `04_manuscript/Abstract/` |
 | 11 | 成品组装与润色 | medical-sci-finalize | 5、6、7、8、9、10 已确认 | `05_final/` |
 | 12 | 参考文献收集与注入 | medical-sci-references | 11 已确认 | `05_final/` |
+| 13 | 期刊适配与投稿材料准备 | medical-sci-submission | 12 已确认 | `06_submission/<journal>/<version>/` |
 
 - 代码接收与整理在阶段 0 内按 references/code-intake.md 执行；无代码可整理时在备注写“代码整理：不适用”。
 - 图注在 Results 之前：Results 技能读图注，图注技能不读 Results。
@@ -64,6 +65,14 @@ description: Use when the user wants to run or resume the whole medical SCI pape
 第11步作者确认后运行 medical-sci-references：只收集主稿引用到 Zotero，生成原生字段版新版本主稿；第12行先待确认，作者 Word Refresh 验收后才能已确认。计划下一阶段时，11已确认且12未确认就取12；旧PROJECT缺12行时补“未开始”，不得把不存在的阶段视为已完成。
 
 第11步重新组装或上游返工影响主稿时，第12行置“需返工”。字段版主稿由 check_references.py 验收；check_finalize.py 的“无References/纯文本引用标识集合一致”断言在第12步之后不再适用，不改 finalize 脚本。Zotero 由作者保持运行，探测连续3次失败（间隔5秒）则记录连接待办并继续离线准备，不启动、重启或关闭 Zotero。
+
+## 第13步期刊适配与投稿材料准备
+
+12 已确认且 13 未确认时，“下一步”取 13，调用 medical-sci-submission；准备完成先 `待确认`。旧 PROJECT 缺 13 行补 `未开始`，不视为已完成；缺 12 时先按第12步约定补齐。可用 `scripts/submission_state.py PROJECT.md` 输出迁移文本供核对保存，脚本不覆盖原文件。独立 DOCX 适配直接用 medical-sci-submission，不要求先建流水线或补写 Methods/Results。
+
+源稿保持在 `05_final/`；新版本材料在 `06_submission/<journal>/<version>/`，过程/核查在 `_process/Submission/<date>_<version>/`，作者决定追加 `04_manuscript/作者决定.md` 的 `## Submission`。交付目录不放原始证据、同意书、私有作者材料或日志。旧版保留，不覆盖。
+
+第 11/12 步重做或上游变更影响主稿/引用时，13 需重核或重建并置 `需返工`；第 11 步影响 12 的规则仍适用。`submission_state.py --changed-stage N` 只辅助 12/13 的有界传播，不替代其他阶段依赖管理。第 13 步常规排版不使已确认的上游科学工作失效。事实缺失或官方指南不可用仍可交草稿，必须列待办；材料作者批准与 Word/Zotero Refresh 验收分开记录，文件存在、模型声明和校验通过都不能自动写 `已确认`。本阶段只准备材料，不发送或投稿。
 
 ## 交付前检查
 

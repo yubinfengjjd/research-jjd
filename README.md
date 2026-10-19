@@ -2,7 +2,7 @@
 
 [![tests](https://github.com/yubinfengjjd/research-jjd/actions/workflows/tests.yml/badge.svg)](https://github.com/yubinfengjjd/research-jjd/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧是七个 medfig 技能和它们依赖的 `scipilot-medimg-figure-skill`；写作侧是八个 `medical-sci-*` 写作技能和把它们串起来的 `medpaper-pipeline`（含投稿前的 Zotero 参考文献注入）；另有科研开题、受管实验与苏格拉底式项目访谈三个技能。一条命令装到 Claude Code 与 Codex 的技能目录后按触发条件自动使用。
+research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧是七个 medfig 技能和它们依赖的 `scipilot-medimg-figure-skill`；写作侧是九个 `medical-sci-*` 技能和把它们串起来的 `medpaper-pipeline`（含 Zotero 参考文献注入与期刊适配、投稿材料准备）；另有科研开题、受管实验与苏格拉底式项目访谈三个技能。一条命令装到 Claude Code 与 Codex 的技能目录后按触发条件自动使用。
 
 | 技能 | 作用 |
 |---|---|
@@ -20,6 +20,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 - 只要一张纯影像网格（已导出的 PNG/JPG/TIF + 掩膜/轮廓/热力图/放大框/比例尺，无统计图混排）→ `scipilot-medimg-figure-skill`。
 - 其他情况：还没有规格 → `medfig-plan`；已有规格、单张图 → `medfig-render`；图表定稿后写作大纲 → `medfig-outline`；示意图 / 架构图 → `medfig-schematic`；参考图 1:1 复刻成矢量 → `medfig-illustrator`；多张图 → `medfig-orchestrate`（内部逐张调用 `medfig-render`）。
 - 写作：从出图一路到 Methods / 图注 / Results / Introduction / Discussion / Abstract、成品 Word 与投稿前参考文献 → `medpaper-pipeline`（逐阶段调用写作技能）；只写或修订单节 → 直接调用对应的 `medical-sci-*` 技能。
+- 期刊适配、作者/基金/伦理声明、cover-letter draft 和相关 checklist/投稿材料 → `medical-sci-submission`；流水线为第13步，独立 DOCX 可直接使用，无需补建上游阶段。不发送或提交材料。
 
 非医学图表、用代码直接画的示意图不在范围内。
 
@@ -27,7 +28,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 
 | 技能 | 作用 |
 |---|---|
-| `medpaper-pipeline` | 写作侧入口与编排：按 图表规划 → 出图 → 写作大纲 → Methods → 图注 → Results → Introduction → Discussion → Abstract → 成品组装与润色 逐阶段调用对应技能，每步停下等作者确认；管理论文项目目录与 `PROJECT.md` 进度，并自带一致性检查脚本 |
+| `medpaper-pipeline` | 写作侧入口与编排：从图表规划、正文写作到成品组装、Zotero 参考文献和第13步期刊适配，逐阶段调用技能并等作者确认；管理项目目录和 `PROJECT.md` 进度，自带一致性检查脚本 |
 | `medical-sci-methods` | Methods 正文（英文成稿附中文对照与核查说明） |
 | `medical-sci-legends` | 主图 / 附图图注与表题表注 |
 | `medical-sci-results` | Results 正文 |
@@ -36,6 +37,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | `medical-sci-abstract` | 摘要（中英对照、关键词、Highlights；默认英文正文 ≤250 词） |
 | `medical-sci-finalize` | 成品 Word 组装（主稿 + 补充材料）与英文全稿保守润色（含去防御性写作）；支持同一表号多区块与发表编号映射 |
 | `medical-sci-references` | 投稿前参考文献收尾：从主稿抽取引用标识，按 PMID/DOI/arXiv 查重并补入 Zotero，注入 Word 原生引文字段与文献表，核对 I1–I9 不变式；支持作者提供的 URL→条目映射 |
+| `medical-sci-submission` | 期刊适配与投稿材料准备：按当前官方文章类型要求核实作者/基金/声明，保护源稿与 Zotero 字段，准备适用材料和缺口清单；可独立处理病例、综述等 DOCX，缺失事实可交草稿，不自动授予投稿就绪 |
 
 ## 科研与项目管理技能
 
@@ -65,7 +67,7 @@ python install.py
 
 以后更新：`git pull && python install.py --update`。
 
-`install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、八个 `medical-sci-*` 写作技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
+`install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、九个 `medical-sci-*` 技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
 
 ```bash
 python install.py --dry-run          # 只打印计划（复制、备份、目标），不改动任何文件

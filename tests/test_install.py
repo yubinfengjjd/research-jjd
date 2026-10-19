@@ -95,6 +95,22 @@ def test_install_copies_exactly_the_skill_dirs(src, roots, tmp_path):
             assert stamp["version"] and stamp["timestamp"]
 
 
+def test_existing_internal_selective_install_preserves_unrelated(src, roots, tmp_path):
+    """Controller can deploy reviewed directories without changing the public CLI."""
+    inst = make(src, roots, tmp_path)
+    target = roots[0]
+    untouched = target / "medical-sci-methods"
+    untouched.mkdir()
+    (untouched / "local.txt").write_bytes(b"unrelated installation")
+    before = snapshot(untouched)
+    for name in ("medical-sci-submission", "medpaper-pipeline"):
+        inst._install_one(target, name, "synthetic", update=False)
+        assert install.verify(src / name, target / name) == []
+    assert not inst.failures
+    assert snapshot(untouched) == before
+    assert (target / "other-skill/SKILL.md").read_text() == "keep me"
+
+
 def test_excluded_files_absent(src, roots, tmp_path):
     make(src, roots, tmp_path).install()
     r = roots[0] / "medfig-render"

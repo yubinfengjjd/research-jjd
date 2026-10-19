@@ -1,0 +1,4 @@
+interface:
+  display_name: "期刊适配与投稿材料准备"
+  short_description: "适配医学稿件到目标期刊，核实作者声明并准备可审核的投稿材料草稿"
+  default_prompt: "使用 $medical-sci-submission 根据目标期刊官方要求适配现有稿件，并准备待作者核对的投稿材料。"

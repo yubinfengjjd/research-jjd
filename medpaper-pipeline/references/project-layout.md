@@ -26,6 +26,7 @@
 │  ├─ Discussion/            Discussion_EN.md、Discussion_ZH.md、Discussion_EN_ZH.md、Discussion_核查说明.md
 │  └─ Abstract/              Abstract_EN.md、Abstract_ZH.md、Abstract_EN_ZH.md、Abstract_核查说明.md
 ├─ 05_final/                 成品 Word：<项目名>_Manuscript_v<N>.docx、<项目名>_Supplementary_v<N>.docx（medical-sci-finalize）
+├─ 06_submission/<journal>/<version>/  期刊适配稿与实际要求的投稿材料；保留历史版本
 ├─ _process/冲突台账.md      全阶段共用的材料冲突记录（consistency-guards.md 第 4 节）
 ├─ _process/<阶段>/<YYYY-MM-DD>_<描述>/   审查、盲测、裁决书、对照稿
 └─ _archive/<YYYY-MM-DD>/<原相对路径>     被替换的旧版本
@@ -38,7 +39,7 @@
 - 附图图注、附表表注都放 `Legends/`；附图、附表文件本身留在 `02_figures/out/`，不复制。
 - 成稿目录不放脚本、缓存、审查记录或对照草稿；这些放 `_process/`。
 - `02_figures/` 是独立 git 仓库；medfig-orchestrate 的台账、brief、review 按该技能要求留在 `02_figures/docs/_process/`（git 跟踪），不移到项目根 `_process/`。
-- `_process/` 的阶段名用：`plan`、`Intake`、`figures`、`outline`、`Methods`、`Legends`、`Results`、`Introduction`、`Discussion`、`Abstract`、`Finalize`、`References`。例如 `_process/Results/2026-10-14_盲测_R4/`、`_process/Legends/2026-10-14_裁决_R3材料问题.md`。
+- `_process/` 的阶段名用：`plan`、`Intake`、`figures`、`outline`、`Methods`、`Legends`、`Results`、`Introduction`、`Discussion`、`Abstract`、`Finalize`、`References`、`Submission`。例如 `_process/Results/2026-10-14_盲测_R4/`、`_process/Legends/2026-10-14_裁决_R3材料问题.md`。
 - Abstract 的 Keywords、Highlights 放在三份语言稿的独立节，不额外增加成稿文件。
 
 ## 2. 替换与归档
@@ -67,6 +68,7 @@
 | 10 | Abstract | medical-sci-abstract | 未开始 | | | | |
 | 11 | 成品组装与润色 | medical-sci-finalize | 未开始 | 05_final/ | | | |
 | 12 | 参考文献收集与注入 | medical-sci-references | 未开始 | 05_final/ | | | |
+| 13 | 期刊适配与投稿材料准备 | medical-sci-submission | 未开始 | 06_submission/ | | | |
 
 ## 写作目标
 
@@ -102,6 +104,7 @@
 ## Abstract
 ## Finalize
 ## References
+## Submission
 ```
 
 - 每条：日期 + 决定 + 依据（对话或裁决书路径）。
@@ -120,3 +123,11 @@
 05_final 主稿可为 Zotero 字段版（medical-sci-references 产物），同一命名、版本递增。过程材料位于 `_process/References/<日期>_v<N>/`，作者决定写 `## References`。独立使用不新建PROJECT；作者必须给输出目录和集合。
 
 第11步重建主稿后第12步置需返工。字段版以 check_references.py 为准；finalize 中无References及纯文本引用集合断言不适用，不改 finalize 脚本。上游变更的下游状态传播自然包含12。第12步仍须作者在Word Refresh验收，脚本只标待确认。
+
+## 第13步产物与检查边界
+
+第12步已确认后进入 `medical-sci-submission`。新 PROJECT 包含13行；旧 PROJECT 缺13行补“未开始”。准备产物先“待确认”，不能由生成元数据或校验结果推定作者批准；缺失伦理/官方指南可交草稿，不能判就绪。作者材料批准与相关 Word/Refresh 验收分别登记。
+
+`06_submission/<journal>/<version>/` 只放投稿稿件、实际要求的标题页/声明/cover-letter draft/checklist/图附件与变更/要求/待办；原始作者材料、患者同意、源证据、库快照和日志留 `_process/Submission/<date>_<version>/`，不进投稿包。源 `05_final/` 不变；新建版本，旧版本保留，不套用第2节的覆盖式路径规则。决定写 `## Submission`。
+
+11/12 重做或上游变更影响主稿或引用时13“需返工”，重核或重建依赖版本。13常规排版不倒推改变已确认上游状态。独立使用明确输出目录和外置过程目录，不补造PROJECT或上游章节。
