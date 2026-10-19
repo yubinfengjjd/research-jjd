@@ -64,13 +64,15 @@ def _field(instruction, display):
 
 def _part(xml):
     root = ET.fromstring(xml)
+    revision_tags = {W + name for name in ("del", "moveFrom", "ins", "moveTo")}
+    revised_nodes = {child for node in root.iter() if node.tag in revision_tags for child in node.iter()}
     for node in root.iter():
-        if node.tag in {W + "del", W + "moveFrom"} and "ZOTERO" in "".join(n.text or "" for n in node.iter(W + "instrText")).upper():
-            raise ValueError("unsupported tracked deletion/move of Zotero field")
         if node.tag.endswith("}instrText") and not node.tag.startswith(W) and "ZOTERO" in (node.text or "").upper():
             raise ValueError("unsupported OOXML namespace for Zotero field")
     stack, fields = [], []
     for node in root.iter():
+        if stack and node in revised_nodes:
+            stack[-1]["revised"] = True
         if node.tag == W + "fldSimple" and "ZOTERO" in node.get(W + "instr", "").upper():
             raise ValueError("unsupported simple Zotero field; complex fields required")
         if node.tag == W + "fldChar":
@@ -78,7 +80,7 @@ def _part(xml):
             if op == "begin":
                 if stack:
                     stack[-1]["has_child"] = True
-                stack.append({"instruction": "", "display": "", "result": False, "nested": bool(stack), "has_child": False})
+                stack.append({"instruction": "", "display": "", "result": False, "nested": bool(stack), "has_child": False, "revised": node in revised_nodes})
             elif op == "separate":
                 if not stack:
                     raise ValueError("unsupported unmatched field separator")
@@ -89,6 +91,8 @@ def _part(xml):
                 current = stack.pop()
                 parsed = _field(current["instruction"], current["display"])
                 if parsed:
+                    if current["revised"]:
+                        raise ValueError("unsupported tracked revision affecting Zotero field")
                     if current["nested"] or current["has_child"] or not current["result"]:
                         raise ValueError("unsupported nested/incomplete Zotero field")
                     fields.append(parsed)
@@ -137,6 +141,32 @@ def compare(baseline, source, candidate):
     return {"ok": not errors, "errors": errors, "candidate_sha256": result["sha256"], "scope": result["scope"]}
 
 
+def _nonblank(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _http_url(value):
+    if not _nonblank(value) or any(ch.isspace() for ch in value):
+        return False
+    try:
+        parsed = urlparse(value)
+        # Accessing port also detects malformed brackets/ports; no network lookup.
+        port = parsed.port
+        host = parsed.hostname
+        if parsed.scheme not in {"http", "https"} or not host or parsed.username or parsed.password:
+            return False
+        if ":" in host:
+            import ipaddress
+            ipaddress.IPv6Address(host)
+            return True
+        ascii_host = host.encode("idna").decode("ascii").rstrip(".")
+        return bool(ascii_host) and len(ascii_host) <= 253 and all(
+            re.fullmatch(r"[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?", label)
+            for label in ascii_host.split("."))
+    except (ValueError, UnicodeError):
+        return False
+
+
 def assess(record):
     """Audit supplied records; evidence strings require human review, never self-authenticate."""
     gaps = []
@@ -149,8 +179,17 @@ def assess(record):
         confirmation = fact.get("confirmation")
         value = fact.get("value")
         missing = value is None or (isinstance(value, str) and not value.strip()) or value == [] or value == {}
-        if missing or not fact.get("source") or not isinstance(confirmation, dict) or not confirmation.get("by") or not confirmation.get("evidence"):
-            gaps.append("fact_unresolved:" + str(fact.get("name", "unnamed")))
+        prefix = "fact_unresolved:" + str(fact.get("name", "unnamed")) + ":"
+        if missing:
+            gaps.append(prefix + "value")
+        if not _nonblank(fact.get("source")):
+            gaps.append(prefix + "source")
+        if not isinstance(confirmation, dict):
+            gaps.append(prefix + "confirmation")
+        else:
+            for key in ("by", "evidence"):
+                if not _nonblank(confirmation.get(key)):
+                    gaps.append(prefix + key)
     if not requirements:
         gaps.append("official_requirements_missing")
     for rule in requirements:
@@ -159,8 +198,9 @@ def assess(record):
             valid_date = True
         except (ValueError, TypeError):
             valid_date = False
-        if (urlparse(rule.get("url", "")).scheme not in {"http", "https"}
-                or not valid_date or rule.get("provenance") != "official"
+        if not _http_url(rule.get("url")):
+            gaps.append("requirement_unresolved:" + str(rule.get("name", "unnamed")) + ":url")
+        if (not valid_date or rule.get("provenance") != "official"
                 or rule.get("verification") not in {"current", "supplied_official"}
                 or rule.get("resolved") is not True):
             gaps.append("requirement_unresolved:" + str(rule.get("name", "unnamed")))

@@ -234,3 +234,49 @@ def test_package_refuses_overwrite_and_process_inputs(tmp_path):
     assert output.read_bytes() == b"keep"
     with pytest.raises(ValueError):
         guard.package(root, [{"path": "_process/notes.md", "kind": "requirements"}], tmp_path / "new.zip")
+
+
+@pytest.mark.parametrize("revision", ["del", "moveFrom"])
+@pytest.mark.parametrize("delimiter", ["begin", "separate", "end"])
+def test_tracked_revision_of_zotero_delimiter_rejected(tmp_path, revision, delimiter):
+    source = doc(tmp_path / "source.docx")
+    candidate = doc(tmp_path / "candidate.docx")
+    run = f'<w:r><w:fldChar w:fldCharType="{delimiter}"/></w:r>'
+    rewrite(candidate, lambda xml: xml.replace(run, f'<w:{revision} w:id="1" w:author="Synthetic">{run}</w:{revision}>', 1))
+    with pytest.raises(ValueError, match="unsupported.*revision"):
+        guard.compare(guard.snapshot(source), source, candidate)
+
+
+@pytest.mark.parametrize("revision", ["del", "moveFrom"])
+def test_tracked_revision_of_split_instruction_without_zotero_token_rejected(tmp_path, revision):
+    import re
+    source = doc(tmp_path / "source.docx")
+    candidate = doc(tmp_path / "candidate.docx")
+    def change(xml):
+        run = re.findall(r'<w:r><w:instrText[^>]*>.*?</w:instrText></w:r>', xml)[1]
+        assert "ZOTERO" not in run
+        return xml.replace(run, f'<w:{revision} w:id="1" w:author="Synthetic">{run}</w:{revision}>', 1)
+    rewrite(candidate, change)
+    with pytest.raises(ValueError, match="unsupported.*revision"):
+        guard.compare(guard.snapshot(source), source, candidate)
+
+
+@pytest.mark.parametrize("field", ["source", "by", "evidence"])
+def test_whitespace_provenance_reports_specific_gap(field):
+    record = complete_record()
+    if field == "source":
+        record["facts"][0][field] = " \t "
+    else:
+        record["facts"][0]["confirmation"][field] = " \t "
+    report = guard.assess(record)
+    assert report["status"] == "draft"
+    assert "fact_unresolved:ethics:" + field in report["gaps"]
+
+
+@pytest.mark.parametrize("url", ["https://", "http://", "https:///authors", "https://bad host/authors"])
+def test_unusable_http_url_reports_specific_gap(url):
+    record = complete_record()
+    record["requirements"][0]["url"] = url
+    report = guard.assess(record)
+    assert report["status"] == "draft"
+    assert "requirement_unresolved:article rules:url" in report["gaps"]

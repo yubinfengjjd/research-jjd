@@ -9,7 +9,7 @@ python scripts/submission_guard.py assess RECORD.json
 python scripts/submission_guard.py package DELIVERABLE_DIR ALLOWLIST.json NEW_PACKAGE.zip
 ```
 
-输出 UTF-8 JSON 到 stdout。snapshot 的 JSON 原样保存为 BASELINE；含原件 sha256、Word XML story 的有序引用（完整 citationItems、citationID）、bibliography JSON 与标准化缓存、原始 citation_displays。引用显示不参与身份比较，数字/作者年制均接受。段落/run 拆分和通常的引号/横线/空白变化不影响 bibliography 检查。本文缓存不验证科学正确性；字段模式不支持、JSON 损坏、简单/嵌套 Zotero 字段、字段结构不完整均报错，不声称部分通过。compare 检查原件 hash 与字段语义，不能证明正文数值/版面保持。
+输出 UTF-8 JSON 到 stdout。snapshot 的 JSON 原样保存为 BASELINE；含原件 sha256、Word XML story 的有序引用（完整 citationItems、citationID）、bibliography JSON 与标准化缓存、原始 citation_displays。引用显示不参与身份比较，数字/作者年制均接受。段落/run 拆分和通常的引号/横线/空白变化不影响 bibliography 检查。本文缓存不验证科学正确性；字段模式不支持、JSON 损坏、简单/嵌套 Zotero 字段、字段结构不完整均报错。影响字段的修订祖先（删除/移出/插入/移入）也报错，覆盖 begin/separate/end、拆分指令和缓存，不依赖修订子树是否单独含有 ZOTERO 字样；不声称部分通过。compare 检查原件 hash 与字段语义，不能证明正文数值/版面保持。
 
 compare 通过退出 0、检测到破坏退出 1；assess 有缺口退出 1、pending_author 退出 0；解析/路径/不支持错误退出 2。package 创建新 ZIP 并输出文件清单；绝不覆盖已有 ZIP。所有检查都不读写 Zotero 库。
 
@@ -32,7 +32,7 @@ RECORD 的实际结构：
 }
 ```
 
-这是结构示例，不是可套入稿件的声明。facts 必须枚举本稿所有适用必需事实，required=false 的真实不适用理由另存记录。value 可为字符串、数字或布尔：有来源和实际确认的 false（如无利益冲突）/0（如零资助）均为有效值；缺失、null、空白字符串或空容器产生缺口。confirmation 不能只写 true。事实来源/确认必须由实际材料和作者回复支撑；模型不得自己制造。requirements 的 verification 可为 current（实际在线核验）、supplied_official（作者提供的官方指南，注明日期/局限）或 unavailable（失败/待核）；后者产生缺口。`access_date` 填真实访问日期；指南版本/原文定位保存在配套要求表。`resolved` 表示该条已满足且有证据，不是仅取得网页。实际使用须包含 general、article-type 及适用 reporting 的要求，示例不是完整清单。
+这是结构示例，不是可套入稿件的声明。facts 必须枚举本稿所有适用必需事实，required=false 的真实不适用理由另存记录。value 可为字符串、数字或布尔：有来源和实际确认的 false（如无利益冲突）/0（如零资助）均为有效值；缺失、null、空白字符串或空容器产生缺口。source、confirmation.by/evidence 须为非空白文字定位，confirmation 不能只写 true。事实来源/确认必须由实际材料和作者回复支撑；模型不得自己制造。requirements 的 verification 可为 current（实际在线核验）、supplied_official（作者提供的官方指南，注明日期/局限）或 unavailable（失败/待核）；后者产生缺口。url 须为有合法主机名的 HTTP(S) URL，空主机、空白和错误端口均形成具体 url 缺口；不进行联网认证。`access_date` 填真实访问日期；指南版本/原文定位保存在配套要求表。`resolved` 表示该条已满足且有证据，不是仅取得网页。实际使用须包含 general、article-type 及适用 reporting 的要求，示例不是完整清单。
 
 word_refresh 仅在源稿确无原生引用字段且本次不改变引用集成时可 not_applicable；否则 pending/pass/fail 取实际验收。对字段保护工具不能覆盖的合法引用样式变更保留 compare 失败及独立的字段/文献表核查和作者 Refresh 证据，不伪造 pass。记录工具不会验证这些外部事实，也不能授予就绪状态。
 
