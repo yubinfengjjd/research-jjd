@@ -33,4 +33,8 @@ Files: `medimg-experiment/SKILL.md`, `references/adaptive-execution.md`, templat
 - [x] Document backend selection/default, native executable, max turns, read-only tools versus OS sandbox, model service use, honest fallback/blocked behavior. Keep skill discovery and all scientific gates.
 - [x] Run the genuine Claude CUDA synthetic source-revision loop in a new bounded study, inspect real code commits, reviews/session IDs, runs/seeds, plan/archive and freeze/test histories. A blocked call or negative result is not a passing acceptance.
 - [x] Independent fresh reviewer inspects the whole source change and real evidence. Fix actionable issues with scoped tests/re-review; run existing full Windows controller regressions and relevant suite/package/installation tests once final source is stable.
-- [ ] Back up and hash-check affected global files in three roots while preserving intentional host isolation. Integrate reviewed source and maintain public documentation/CI honestly; no private logs in Git. Report implemented, tested, accepted and remaining limitations separately.
+- [x] Back up and hash-check affected global files in three roots while preserving intentional host isolation. Integrate reviewed source and maintain public documentation/CI honestly; no private logs in Git. Report implemented, tested, accepted and remaining limitations separately.
+
+## Execution receipt
+
+Implementation and independent review completed without outstanding P1/P2. Three selected skills were deployed to three global roots with nine verified backups and 252 verified files; host isolation guards were preserved. Runtime installation stamps reference implementation commit `475431f`. Private receipts and raw runs remain outside the public tree. Remote CI is checked against the published commit separately. See the [public acceptance scope](../../claude-backend-acceptance-20261020.md).
