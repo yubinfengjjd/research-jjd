@@ -19,14 +19,33 @@
     "ci_lower_bound": null,
     "screening_floor": null,
     "required_contributions": [
-      {"id": null, "claim": null, "falsification": null, "boundary": null, "ablation": null, "min_effect": null, "ci_lower_bound": null}
+      {
+        "id": null,
+        "claim": null,
+        "falsification": null,
+        "boundary": null,
+        "ablation": null,
+        "min_effect": null,
+        "ci_lower_bound": null
+      }
     ],
     "comparisons": [
-      {"entry": null, "min_effect": null, "ci_lower_bound": null}
+      {
+        "entry": null,
+        "min_effect": null,
+        "ci_lower_bound": null
+      }
     ]
   },
   "entry_dependencies": null,
   "evaluator_implementation_paths": [],
-  "codex": {"executable": null},
-  "recovery": null
+  "codex": {
+    "executable": null
+  },
+  "recovery": null,
+  "agent_backend": "codex",
+  "claude": {
+    "executable": null,
+    "max_turns": 20
+  }
 }

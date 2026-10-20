@@ -1,7 +1,7 @@
 """Bounded, explicitly delegated adaptive experiments over the v2 owned worker.
 
 The controller is an operational gate, not an OS security sandbox. The proposer
-and reviewer are separate real Codex exec sessions; neither executes proposals.
+and reviewer are separate real CLI sessions; neither executes proposals.
 """
 from contextlib import contextmanager
 from contextvars import ContextVar
@@ -111,8 +111,8 @@ def validate_delegation(c, d):
         for name in names:
             require(isinstance(name, str) and '..' not in Path(name).parts and
                     not Path(name).is_absolute() and ':' not in name, '依赖路径必须为受管相对路径')
-    exe = d.get('codex', {}).get('executable')
-    require(isinstance(exe, str) and Path(exe).is_absolute() and safe_path(exe).is_file(), '必须提供真实本地 Codex 可执行文件绝对路径')
+    from .agent_backends import validate_backend
+    validate_backend(d)
     if d.get('project_root') is not None:
         require(Path(d['project_root']).is_absolute() and safe_path(d['project_root']).is_dir(), 'project_root必须为现有绝对目录')
     policy=d.get('recovery')
@@ -508,6 +508,23 @@ def correct(root,record):
     return a
 
 
+def _verify_review_invocation(root,out,record,purpose):
+    from .agent_backends import selected_backend, verify_replay
+    from .agent_runner import REVIEW
+    d=delegation(root);backend=selected_backend(d)
+    require(record.get('backend','codex')==backend,'审查调用后端与选定授权不一致')
+    if backend=='codex':return
+    require(record.get('purpose')==purpose and record.get('fresh_context') is True
+            and record.get('status')=='completed','Claude审查缺少已完成的新会话调用')
+    ident=record.get('invocation_id');require(isinstance(ident,str) and ident,'Claude审查缺少实际调用记录')
+    folder=inside(root/'adaptive'/'agents',ident)
+    require(read_json(folder/'invocation.json')==record,'Claude审查记录与实际调用文件不一致')
+    raw=verify_replay(root,d,folder,record,REVIEW)
+    normalized,_=normalize_review(root,raw,record)
+    require(all(out.get(key)==normalized[key] for key in REVIEW['properties']),
+            'Claude审查结果与实际事件不一致')
+
+
 def _apply_correction(root,a,review):
     require(read_json(root/'adaptive'/'state.json')['status'] not in TERMINAL,'暂停/停止阻止应用纠错')
     p=read_json(root/'adaptive'/'pending-correction.json');s=load_state(root);c=engine.current_contract(root,s)
@@ -516,6 +533,7 @@ def _apply_correction(root,a,review):
             '评价纠错审查必须绑定当前提交和明确纠错身份')
     require(review.get('invocation',{}).get('thread_id') and review['invocation'].get('fresh_context') is True,
             '缺少真实新上下文审查调用身份')
+    _verify_review_invocation(root,review,review['invocation'],'correction_review')
     require(isinstance(review.get('artifacts_read'),list) and review['artifacts_read'],'纠错审查未登记源文件读取')
     for name in review['artifacts_read']:require(inside(root/'worktree',name).is_file(),'纠错审查引用不存在的源文件')
     validate_proposal(root,p,correction=True)
@@ -546,6 +564,41 @@ def _stop(root,a,reason,status_value='stopped'):
     a.update(status=status_value,stop_reason=reason);persist(root,a,'adaptive_stopped');return a
 
 
+def _method_classification_evidence(root,a,c,current_commit):
+    """Supply bound prior source evidence without extending the agent's tools."""
+    pending=a['pending_method_classification'];work=root/'worktree'
+    prior=pending.get('prior_commit');proposed=pending.get('proposed_commit')
+    def verified_commit(value):
+        require(isinstance(value,str) and len(value) in (40,64) and all(ch in '0123456789abcdef' for ch in value),
+                '故障分类提交身份必须为完整Git提交')
+        require(project.git(work,'rev-parse','--verify',value+'^{commit}')==value,'故障分类提交身份无效')
+        return value
+    verified_commit(prior);verified_commit(proposed)
+    require(proposed==current_commit and project.clean(root),'故障分类新提交与当前干净源码不一致')
+    project.git(work,'merge-base','--is-ancestor',prior,proposed)
+    ident=pending.get('prior_proposal');require(isinstance(ident,str) and ident,'故障分类缺少原始提案身份')
+    previous=read_json(inside(root/'adaptive'/'proposals',ident+'.json'))
+    previous_commit=verified_commit(previous.get('commit'))
+    project.git(work,'merge-base','--is-ancestor',previous_commit,prior)
+    require(isinstance(previous.get('proposal'),dict) and
+            previous['proposal'].get('method_plan')==pending.get('prior_method_plan'),'故障分类原始提案与旧技术路线不一致')
+    declared=set(c['code']['files'])|set(c['scope']['frozen_paths'])
+    declared|={name for names in delegation(root)['entry_dependencies'].values() for name in names}
+    names=project.git(work,'-c','core.quotepath=false','diff','--no-ext-diff','--no-textconv',
+                      '--no-renames','--name-only','-z',prior,proposed,'--')
+    changed=sorted(name for name in names.split('\0') if name)
+    for name in changed:
+        path=inside(work,name)
+        require('.git' not in path.relative_to(work).parts and
+                (name in declared or project.matches(name,c['scope']['editable_paths'])),
+                '故障分类差异越出批准源码范围')
+    diff=project.git(work,'-c','core.quotepath=false','diff','--no-ext-diff','--no-textconv',
+                     '--no-renames','--no-color','--full-index','--unified=20',prior,proposed,'--',*changed) if changed else ''
+    return {'schema_version':1,'prior_commit':prior,'proposed_commit':proposed,
+            'prior_proposal_id':ident,'prior_proposal_commit':previous_commit,'prior_proposal':previous['proposal'],
+            'changed_paths':changed,'source_diff':diff}
+
+
 def _agent_payload(root,a,purpose):
     verify_original(root)
     s=load_state(root);c=engine.current_contract(root,s)
@@ -553,12 +606,15 @@ def _agent_payload(root,a,purpose):
     records=[]
     for p in (root/'runs').glob('*/record.json'):
         rec=read_json(p);records.append({k:rec.get(k) for k in ('run_id','candidate_id','entry','seed','status','value','guards','anomaly','invalidated')})
-    return {'purpose':purpose,'current_commit':project.commit(root),'original_plan':(root/'plans'/'original.md').read_text(encoding='utf-8'),
+    payload={'purpose':purpose,'current_commit':project.commit(root),'original_plan':(root/'plans'/'original.md').read_text(encoding='utf-8'),
             'contract':c,'delegation':delegation(root),'method_plan':a['method_plan'],
             'method_revisions':a['method_revisions'],'fault_retries':a['fault_retries'],'validation_runs':records,
             'pending_method_classification':a.get('pending_method_classification'),
             'diagnosis':a.get('diagnosis'),'proposal':read_json(root/'adaptive'/'proposals'/(a['current_proposal']+'.json')) if a.get('current_proposal') else None,
             'candidate':read_json(root/'candidates'/(a['current_candidate']+'.json')) if a.get('current_candidate') else None}
+    if payload['delegation'].get('agent_backend','codex')=='claude' and a.get('pending_method_classification'):
+        payload['method_classification_evidence']=_method_classification_evidence(root,a,c,payload['current_commit'])
+    return payload
 
 
 def _review_candidate(root,a,cand):
@@ -572,10 +628,11 @@ def _review_candidate(root,a,cand):
             require(latest['status'] not in TERMINAL,'暂停或停止阻止登记后台审查')
             latest['review_persistence_pending']=a['review_persistence_pending'];write_json(root/'adaptive'/'state.json',latest)
     out,record=normalize_review(root,out,record)
+    _verify_review_invocation(root,out,record,'review')
     require(project.commit(root)==cand['commit'] and project.clean(root),'审查期间代码已改变')
     require(out['candidate_id']==cand['id'] and out['commit']==cand['commit'],'审查候选/提交绑定不一致')
-    out.update(reviewer='codex-independent',agent_id=record['thread_id'],invocation=record,
-               identity_assurance='real fresh Codex exec; same-family; not scientific proof')
+    out.update(reviewer=record.get('backend','codex')+'-independent',agent_id=record['thread_id'],invocation=record,
+               identity_assurance='real fresh '+record.get('backend','codex')+' CLI; same-family; not scientific proof')
     with internal():engine.review(root,_record_file(root,out))
     if out['verdict']=='block':_blocked_review(root,a,out)
     elif a.get('pending_method_classification'):_classify_review(root,a,cand,out)
@@ -639,6 +696,7 @@ def _bootstrap_step(root,a,c):
     payload['bootstrap']={'allowed':True,'constraint':'Read-only review all initial training/audit/evaluator implementation against confirmed definitions; no execution'}
     out,record=invoke(root,delegation(root),'bootstrap_review',payload)
     out,record=normalize_review(root,out,record)
+    _verify_review_invocation(root,out,record,'bootstrap_review')
     require(project.commit(root)==commit and project.clean(root),'bootstrap审查期间代码已改变')
     require(out.get('candidate_id')==candidate['id'] and out.get('commit')==commit,'bootstrap审查提交/身份不匹配')
     require(out.get('verdict') in ('pass','block') and isinstance(out.get('findings'),list),'bootstrap审查结论无效')
@@ -646,7 +704,7 @@ def _bootstrap_step(root,a,c):
     for name in out['artifacts_read']:require(inside(root/'worktree',name).is_file(),'bootstrap审查引用不存在的文件')
     required=set(c['scope']['frozen_paths'])|{name for names in delegation(root)['entry_dependencies'].values() for name in names}
     require(required.issubset(set(out['artifacts_read'])),'bootstrap审查必须列出实际检查的全部固定评价/审计与条目实现源文件')
-    out.update(reviewer='codex-independent',agent_id=record['thread_id'],invocation=record)
+    out.update(reviewer=record.get('backend','codex')+'-independent',agent_id=record['thread_id'],invocation=record)
     write_json(root/'evidence'/'reviews'/(candidate['id']+'-'+uuid.uuid4().hex[:8]+'.json'),out)
     a['bootstrap_review']=out
     if out['verdict']=='block':return _blocked_review(root,a,out)

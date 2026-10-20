@@ -1,6 +1,6 @@
 # 授权内自动闭环
 
-本页适用于用户已选择的自动执行模式。旧的 setup/execution/recovery/independent-review 文档描述人工逐步模式；激活自动委托后禁止混用旧命令绕过累计预算或测试门。自动流程通过本机用户配置的 Codex CLI 调用提案者与新上下文只读审查者，训练始终由受管 worker 执行。
+本页适用于用户已选择的自动执行模式。旧的 setup/execution/recovery/independent-review 文档描述人工逐步模式；激活自动委托后禁止混用旧命令绕过累计预算或测试门。自动流程通过首次委托选定且已实际核验的本机 Codex 或 Claude Code CLI 调用提案者与新上下文只读审查者，训练始终由受管 worker 执行。
 
 ## 两份确认材料
 
@@ -22,7 +22,9 @@
 | `rules.required_contributions` | `{id, ablation, claim, falsification, boundary, min_effect, ci_lower_bound}` 列表；固定科学命题、反证、边界与指定消融/统计要求。与初始贡献卡可读对应，方法换了也持续有效；空列表须确有已确认理由。 |
 | `rules.comparisons` | `{entry, min_effect, ci_lower_bound}` 列表；对正式比较条目的要求。 |
 | `entry_dependencies` | 每个矩阵条目完整的相关源码清单；与固定数据、环境、评价、命令一起指纹化判断复用。不得少列共享模型、预处理等依赖。 |
-| `codex.executable` | 实际可用的本地 codex.exe 绝对路径，先核验真实调用成功。不得依赖旧路径或仅凭 --help 宣称可运行。 |
+| `agent_backend` | `codex` 或 `claude`；省略时兼容旧委托使用 Codex。首次确认后固定，不因调用失败自动切换。 |
+| `codex.executable` | 选 Codex 时提供实际本地原生可执行文件绝对路径，先核验真实调用。 |
+| `claude.executable` / `claude.max_turns` | 选 Claude 时提供原生可执行文件绝对路径和 1–100 的单调用轮数上限，不要求安装 Codex。详见 [后端协议](agent-backends.md)。 |
 | `project_root` | 可选已有论文项目绝对路径；初次绑定，不能由模型提案任意更换。 |
 | `downstream_stages` | 可选初次确认的受影响下游阶段名；未提供时识别已有论文阶段，排除入口检查。只在实质变更事件使相应下游需返工，后续普通事件不重复撤销新的作者验收。 |
 | `evaluator_implementation_paths` | 可选明确列出的原冻结评价实现文件；仅开发期恢复原指标定义时可走专用纠错审查，不能修改划分审计。 |
@@ -38,7 +40,7 @@ PowerShell 示例（`$pythonExe` 必须设为本课题已核验的真实 Python 
 & $pythonExe -X utf8 $controller adaptive-status --root $study
 ```
 
-`adaptive-init` 创建全新 study 并登记首次契约/委托，尚不启动训练。`adaptive-start` 启动单实例后台 supervisor；父聊天离开后仍可读结果、真实调用 Codex、修订、审查和启动下个受管候选，直到终止条件。计算机必须保持运行、联网且账户调用能力可用；锁屏不需要聊天持续发送消息。`adaptive-step` 只推进一步，适合排错和受控验收，不能把它当后台运行证明。重复启动不应产生重复训练。
+`adaptive-init` 创建全新 study 并登记首次契约/委托，尚不启动训练。`adaptive-start` 启动单实例后台 supervisor；父聊天离开后仍可读结果、真实调用已选后端、修订、审查和启动下个受管候选，直到终止条件。计算机必须保持运行、联网且账户调用能力可用；锁屏不需要聊天持续发送消息。`adaptive-step` 只推进一步，适合排错和受控验收，不能把它当后台运行证明。重复启动不应产生重复训练。
 
 没有现成代码时，受管工程先进入初始实现窗口：根据原确认定义提出训练器、划分审计和评价实现，只能写明确允许的初始源码；新上下文审查覆盖全部固定实现和条目依赖，通过才执行审计。首次审查/审计后窗口永久关闭，后续不得借“重新初始化”修改划分或评价。审查发现明确实现问题时，在故障重试上限内修复再用新会话审，不把 block 改成 pass。
 

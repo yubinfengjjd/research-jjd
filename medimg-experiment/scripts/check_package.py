@@ -36,7 +36,7 @@ def check(root):
     json.loads((root/'assets'/'contract-template.json').read_text(encoding='utf-8'))
     json.loads((root/'assets'/'adaptive-contract-template.json').read_text(encoding='utf-8'))
     for name in ['controller.py','worker.py','medexp/process.py','medexp/stats.py',
-                 'medexp/adaptive.py','medexp/agent_runner.py','medexp/scheduler.py','medexp/projection.py','medexp/recovery.py','medexp/review_adapter.py']:
+                 'medexp/adaptive.py','medexp/agent_runner.py','medexp/agent_backends.py','medexp/scheduler.py','medexp/projection.py','medexp/recovery.py','medexp/review_adapter.py']:
         if not (root/'scripts'/name).is_file():raise ValueError('Missing runtime file: '+name)
     for name in ['synth_data.py','audit_split.py','evaluate_test.py','model.py','train.py']:
         if not (root/'assets'/'synthetic'/name).is_file():raise ValueError('Missing demo file: '+name)

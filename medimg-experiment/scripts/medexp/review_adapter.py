@@ -2,10 +2,8 @@
 import copy
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
-import uuid
 from .common import require,safe_path,read_json,write_json,load_state,timestamp
 from . import engine,project
 
@@ -129,34 +127,24 @@ def reconcile_review(root,invocation_path):
         require(path.name=='invocation.json' and path.parent.parent==root/'adaptive'/'agents','仅接受本study实际调用记录')
         record=read_json(path);folder=path.parent
         require(record.get('invocation_id')==folder.name and record.get('purpose')=='review' and
-                record.get('fresh_context') is True and record.get('status')=='completed' and
-                record.get('sandbox')=='read-only','不是已完成的真实新上下文只读审查')
-        thread=record.get('thread_id');require(isinstance(thread,str) and thread.strip(),'缺少真实thread身份')
-        uuid.UUID(thread)
-        argv=record.get('argv',[])
-        require(argv and os.path.normcase(str(safe_path(argv[0])))==os.path.normcase(str(safe_path(d['codex']['executable'])))
-                and 'exec' in argv and '--ephemeral' in argv and '--json' in argv,'实际Codex命令身份不匹配')
-        require('-s' in argv and argv[argv.index('-s')+1]=='read-only' and '-C' in argv and
-                safe_path(argv[argv.index('-C')+1])==root/'worktree','实际调用沙箱/工作目录不匹配')
-        events=[]
-        for line in (folder/'events.jsonl').read_text(encoding='utf-8',errors='replace').splitlines():
-            try:events.append(json.loads(line))
-            except json.JSONDecodeError:continue
-        require(any(e.get('type')=='thread.started' and e.get('thread_id')==thread for e in events)
-                and any(e.get('type')=='turn.completed' for e in events),'没有匹配的真实新会话/完成事件')
+                record.get('fresh_context') is True and record.get('status')=='completed',
+                '不是已完成的真实新上下文只读审查')
+        from .agent_backends import verify_replay
+        from .agent_runner import REVIEW
+        raw=verify_replay(root,d,folder,record,REVIEW)
+        thread=record['thread_id']
         saved=read_json(folder/'input.json');expected=runtime._agent_payload(root,a,'review');expected['candidate']=cand
         for key in ('contract','delegation','candidate','current_commit','original_plan','proposal','method_plan',
                     'pending_method_classification','validation_runs','diagnosis'):
             require(saved.get(key)==expected.get(key),'已完成审查输入绑定不再一致: '+key)
         require(saved==expected,'已完成审查完整输入绑定不再一致')
         if pending:require(pending['invocation_id']==folder.name and pending['candidate_id']==ident,'待登记调用身份不匹配')
-        raw=read_json(folder/'result.json')
         require(raw.get('candidate_id')==ident and raw.get('commit')==cand['commit'] and raw.get('verdict')=='pass',
                 '只能登记该候选实际已完成的pass；不得制造通过')
         require(raw.get('change_kind')!='uncertain','不确定的语义分类不能通过技术协调解除')
         out,record=normalize_review(root,raw,record)
-        out.update(reviewer='codex-independent',agent_id=thread,invocation=record,
-                   identity_assurance='replayed actual completed fresh Codex exec; same-family; not scientific proof')
+        out.update(reviewer=record.get('backend','codex')+'-independent',agent_id=thread,invocation=record,
+                   identity_assurance='replayed actual completed fresh '+record.get('backend','codex')+' CLI; same-family; not scientific proof')
         before={'training_spent_seconds':a['training_spent_seconds'],'fault_retries':a['fault_retries'],
                 'method_revisions':a['method_revisions'],'deadline_utc':a['deadline_utc']}
         a.setdefault('reconciliations',[]).append({'time':timestamp(),'old_status':a['status'],
