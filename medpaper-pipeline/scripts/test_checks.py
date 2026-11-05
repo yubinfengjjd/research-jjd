@@ -93,7 +93,7 @@ class ManuscriptChecks(unittest.TestCase):
     def test_template_cap(self):
         en = make_project({"D.md": "## Discussion\nThis agrees with prior work. That agrees with it. It also agrees with that. X may differ.\n"}) / "D.md"
         res = mc.check("discussion", en)
-        self.assertTrue(any(r["rule"] == "agrees-with" and r["level"] == mc.E for r in res), res)
+        self.assertTrue(any(r["rule"] == "agrees-with" and r["level"] == mc.W for r in res), res)
 
     def test_number_not_in_results(self):
         proj = make_project({"D.md": "## Discussion\nCoverage reached 0.123 in this cohort.\n",

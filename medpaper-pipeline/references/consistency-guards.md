@@ -106,7 +106,7 @@
 - 疑似丢失小数点（裸的 0ddd…，DOI 等除外）报告为警告；以上两类记为 warning，不影响退出码；
 - 退出码：0 表示无 error，1 表示有 error。warning 在阶段关口逐条处理或说明。
 
-**章节自检（section = methods / legends / results / introduction / discussion / abstract）** `scripts/manuscript_check.py <methods|legends|results|introduction|discussion|abstract> <EN 稿> [--zh ZH 稿] [--results Results_en 稿]`：检查词数、句长、禁用词、模板句频次、引用格式与 PMID 数、中英 PMID 与数字一致性、稿件数字能否在 Results 中找到、panel 字母大小写等可数规则；ERROR 必须修掉，WARN 由作者裁决。论证质量和引用是否支持论断不在脚本范围内。
+**章节自检（section = methods / legends / results / introduction / discussion / abstract）** `scripts/manuscript_check.py <methods|legends|results|introduction|discussion|abstract> <EN 稿> [--zh ZH 稿] [--results Results_en 稿]`：检查词数、句长、禁用词、模板句频次、引用格式与 PMID 数、中英 PMID 与数字一致性、稿件数字能否在 Results 中找到、panel 字母大小写等可数规则；ERROR 必须修掉。纯风格计数只提供线索，代理按具体上下文修改或说明保留依据，不将所有WARN升级为作者问题。实质叙事问题由全稿审阅逐项处置；论证质量和引用支持关系不在脚本范围内。篇幅不设通用最低值，明确限制按[篇幅配置](writing-limits.md)执行。
 
 Abstract 模式正文默认≤250词，Keywords/Highlights 不计入正文词数，但参与强度词与数字核对；默认不带引用、图表号或引用占位。指定期刊篇幅可用 `--max-words`，明确要求引用时才用 `--allow-abstract-references`。四段结构、Results 4–6句（或按字数自然分句），不得用分号链压缩和证据核对按 medical-sci-abstract 执行；脚本不验证统计定义、CI归属和所有中英单位。
 

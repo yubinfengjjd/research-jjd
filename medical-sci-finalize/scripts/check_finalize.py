@@ -479,15 +479,32 @@ def check_assembly(root, output=None, version=1, name=None):
         if not path.is_file(): errors.append('Missing output: '+str(path)); continue
         r = check_document(path,model,kind); results[kind] = r
         errors += r['errors']; warnings += r['warnings']; information += r['information']
+    declared = {}
+    config = root/'writing-limits.json'
+    if config.exists():
+        helper = Path(__file__).resolve().parents[2]/'medpaper-pipeline/scripts/writing_limits.py'
+        if not helper.is_file():
+            raise ValueError('Word limit checker dependency missing: '+str(helper))
+        spec = importlib.util.spec_from_file_location('finalize_writing_limits', helper)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        declared = module.load_limits(root/'04_manuscript/placeholder_EN.md', config)
     words = {}
     for section,text in model['texts'].items():
         if section == 'Abstract': text = re.split(r'^## Keywords',text,flags=re.M)[0]
-        n = word_count(text); words[section] = n; low,high = TARGETS[section]
-        if not low <= n <= high: warnings.append(f'Source {section} word count {n} outside {low}–{high}; do not auto-trim')
+        n = word_count(text); words[section] = n
+        limits = declared.get(section.casefold())
+        low, high = (limits.get('min', 0), limits.get('max', float('inf'))) if limits else (0, TARGETS[section][1])
+        if not low <= n <= high:
+            destination = errors if limits else warnings
+            destination.append(f'Source {section} word count {n} outside {low}–{high}; review evidence coverage')
     for family in ('figure_captions','supp_captions'):
         for key,caption in model[family].items():
             n = word_count(caption)
-            if n > 150: warnings.append(f'Source Figure {key} has {n} words (>150); author decision required')
+            limits = declared.get('legends')
+            low, high = (limits.get('min', 0), limits.get('max', float('inf'))) if limits else (0, 150)
+            if not low <= n <= high:
+                (errors if limits else warnings).append(f'Source Figure {key} word count {n} outside {low}–{high}')
     style = manuscript_style(model)
     errors.extend(f['rule']+': '+f['msg'] for f in style['whole']['findings'] if f['level'] == 'ERROR')
     warnings.extend(f['rule']+': '+f['msg'] for f in style['whole']['findings'] if f['level'] == 'WARN')
@@ -535,6 +552,9 @@ def main():
     p.add_argument('--version', type=int, default=1); p.add_argument('--name')
     p.add_argument('--before', type=Path); p.add_argument('--after', type=Path)
     p.add_argument('--protected-json', type=Path, help='JSON list of exact terms/evidence strings or a relative-file mapping')
+    p.add_argument('--edit-mode', choices=('strict', 'structural'), default='strict',
+                   help='Strict legacy token protection, or explicit source-bound structural review')
+    p.add_argument('--review-json', type=Path, help='Structural source/candidate claims and narrative review')
     p.add_argument('--changes', type=Path, help='JSON paragraph changes with exact before/after and reasons')
     p.add_argument('--decisions', type=Path); p.add_argument('--apply', action='store_true')
     p.add_argument('--date', default=date.today().isoformat()); p.add_argument('--report', type=Path)
@@ -543,7 +563,22 @@ def main():
         date.fromisoformat(args.date)
         protected = json.loads(build.read(args.protected_json)) if args.protected_json else []
         if bool(args.before) != bool(args.after): raise ValueError('Both --before and --after are required')
-        if args.apply:
+        if args.edit_mode == 'structural':
+            if not all((args.before, args.after, args.review_json, args.changes)):
+                raise ValueError('Structural editing requires --before/--after/--review-json/--changes')
+            if args.protected_json:
+                raise ValueError('Use exact protected strings only in strict mode; structural review cannot ignore them')
+            import evidence_edit
+            if args.apply:
+                if not all((args.decisions, args.project_root)):
+                    raise ValueError('Structural --apply also requires --project-root and --decisions')
+                result = evidence_edit.apply_edit(args.before, args.after, args.review_json, args.changes,
+                                                  args.decisions, args.project_root, args.date)
+            else:
+                result = evidence_edit.compare_paths(args.before, args.after, args.review_json, args.changes)
+        elif args.review_json:
+            raise ValueError('--review-json requires explicit --edit-mode structural')
+        elif args.apply:
             if not all((args.before, args.after, args.changes, args.decisions, args.project_root, args.protected_json)):
                 raise ValueError('--apply requires root/before/after/changes/decisions/protected-json')
             result = apply_polish(args.before, args.after, args.changes, args.decisions, args.project_root, args.date, protected)

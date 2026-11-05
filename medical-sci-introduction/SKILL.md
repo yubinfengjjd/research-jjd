@@ -1,11 +1,17 @@
 ---
 name: medical-sci-introduction
-description: Use when drafting or revising the Introduction of a medical SCI manuscript after its Methods, Results and figure legends are written, such as 写引言、Introduction 撰写、SCI 引言中英对照、修改已有引言、补引言文献和 PMID. Produces an English Introduction (background, literature review, research gap, contribution, significance) with Chinese parallel text, verified PMID citations under PROJECT.md quotas (default ≥20, ≥10 in the review) without disclosing any results, plus a Chinese 核查说明 with compliance notes and a citation verification table. Do not use for Methods, Results, Discussion, Abstract or figure legends (use medical-sci-methods / medical-sci-results / medical-sci-legends), outline building or drawing figures.
+description: Use when drafting or revising the Introduction of a medical SCI manuscript after its Methods, Results and figure legends are written, such as 写引言、Introduction 撰写、SCI 引言中英对照、修改已有引言、补引言文献和 PMID. Produces an English Introduction (background, literature review, research gap, contribution, significance) with Chinese parallel text, verified PMID citations under existing PROJECT.md soft citation targets without disclosing any results, plus a Chinese 核查说明 with compliance notes and a citation verification table. Do not use for Methods, Results, Discussion, Abstract or figure legends (use medical-sci-methods / medical-sci-results / medical-sci-legends), outline building or drawing figures.
 ---
 
 # 医学 SCI 引言写作
 
 依据已完成的大纲、Methods、Results 和图注，撰写或修订英文 Introduction，附中文对照和中文核查说明。引言从研究背景逐步聚焦到研究空白，再引出本研究的问题、做法与意义；每条引用都经过公开数据库核验，正文不出现任何结果。
+
+## 证据保留的修订契约
+
+默认允许同节合并、去重、重排，保留来源、分析范围、数字/CI 归属、必要限定、不利发现与引用支持关系；不改数据、统计逻辑或研究问题。篇幅由作者/期刊与证据决定，无通用最低词数；历史篇幅/句数只作参考，沿用项目引用软配额，不为填数扩写。
+
+实质叙事问题须改文或给具体保留理由；英文重构后同步对应 ZH 和已有 EN_ZH，归档原件。未知局部范围保留并记录，继续独立编辑；作者动作按问题归组，核心矛盾阻断受影响交付。公开披露已承诺或结论相关的未完成分析，内部备用实验/审批/版本记录留在过程文件。结构记录与核验按 [结构审查契约](../medical-sci-finalize/references/structural-review.md)，脚本通过不证明科学等价。
 
 ## 必读材料（每次起草或修订都执行）
 
@@ -24,8 +30,8 @@ description: Use when drafting or revising the Introduction of a medical SCI man
 1. **前置检查**：确认 Methods、Results 和图注都已写完（规则第 1 节）。缺任一份时先告诉作者并建议补齐；作者要求继续才往下做。同时记录目标期刊是否指定，未指定则采用默认策略。 从工作目录或材料路径向上找到 PROJECT.md，读取“写作目标”的本节配额和目标期刊；缺 PROJECT 或缺该小节时采用缺省并在核查说明中说明，缺个别字段时仅该字段用缺省。作者可随时修改；不新建 PROJECT.md。配额读取与统计约定见 medpaper-pipeline/references/citation-quotas.md。
 2. **提取研究要素**：从大纲和 Methods 提取研究领域、临床问题、数据与设计、方法、研究问题和措辞边界；从 Results 和图注只核对每个研究问题都有对应分析，不摘取数字或结论（规则第 1、3 节）。
 3. **建文献池**：收集手稿已有引用的 PMID，逐条核对；不足时按论证需要检索 PubMed 补充（规则第 5 节）。PMID 用 WebFetch 或 curl 查 Europe PMC REST API，NCBI E-utilities 作备用；DOI 用 Crossref（带 `mailto` 参数）。curl 因 TLS 或证书错误失败时，改用带 OpenSSL 的 Python（urllib）发送同样的请求。读摘要确认支持关系后才放入候选。只提交公开主题词和标识，不提交稿件正文、数据或代码。中间结果放在临时目录。
-4. **搭论证线**：先在内部列出五个层次各自的论点和对应引用（规则第 2 节），确认研究空白有依据、本研究的问题与 Results 实际分析一一对应（规则第 4 节）、按登记配额核对已核验 PMID 数量（缺省全文 ≥20、综述层 ≥10）；检索穷尽仍不足时记录缺口并继续，不凑数。
-5. **撰写英文**：4–6 段，无小标题；结果规避按规则第 3 节，措辞按规则第 4 节和 journal-style 第 1 节。
+4. **搭论证线**：先在内部列出五个层次各自的论点和对应引用（规则第 2 节），确认研究空白有依据、本研究的问题与 Results 实际分析一一对应（规则第 4 节）、按登记配额核对已核验 PMID 数量（无登记时历史全文 ≥20、综述层 ≥10 仅作参考，不建立硬配额）；检索穷尽仍不足时记录缺口并继续，不凑数。
+5. **撰写英文**：按证据与论证需要分段，4–6 段仅作参考，默认无小标题；作者/期刊明确要求优先。结果规避按规则第 3 节，措辞按规则第 4 节和 journal-style 第 1 节。
 6. **撰写中文对照**：逐段重组为规范中文，事实、引用和限定与英文一致（规则第 6 节）。
 7. **复核**：用本地脚本统计词数和引用数，再按下方“交付前检查”逐项确认，写核查说明（规则第 7 节）。
 
@@ -66,19 +72,19 @@ description: Use when drafting or revising the Introduction of a medical SCI man
 - [ ] 散文分号链 0 处（同句 ≥2 个散文分号为 ERROR，结构性分号豁免）；目标平均 18–28 词/句，一般 ≤45 词、硬上限 60 词，>45 词占比 >10% 为 WARN；无连续 ≥3 个 <8 词短句的电报体连跑；WARN 已逐条说明。连接词按逻辑需要使用，不连续三句以上以同一个连接词或短语开头；按 journal-style 的「句长、分号与衔接」复核。
 
 - [ ] 前置稿件齐全，或缺失情况已告知作者并写入核查说明第 1 部分。
-- [ ] 五个层次（背景、综述、空白、本研究贡献、意义）都出现；4–6 段，无小标题、列表、路标式连接或“本文结构如下”。
+- [ ] 五个层次（背景、综述、空白、本研究贡献、意义）功能清楚，段落可按证据关系合并、拆分或重排；4–6 段仅作参考。默认无小标题或列表，作者/期刊明确要求优先；没有机械路标或“本文结构如下”。
 - [ ] 设计部分约 150 词以内，没有训练阶段、标签映射、划分规则、比较器清单或评估层级；各项分析已归并为 1–3 个研究问题，没有逐项罗列 Results 目录；没有 Methods 内部构造名。
-- [ ] 每个空白句点名所引研究的具体局限；每个设计要素与最接近现有设计的同句对照已按规则第 2 节第 4 层核对；意义句写明对谁、在哪个环节有用；临床背景引临床或综述来源，核心空白尽量各有 2 篇直接相关引用（不足时如实说明，不凑数）。
-- [ ] 否定式空白句（do not establish 等）≤2 处，相邻段落不以同一句式收尾；每个 PMID 紧跟所支持的研究或论断；综述中以作者名开头的句子 ≤1/3。
-- [ ] 没有逐段的免责式范围声明（“不意味着临床获益”“不在本研究范围内”等），全文最多 1 句。
+- [ ] 每个空白句点名所引研究的具体局限；与最接近工作的比较按实际证据需要组织，无逐要素同句对照模板；意义句写明对谁、在哪个环节有用；临床背景引临床或综述来源，核心空白尽量各有 2 篇直接相关引用（不足时如实说明，不凑数）。
+- [ ] 检查否定式空白句与相邻段落尾句是否机械重复，保留定义范围必需的否定；每个 PMID 紧跟所支持的研究或论断；综述按问题组织，作者名起句的比例仅作罗列式写法的诊断。
+- [ ] 没有机械逐段追加免责式范围声明；必要范围在所限定的论断处清楚保留，不按全文句数删减。
 - [ ] 段末没有复述性总结句；研究问题中的分析对象与 Results 实际检验的量一致。
 - [ ] 没有本研究的数字、方向性结论或 demonstrate/reveal/show that 后接本研究发现；逐句对照过 Results 稿，没有借来的数字或判断。
 - [ ] 引言提出的每个问题都有 Results 中的对应分析；没有材料之外的研究问题、方法、结论或 Discussion 层面的推测。
-- [ ] 研究空白由所引研究的局限推出，或有检索记录支撑；没有 no study has ever、novel、first、breakthrough 等表述，“to our knowledge”最多一处且有检索依据。
-- [ ] 带已核验 PMID 的不同文献及综述层数量已与 PROJECT.md 配额对照（缺省 ≥20 / ≥10）；不足时已说明实际 vs 目标、缺口与检索主题，不因软门槛停工；每条 PMID 的题名、第一作者、期刊、年份已核对，摘要支持所引论断；背景数字与所引摘要一致。
+- [ ] 研究空白由所引研究的局限推出，或有检索记录支撑；没有 no study has ever、novel、first、breakthrough 等表述，首次性表述有检索依据，不以固定次数代替证据审查。
+- [ ] 带已核验 PMID 的不同文献及综述层数量已与 PROJECT.md 配额对照（无登记时历史 ≥20 / ≥10 仅作参考）；不足时已说明实际 vs 目标、缺口与检索主题，不因软门槛停工；每条 PMID 的题名、第一作者、期刊、年份已核对，摘要支持所引论断；背景数字与所引摘要一致。
 - [ ] 引用格式为纯文本 `(PMID: …)`；确无 PMID 的按 DOI > 出版页 URL > arXiv 降级并列入核查说明；没有占位、猜测或未核验的标识。
 - [ ] 没有写影响因子或分区；没有声称符合某具体期刊的要求（用户未指定时）。
-- [ ] 英文默认 900–1,100 词、≤1,200 词（或更严格的期刊限制），单句硬上限 60 词；美式拼写；术语和缩写与 Methods 一致；没有内部标识或工程词汇。
+- [ ] 英文篇幅按作者/期刊与证据量决定，900–1,100 词仅作规划参考，无通用最低词数，单句硬上限 60 词；美式拼写；术语和缩写与 Methods 一致；没有内部标识或工程词汇。
 - [ ] 中文对照按中文语序重组，事实、引用、限定与英文一致，引用用全角括号。
 - [ ] 核查说明四部分齐全：需作者裁决事项、逐条合规说明（含目标期刊策略）、引用核验表（含已核验 PMID 实际 vs 目标、综述层计数、缺口与检索主题）、检索记录。
 - [ ] 引用核验表建议：完成元数据及支持关系核验后，状态以“已核验”开头，未完成写“暂未核验”；正文用途建议标注“（综述层）”。兼容旧自由文本的“已核验”/“已核对”/verified及“综述”/review，否定优先；未识别状态按未核验并在WARN附原文片段。

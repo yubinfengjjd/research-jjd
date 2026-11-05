@@ -35,7 +35,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | `medical-sci-introduction` | Introduction（引用逐条核验 PMID） |
 | `medical-sci-discussion` | Discussion（方法、结果、图注、引言齐备后才动笔） |
 | `medical-sci-abstract` | 摘要（中英对照、关键词、Highlights；默认英文正文 ≤250 词） |
-| `medical-sci-finalize` | 成品 Word 组装（主稿 + 补充材料）与英文全稿保守润色（含去防御性写作）；支持同一表号多区块与发表编号映射 |
+| `medical-sci-finalize` | 成品 Word 组装（主稿 + 补充材料）、保留证据的全稿结构编辑及对应中文/已有双语稿同步；支持同一表号多区块与发表编号映射 |
 | `medical-sci-references` | 投稿前参考文献收尾：从主稿抽取引用标识，按 PMID/DOI/arXiv 查重并补入 Zotero，注入 Word 原生引文字段与文献表，核对 I1–I9 不变式；支持作者提供的 URL→条目映射 |
 | `medical-sci-submission` | 期刊适配与投稿材料准备：按当前官方文章类型要求核实作者/基金/声明，保护源稿与 Zotero 字段，准备适用材料和缺口清单；可独立处理病例、综述等 DOCX，缺失事实可交草稿，不自动授予投稿就绪 |
 
@@ -79,6 +79,8 @@ python install.py
 ```
 
 以后更新：`git pull && python install.py --update`。
+
+只更新指定技能可重复使用`--skill`，例如`python install.py --update --skill medical-sci-finalize --skill medpaper-pipeline`；用`--target`明确指定实际加载的技能根（如同时使用`.agents/skills`时），先`--dry-run`再安装/`--verify`。默认目标保持兼容。0.10的结构编辑模式、双语同步和旧记录兼容见[迁移说明](docs/evidence-aware-writing.md)。
 
 `install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、九个 `medical-sci-*` 技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
 

@@ -135,6 +135,31 @@ class Invariants(unittest.TestCase):
 
 
 class Assembly(unittest.TestCase):
+    def test_tracking_preserves_author_decisions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root/'PROJECT.md').write_text('| 11 | old |', encoding='utf-8')
+            decision = root/'04_manuscript/作者决定.md'
+            decision.parent.mkdir()
+            original = '# 作者决定\n\n## 通用\n- Actual author choice.\n'.encode('utf-8')
+            decision.write_bytes(original)
+            build.tracking(root, 2, '2026-11-05')
+            self.assertEqual(decision.read_bytes(), original)
+
+    def test_assembly_does_not_reintroduce_generic_minimum_and_enforces_author_maximum(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self.fixture(root)
+            output = root/'output'
+            build.build(root, output_dir=output, update_tracking=False)
+            result = check.check_assembly(root, output)
+            self.assertFalse([message for message in result['warnings']
+                              if message.startswith(('Source Methods word count', 'Source Results word count',
+                                                     'Source Discussion word count'))], result)
+            (root/'writing-limits.json').write_text('{"results":{"max":1}}', encoding='utf-8')
+            limited = check.check_assembly(root, output)
+            self.assertTrue(any('word' in message.lower() for message in limited['errors']), limited)
+
     def test_batch10_section_end_mixed_assets_and_plain_headings(self):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d); self.fixture(root); out = root/'output'

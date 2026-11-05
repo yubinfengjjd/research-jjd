@@ -706,12 +706,7 @@ def tracking(root, version, day):
         if not matches: raise ValueError('PROJECT.md lacks stage 10 row; cannot safely update tracking')
         m = matches[-1]; text = text[:m.end()]+'\n'+row+text[m.end():]
     archive_write(project, text.encode('utf-8'), root, day)
-    decision = root/'04_manuscript/作者决定.md'
-    content = read(decision) if decision.exists() else '# 作者决定\n'
-    entry = '- Finalize 固定约定：两份 Word；主图主表置于首次引用所属节末，单节 A4 纵向，Arial 单倍行距，单表缩字至 6.5 pt；不输出 References；保守去防御，保留全部证据限定；英文归档后覆盖，中文不动。'
-    if '## Finalize' not in content:
-        content += '\n\n## Finalize\n\n'+entry+'\n'
-        archive_write(decision, content.encode('utf-8'), root, day)
+    # Assembly records execution state, never invents or rewrites author decisions.
 
 
 def write_process_lists(process, candidates, layouts):

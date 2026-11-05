@@ -111,6 +111,29 @@ def test_existing_internal_selective_install_preserves_unrelated(src, roots, tmp
     assert (target / "other-skill/SKILL.md").read_text() == "keep me"
 
 
+def test_selected_skill_update_and_uninstall_preserve_other_installations(src, roots, tmp_path):
+    target = roots[0]
+    other = target / 'medical-sci-methods'
+    other.mkdir()
+    (other / 'local.md').write_bytes(b'custom installation')
+    prior = snapshot(other)
+    inst = make(src, roots, tmp_path, skills=('medical-sci-results',))
+    assert inst.install() == 0
+    assert snapshot(other) == prior
+    assert inst.verify_all() == 0
+    assert inst.uninstall() == 0
+    assert not (target / 'medical-sci-results').exists()
+    assert snapshot(other) == prior
+
+
+@pytest.mark.parametrize('selected', [(), ('unknown-skill',)])
+def test_invalid_skill_selection_fails_before_writes(src, roots, tmp_path, selected):
+    before = snapshot(tmp_path / 'home')
+    with pytest.raises(ValueError):
+        make(src, roots, tmp_path, skills=selected)
+    assert snapshot(tmp_path / 'home') == before
+
+
 def test_excluded_files_absent(src, roots, tmp_path):
     make(src, roots, tmp_path).install()
     r = roots[0] / "medfig-render"

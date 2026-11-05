@@ -9,7 +9,7 @@
 | 写作大纲（Results 各节的“图 / 表”说明、写作要点、措辞边界；图表引用清单） | 决定要写哪些图表、每个 panel 的科学问题、重点与表述边界 |
 | 成图（PNG/SVG） | 唯一的图面依据：panel 字母、实际显示的对象、可见的分布/趋势/差异、图内标注和符号 |
 | 详细图注（如 `captions/*.md`）、源数据（如 `*.source.json`）、表格（csv/md） | 数字基准：n、估计值、区间、比例、分母；核对图中标注的数值 |
-| 已有图注（修订模式，用户提供时） | 修订对象；保留作者已确认的措辞，只改违反本规则或与数据冲突之处 |
+| 已有图注（修订模式，用户提供时） | 修订对象；保留作者已确认的科学含义与 panel 覆盖，可按证据关系合并、去重和重排 |
 | Methods 稿（如有） | 用于对齐模型、队列、指标名称和缩写；图注不搬方法细节；表注按第 7 节承载从表体移出的必要方法 / 处理规则 / 口径 |
 | 作者决定记录（如 `Legends_作者决定.md`，存在时） | 已裁决事项直接沿用，不再上报 |
 
@@ -29,10 +29,10 @@
 
 ## 3. Panel 描述
 
-- 长度：每个独立 panel 或合并组 1–2 句，最多 4 句（图注精简原则为最高优先级）。示意图、示例病例或流程图 1 句说明其构成与作用即可。
+- 长度：每个独立 panel 或合并组简洁交代必要信息，1–2 句仅作参考，无通用四句硬顶；科学范围和完整信息优先。示意图、示例病例或流程图 1 句说明其构成与作用即可。
 - 信息：自然融合“图形或比较对象 + 一项以上可见证据（分布集中区间、组间高低、离散程度、趋势方向、与参考线的关系、聚集/重叠）+ 证据直接支持的有限含义”。这是信息要求，不是固定句式；含义不强制，只在图面直接支持时加。
 - 不能只写“展示什么”（“(C) Box plots of Dice scores.”），也不能只写空泛结论（“(C) Dice scores indicate high accuracy.”）。承担定量比较的 panel 至少保留一项具体的图上模式或一个关键数字。
-- 数字有选择地写，图注不是表格转述：每个描述单元一般不超过 3 个数值，其中带区间的估计不超过 2 个。只写理解该 panel 必需的数字：主要估计值及区间、预设界值、最弱或例外项、范围。多个队列、类别、种子或对比的数值，写范围、极值或例外（“0.802 in Cohort B versus 0.929–0.938 in the other three-class cohorts”），不逐个列出；完整数值留给表格。不复述 Results 式的逐组差异分析。
+- 数字有选择地写，图注不是表格转述：3 个数值/2 个带区间估计仅作精简参考，实际数量取决于理解该图所需信息。只写理解该 panel 必需的数字：主要估计值及区间、预设界值、最弱或例外项、范围。多个队列、类别、种子或对比的数值，写范围、极值或例外（“0.802 in Cohort B versus 0.929–0.938 in the other three-class cohorts”），不逐个列出；完整数值留给表格。不复述 Results 式的逐组差异分析。
 - 比较两个量级时写出这对数字，不写“两者相近/重叠”这类判断：不写 “Mean shift norms overlap the range of decision margins”（写 “The mean shift norm in one cohort, 3.12, is close to the internal median margin, 2.96”）。
 - 压缩时不用 some、several、many、a few 等模糊量词代替证据（“lie near some median margins”“higher in several cohorts”），写出具体的队列、类别名或一个数字（“the Cohort D mean shift norm, 3.12, is close to the internal median margin, 2.96”）。
 - 数值格式跟随图面：图上标为百分比就写百分比，标为 0–1 比例就写比例；同一图注内同一指标格式一致。
@@ -51,12 +51,12 @@
 
 ## 5. 尾注
 
-尾注接在最后一个 panel 描述之后，同一段内，按以下顺序只写需要的项，整体一般不超过三句：
+尾注接在最后一个 panel 描述之后，同一段内，按以下顺序只写需要的项，三句仅作精简参考，不以句数删去必要范围：
 
 1. 读图必需的符号与颜色：参考线（“Dashed line, identity”“Dotted line, 90% nominal coverage”）、标记含义（“† …”“outlined cases are misclassified”）、颜色仅在图内无图例或图例不自明时说明（“Colors denote true class”）。不写色号、透明度、线宽。
 2. 统计量含义：误差线或区间是什么（“Error bars, 95% CIs”“Points, seed means; bars, min–max across three seeds”），n 的单位（scans、eyes、participants），显著性标记的含义（`*P < 0.05, **P < 0.01, ***P < 0.001`，仅当图中实际有标记）和对应检验名称（“two-sided Wilcoxon signed-rank test”）。不写计算过程、重抽样次数或数据来源。
 3. 缩写：该图注中出现的全部缩写，按出现顺序写在最后一句，格式见 `journal-style.md` 第 3 节。每个图注独立定义，不依赖其他图注或正文。
-4. 大纲措辞边界要求在图注中出现的限定（如“两个队列共享重复图像，不是独立复现”），按需用 † 等标记接在相应 panel 或尾注中，每图只写一次。写成简短的事实短语（“Coverage is empirical at scan level.”“Review budgets are retrospective.”），不写成否定式清单（“support no clinical operating-threshold, workflow-benefit, or reader-performance conclusion”）。
+4. 大纲措辞边界要求在图注中出现的限定（如“两个队列共享重复图像，不是独立复现”），按需用 † 等标记接在相应 panel 或尾注中，同一分析的重复说明可合并；不同分析所需范围分别保留。写成简短的事实短语（“Coverage is empirical at scan level.”“Review budgets are retrospective.”），不写成否定式清单（“support no clinical operating-threshold, workflow-benefit, or reader-performance conclusion”）。
 
 ## 6. 解读边界
 
@@ -65,7 +65,7 @@
 - 比较的方向用 positive、negative、higher、lower 描述。不写 favor、favoring、advantage 及其中文对应“偏向、有利于、更优”：不写 “Paired BACC differences favor the proposed model in one seed”（写 “Paired BACC differences are positive in one seed”），不写“差值偏向本模型”（写“差值为正”）。
 - 不写 superior、outperformed、better（无检验支持时），不写因果、机制、临床价值或泛化结论；不把相关、共现、降维分布或解释图写成机制证据；不把代理指标写成真实终点。
 - 只有部分类别的队列、非独立队列、使用目标标签的参照等，在相应 panel 中用短语如实限定一次，不堆叠；只写在该限定确实影响读图的 panel 或尾注，不在无关 panel 中重复。
-- 限定只有两个来源：大纲措辞边界中与该图相关的条目，以及读图必需的定义（如“轮廓为模型预测”“oracle 使用目标标签”）。每张图最多一句独立的限定句，其余并入 panel 短语。不写通用免责句：“these curves are descriptive”“do not establish a model ranking”“the overall result is mixed and not significant”“not a clinical report”“does not define an operating threshold”。没有检验就用中性措辞描述结果本身，不用免责句补救。
+- 限定只有两个来源：大纲措辞边界中与该图相关的条目，以及读图必需的定义（如“轮廓为模型预测”“oracle 使用目标标签”）。限定可并入 panel 短语或独立表达，数量服从实际分析范围，不设每图一句硬上限。不写通用免责句：“these curves are descriptive”“do not establish a model ranking”“the overall result is mixed and not significant”“not a clinical report”“does not define an operating threshold”。没有检验就用中性措辞描述结果本身，不用免责句补救。
 - 不使用宣传性词汇：remarkable、striking、excellent、robust（作评价）、clearly、显著优异。
 
 ## 7. 表格标题与表注
@@ -79,7 +79,7 @@
 
 ## 8. 中英对照
 
-- 英文为正式图注；中文对照按中文学术语序重组，事实、数值、限定、panel 编号和合并范围逐句一致，不增删信息。
+- 英文为正式图注；中文对照按中文学术语序重组，事实、数值、限定、panel 编号和合并范围覆盖一致，允许中英文句子拆合，不增删信息。
 - 避免“被……所”“对……进行……”“……的……的……”堆叠；中文标题同样是描述性名词短语。
 - 图面上的类别、分带和队列标签（如 Normal、Edema、RPE/drusen）在中文稿中保持英文原样，全文一致，不在同一稿中混用“正常”与“Normal”；英文中的 seed 写作“种子”，“seed 0”写作“种子 0”。
 - 专有名称（数据集、模型、软件）保留英文；通用术语首次出现用通行中文译名（B-scan 写作“B 扫描”）；指标缩写可保留英文，中文尾注同样给出缩写释义（“BACC，平衡准确率”）。

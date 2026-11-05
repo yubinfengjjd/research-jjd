@@ -1,6 +1,6 @@
 # 期刊语言与格式规范
 
-作者于 2026-10-14 确认。适用于医学 SCI Introduction 的英文正文及中文对照。目标期刊或用户另有要求时，按其要求执行；与本文件冲突时取更严格者。
+作者于 2026-10-14 确认。适用于医学 SCI Introduction 的英文正文及中文对照。目标期刊或用户另有要求时，按其要求执行；历史篇幅和模板不覆盖当前证据保留规则。
 
 ## 1. 语言
 
@@ -12,7 +12,7 @@
 - 不用 Methods 内部构造名或分析名（如 target-label-informed reference、signed concept-shift decomposition、representation probe、final readout、soft compartments、clinical-group level）。引言读者还没读 Methods，改用通用说法（“a reference that uses target labels”“which concepts change between cohorts”“the final classification layer”）。模型、数据集的专有名称照常使用。
 - 中文对照中，英文术语首次出现时给出通行中文译名（B-scan 写作“B 扫描”），此后统一用中文；数据集、模型等专有名称保留英文。
 - 不用宣传性形容词：novel、powerful、robust（作为评价词）、state-of-the-art（无引用支持时）、remarkable、significant（无检验时）。审慎措辞见 `writing-rules.md` 第 4 节。
-- 综述层次中以作者名（“X et al.”）或系统名开头的句子不超过三分之一，其余以研究问题、方法类别或发现作主语，作者名放进句中或只用 PMID 指代。
+- 综述按研究问题、方法关系和证据组织，避免逐篇罗列；作者名/系统名起句比例只作诊断，准确自然的表达不受固定比例限制。
 - 衔接按下方「句长、分号与衔接」执行；取消连接词全文次数死限。
 
 ## 2. 引用格式
@@ -36,7 +36,7 @@
 
 ## 4. 篇幅
 
-- 默认约 900–1,100 个英文词，上限 1,200 词；目标期刊或用户给出更严格的限制时以其为准。
+- 900–1,100 英文词仅作规划参考，无通用最低词数或默认 1,200 硬顶；作者/期刊的明确限制优先，实际篇幅服从论证与证据需要。
 - 词数口径：只统计正文段落，不计标题和括号内引用标识（PMID/DOI/URL/arXiv 及作者年份）；用本地脚本按空白分词计数，交付时注明口径。
 - 超出上限时先删背景中的教科书内容和综述中的逐篇罗列，再压缩意义段；不删研究空白和本研究问题。
 

@@ -132,8 +132,11 @@ def target_label(target: Path) -> str:
 
 class Installer:
     def __init__(self, targets, backup_root: Path, src_root: Path = SRC_ROOT,
-                 dry_run: bool = False, log=print):
+                 dry_run: bool = False, log=print, skills=None):
         self.src_root = src_root
+        self.skills = tuple(SKILLS if skills is None else dict.fromkeys(skills))
+        if not self.skills or any(name not in SKILLS for name in self.skills):
+            raise ValueError('Select one or more known skills')
         self.targets = [Path(t).expanduser().resolve() for t in targets]
         src = Path(src_root).resolve()
         for t in self.targets:
@@ -184,7 +187,7 @@ class Installer:
         self.log(f"backup dir (if needed): {self.backup_dir}")
         for target in self.targets:
             self.log(f"target {target}:")
-            for skill in SKILLS:
+            for skill in self.skills:
                 self._install_one(target, skill, version, update)
         return self._finish()
 
@@ -227,7 +230,7 @@ class Installer:
         self.log(f"backup dir: {self.backup_dir}")
         for target in self.targets:
             self.log(f"target {target}:")
-            for skill in SKILLS:
+            for skill in self.skills:
                 if (target / skill).exists():
                     self._backup(target, skill)
                 else:
@@ -237,7 +240,7 @@ class Installer:
     def verify_all(self) -> int:
         for target in self.targets:
             self.log(f"target {target}:")
-            for skill in SKILLS:
+            for skill in self.skills:
                 problems = verify(self._src(skill), target / skill)
                 if problems:
                     self.failures += [f"{target / skill}: {p}" for p in problems]
@@ -268,6 +271,8 @@ def main(argv=None) -> int:
     p.add_argument("--backup-root", type=Path, default=Path.home() / "skill_backups",
                    help="where backups go (default ~/skill_backups)")
     p.add_argument("--dry-run", action="store_true", help="print the plan, change nothing")
+    p.add_argument("--skill", action="append", choices=SKILLS,
+                   help="install, verify or uninstall only this skill (repeatable; default all)")
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--update", action="store_true",
                       help="only reinstall skills whose manifest hash differs")
@@ -276,7 +281,7 @@ def main(argv=None) -> int:
     mode.add_argument("--verify", action="store_true",
                       help="only verify installed trees against the source")
     a = p.parse_args(argv)
-    inst = Installer(a.target or default_targets(), a.backup_root, dry_run=a.dry_run)
+    inst = Installer(a.target or default_targets(), a.backup_root, dry_run=a.dry_run, skills=a.skill)
     if a.verify:
         return inst.verify_all()
     if a.uninstall:

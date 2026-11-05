@@ -37,13 +37,13 @@ PROFILES = {
         (E, "abstract-reference", r"(?:PMID|DOI|URL|arXiv)\s*:|\b(?:Fig\.|Figure|Table)\s*S?\d|\[citation needed\]", 0,
          "摘要默认不带引用、图表号或引用占位"),
     ]),
-    "methods": dict(words=(2500, 3000, W), rules=[]),
+    "methods": dict(words=(None, 3000, W), rules=[]),
     "legends": dict(words=None, legend_words=150, rules=[
         (E, "comparison-word", r"\b(?:superior|outperform\w*|favou?r(?:s|ed)?|advantage)\b", 0,
          "比较方向词；改为 positive/negative 或写出数值"),
         (W, "disclaimer", r"\b(?:do(?:es)? not establish|not significant overall|not clinical)\b", 0, "通用免责句"),
     ]),
-    "results": dict(words=(3500, 4000, W), rules=[
+    "results": dict(words=(None, 4000, W), rules=[
         (E, "sentence-opener", r"(?:^|(?<=[.!?]\s))(?:First|Then|Next|Finally|"
          r"Notably|Interestingly|Importantly)\b", 0, "句首串联或强调词"),
         (E, "section-number", r"\bSection \d|\d\.\d+ ?节|上一节", 0, "正文出现节号"),
@@ -64,7 +64,7 @@ PROFILES = {
         (E, "roadmap", r"\b(?:rest|remainder) of this (?:paper|article)\b|\bis organized as follows\b", 0, "路标式结构说明"),
         (W, "result-verb", r"\bwe (?:show|demonstrate|reveal|confirm|establish)\b", 0, "可能提前披露结果"),
     ]),
-    "discussion": dict(words=(800, 1500, W), rules=[
+    "discussion": dict(words=(None, 1500, W), rules=[
         (E, "overclaim", r"\b(?:prove[sd]?|proven|clearly|undoubtedly)\b", 0, "超越证据的强度词"),
         (W, "confirm", r"\bconfirm(?:s|ed)? (?:that|our)\b", 0, "confirm 指本研究假设时改为 support/indicate"),
         (E, "to-our-knowledge", r"\bto our knowledge\b", 1, "“to our knowledge” 全文 ≤1"),
@@ -132,7 +132,8 @@ def abstract_body(text):
                     maxsplit=1, flags=re.M | re.I)[0]
 
 
-def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250, allow_abstract_references=False):
+def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250, allow_abstract_references=False,
+          limits_json=None):
     prof = PROFILES[section]
     raw = Path(en_path).read_text(encoding="utf-8-sig")
     body = strip_md(abstract_body(raw) if section == "abstract" else raw)
@@ -142,12 +143,21 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
     def add(level, rule, msg, ctx=""):
         out.append({"level": level, "rule": rule, "msg": msg, "context": ctx[:160]})
 
+    from writing_limits import load_limits
+    try:
+        declared = load_limits(en_path, limits_json).get(section)
+    except (ValueError, OSError) as exc:
+        add(E, 'word-limits-config', str(exc))
+        declared = None
     # length
     if section == "legends":
         for leg in re.split(r"\n(?=\*\*(?:Supplementary )?(?:Figure|Table) )", raw.replace("\r\n", "\n")):
             m = re.match(r"\*\*((?:Supplementary )?(?:Figure|Table) S?\d+)", leg)
-            if m and m.group(1).split()[-2] != "Table" and words_of(leg) > prof["legend_words"]:
-                add(W, "legend-length", f"{m.group(1)} 英文 {words_of(leg)} 词，超过 {prof['legend_words']}")
+            lo = declared.get('min') if declared else None
+            hi = declared.get('max') if declared else prof['legend_words']
+            n = words_of(leg)
+            if m and m.group(1).split()[-2] != "Table" and ((lo and n < lo) or (hi and n > hi)):
+                add(E if declared else W, "legend-length", f"{m.group(1)} 英文 {n} 词，目标 {lo or '—'}–{hi or '—'}")
         if re.search(r"\n\s*\n\*\*(?:Supplementary )?(?:Figure|Table)", raw.replace("\r\n", "\n")):
             add(E, "legend-blank-line", "图注之间有空行")
     else:
@@ -155,6 +165,8 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
         lo, hi, lvl = prof["words"]
         if section == "abstract":
             hi = abstract_limit
+        if declared is not None:
+            lo, hi, lvl = declared.get('min'), declared.get('max'), E
         if (lo and n < lo) or (hi and n > hi):
             add(lvl, "word-count", f"英文正文 {n} 词，目标 {lo or '—'}–{hi}")
     # Shared style policy replaces legacy per-section 45/50/55-word caps.
@@ -163,6 +175,10 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
     out.extend(analyze_style(style_text, section)["findings"])
     # phrase rules
     for level, rule, pat, mx, msg in COMMON + prof["rules"]:
+        if rule in {'sentence-opener', 'negative-gap', 'scope-disclaimer', 'agrees-with',
+                    'extends', 'consistent-with', 'contrasts-with', 'would-test',
+                    'negative-boundary', 'we-found-opener'}:
+            level = W
         if section == "abstract" and rule == "abstract-reference" and allow_abstract_references:
             continue
         hits = [m for m in re.finditer(pat, claims, re.I if rule not in ("sentence-opener", "we-found-opener") else 0)]
@@ -221,10 +237,11 @@ def main():
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--max-words", type=int, default=250, help="Abstract body word limit (default 250)")
     ap.add_argument("--allow-abstract-references", action="store_true", help="Only when author/journal explicitly requires abstract references")
+    ap.add_argument("--limits-json", type=Path, help="Explicit section min/max word limits; otherwise discover writing-limits.json beside PROJECT.md")
     a = ap.parse_args()
     if a.max_words < 1:
         ap.error("--max-words must be positive")
-    res = check(a.section, a.en, a.zh, a.results, a.max_words, a.allow_abstract_references)
+    res = check(a.section, a.en, a.zh, a.results, a.max_words, a.allow_abstract_references, a.limits_json)
     if a.json:
         print(json.dumps(res, ensure_ascii=False, indent=1))
     else:
