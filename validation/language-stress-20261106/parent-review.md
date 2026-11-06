@@ -1,0 +1,3 @@
+# Parent review — round 1 rejected
+
+Claude Code backend: deepseek-flash[1m]. Engineering logs: 171 and 104 passed, both exit 0; these are separate suites, not proof of language quality. Do not accept reported 13/13 semantic PASS: C08 retained internal E9/E13 and omitted unique counts 24 and 179,505; C09 expanded a local translation into unsupported background/methods; C11 remained tautological; C07 still needed argument-level review. Second round required. No stable manuscript or scientific validity claimed. Full private manuscript excerpts remain local and are not committed to public repository.
