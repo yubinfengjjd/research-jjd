@@ -148,3 +148,10 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
+
+
+## 证据优先的叙事复核
+
+发表边界复核：清除内部审批、版本历史及实验代号；科学承诺或结论依赖的未执行分析仍须披露，内部备选任务不自动进入论文。编辑验收逐项评价信息增量、文献论证角色、摘要优先级和限定支配范围；字数或词频 PASS 不得代替这些判断。尤其不得将 no clear reduction 改为 did not narrow，不得混淆 observed-class BACC 与完整三分类 BACC，或把差值为负写成种子为负。
+
+局部编辑不得为满足摘要格式而补写背景、样本设计或方法。清理表注时逐项区分科学信息与内部管理信息：删除审批理由及 E9/E13 等无读者意义代号；独有计数（例如 24 个组合、179,505 行）不可随之消失，除非有明确依据证明其纯属内部过程且记录取舍。测试验收应包含未预告变体和反例，不能由编辑自己编写预期后全部自评 PASS。
