@@ -36,6 +36,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | `medical-sci-discussion` | Discussion（方法、结果、图注、引言齐备后才动笔） |
 | `medical-sci-abstract` | 摘要（中英对照、关键词、Highlights；默认英文正文 ≤250 词） |
 | `medical-sci-finalize` | 成品 Word 组装（主稿 + 补充材料）、保留证据的全稿结构编辑及对应中文/已有双语稿同步；支持同一表号多区块与发表编号映射 |
+| `anti-defensive-writing` | `medical-sci-finalize` 的必需依赖，也可独立使用；上游原文随仓库分发，医学稿执行时受 finalize 的证据保留规则约束 |
 | `medical-sci-references` | 投稿前参考文献收尾：从主稿抽取引用标识，按 PMID/DOI/arXiv 查重并补入 Zotero，注入 Word 原生引文字段与文献表，核对 I1–I9 不变式；支持作者提供的 URL→条目映射 |
 | `medical-sci-submission` | 期刊适配与投稿材料准备：按当前官方文章类型要求核实作者/基金/声明，保护源稿与 Zotero 字段，准备适用材料和缺口清单；可独立处理病例、综述等 DOCX，缺失事实可交草稿，不自动授予投稿就绪 |
 
@@ -52,6 +53,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 - Python ≥ 3.11（低于 3.11 需安装 `tomli`，`requirements.txt` 已按版本处理）。
 - Python 依赖：`pip install -r requirements.txt`（版本固定为测试通过的组合）；跑测试另装 `pip install -r requirements-dev.txt`。
 - `scipilot-medimg-figure-skill` 已包含在本仓库，由 `install.py` 一起安装，不需要另外下载。
+- `anti-defensive-writing` 已包含在本仓库，安装或核验 `medical-sci-finalize` 时自动包含该依赖。每次使用 finalize 须实际加载它；缺失或不可读时停止，不以静态摘录替代。医学稿仍保留不利结果、必要限定与不确定性。
 - 可选：Arial 字体（期刊默认字体；缺失时 matplotlib 回退到 DejaVu Sans 并给出警告）。
 - `medfig-illustrator` 另需：Windows、Adobe Illustrator CC 2019（23.x）或更新版本并已打开目标文档；它的 PowerShell 脚本按 `CELL_LCT_PYTHON` → `py` 启动器 → PATH 上的 `python.exe` 的顺序找 Python（需含 Pillow 与 fontTools）。PATH 上只有 Microsoft Store 占位程序时，请设置用户级环境变量：`[Environment]::SetEnvironmentVariable("CELL_LCT_PYTHON", "<python.exe 的完整路径>", "User")`。
 - `medical-sci-references` 另需：Zotero 10（建议 ≥10.0.5，本地 API 写入）并启用“允许其他应用程序与本机 Zotero 通信”；Word 内需启用 Zotero 插件。缺失时技能会在就绪检查处停下，不会自行启动或修改 Zotero。
@@ -82,7 +84,7 @@ python install.py
 
 只更新指定技能可重复使用`--skill`，例如`python install.py --update --skill medical-sci-finalize --skill medpaper-pipeline`；用`--target`明确指定实际加载的技能根（如同时使用`.agents/skills`时），先`--dry-run`再安装/`--verify`。默认目标保持兼容。0.10的结构编辑模式、双语同步和旧记录兼容见[迁移说明](docs/evidence-aware-writing.md)。
 
-`install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、九个 `medical-sci-*` 技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
+`install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、`anti-defensive-writing`、九个 `medical-sci-*` 技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
 
 ```bash
 python install.py --dry-run          # 只打印计划（复制、备份、目标），不改动任何文件
@@ -96,6 +98,7 @@ python install.py --target D:/x/skills --target D:/y/skills   # 覆盖默认目�
 - 备份位置：`~/skill_backups/medfig_<时间戳>/<目标名>/<技能名>`（可用 `--backup-root` 修改），运行时会打印。
 - 复制后逐文件做 SHA-256 校验，并写入 `<目标>/<技能>/.medfig_install.json`（版本 = 源仓库 git 短 SHA，取不到时为 `unknown`；时间戳；文件数；清单哈希）。
 - 任何校验失败时退出码非零。
+- `--skill medical-sci-finalize` 的安装、更新与核验会自动包含 `anti-defensive-writing`；只卸载 finalize 时保留独立依赖。需要卸载依赖时显式选择它。
 - 只处理清单中的技能目录，目标根目录中的其他技能不会被读写。已装过上游或旧版 `scipilot-medimg-figure-skill` 的，安装时会先备份再替换。
 
 ## Codex 用户：设置 FIGKIT_LIB 与 scipilot_scripts

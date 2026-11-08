@@ -126,6 +126,52 @@ def test_selected_skill_update_and_uninstall_preserve_other_installations(src, r
     assert snapshot(other) == prior
 
 
+def _dependency_source(src):
+    dependency = src / "anti-defensive-writing"
+    dependency.mkdir(exist_ok=True)
+    if not (dependency / "SKILL.md").exists():
+        (dependency / "SKILL.md").write_text(
+            "---\nname: anti-defensive-writing\ndescription: Use when editing defensive prose.\n---\n",
+            encoding="utf-8",
+        )
+    return dependency
+
+
+def test_selected_finalize_installs_its_sibling_dependency(src, roots, tmp_path):
+    dependency = _dependency_source(src)
+    inst = make(src, roots, tmp_path, skills=("medical-sci-finalize",))
+    assert inst.install() == 0
+    for target in roots:
+        assert install.verify(dependency, target / dependency.name) == []
+        assert (target / "medical-sci-finalize" / "../anti-defensive-writing/SKILL.md").is_file()
+        assert not (target / "medical-sci-methods").exists()
+
+
+def test_selected_finalize_verification_checks_dependency(src, roots, tmp_path):
+    dependency = _dependency_source(src)
+    inst = make(src, roots, tmp_path, skills=("medical-sci-finalize",))
+    assert inst.install() == 0
+    for target in roots:
+        if not (target / dependency.name).exists():
+            shutil.copytree(dependency, target / dependency.name)
+    (roots[0] / dependency.name / "SKILL.md").unlink()
+    assert inst.verify_all() == 1
+    assert any("anti-defensive-writing" in problem for problem in inst.failures)
+
+
+def test_uninstall_selected_finalize_preserves_independent_dependency(src, roots, tmp_path):
+    dependency = _dependency_source(src)
+    for target in roots:
+        shutil.copytree(dependency, target / dependency.name)
+    inst = make(src, roots, tmp_path, skills=("medical-sci-finalize",))
+    assert inst.install() == 0
+    before = [snapshot(target / dependency.name) for target in roots]
+    assert inst.uninstall() == 0
+    for target, expected in zip(roots, before):
+        assert not (target / "medical-sci-finalize").exists()
+        assert snapshot(target / dependency.name) == expected
+
+
 @pytest.mark.parametrize('selected', [(), ('unknown-skill',)])
 def test_invalid_skill_selection_fails_before_writes(src, roots, tmp_path, selected):
     before = snapshot(tmp_path / 'home')

@@ -22,6 +22,10 @@ Author/journal limits can be declared using [writing-limits.json](../medpaper-pi
 
 ## Validation and installation
 
+As of 0.10.1, `medical-sci-finalize` requires loading the separately usable sibling skill `anti-defensive-writing` on every invocation. Its unchanged upstream instructions, MIT license and pinned provenance are bundled in this repository. A missing or unreadable dependency stops finalize; embedded excerpts are not a substitute. The parent's medical evidence rules resolve conflicts with upstream advice: adverse results, established evaluation criteria, necessary qualifiers and uncertainty remain protected. Record the dependency path, commit when available, file hash and applied or overridden rules in the readable editing record.
+
+`python install.py --update --skill medical-sci-finalize` automatically installs or updates the dependency first; `--verify --skill medical-sci-finalize` checks both skills. Selectively uninstalling finalize leaves the independent dependency installed. Explicitly select the dependency to uninstall it as well. This adds a bundled skill dependency, not a Python package requirement.
+
 Synthetic tests cover legitimate merging, scope/fact mismatches, stale records, missing adverse evidence, bilingual coverage, archive/rollback, author limits and CLI compatibility. Word/table/math/citation regressions remain in the suite. Contextual scientific and narrative review is separate from deterministic validation: a schema, token or source-hash PASS does not prove arbitrary semantic equivalence, translation accuracy, scientific validity or author acceptance.
 
 Install only reviewed changed skills with repeatable`--skill`; use explicit`--target`paths when multiple runtimes use different roots. Preview, back up and verify. Preserve local additions by reconciling them into reviewed source before installation; do not overwrite a local customization just because the default installer targets a different copy. No new runtime dependencies are required for this revision.

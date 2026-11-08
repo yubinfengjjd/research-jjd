@@ -19,7 +19,7 @@ WRITING_SKILLS = ["medical-sci-methods", "medical-sci-legends", "medical-sci-res
 # research planning / managed experiments / Socratic project interview
 EXTRA_SKILLS = ["medical-research-plan", "medimg-experiment", "socratic-project-manager"]
 # dependency skill derived from Haojae/scipilot-figure-skill (MIT): leak scan + forbidden-workflow scan only
-ALL_SKILLS = SKILLS + ["scipilot-medimg-figure-skill"] + WRITING_SKILLS + EXTRA_SKILLS
+ALL_SKILLS = SKILLS + ["scipilot-medimg-figure-skill", "anti-defensive-writing"] + WRITING_SKILLS + EXTRA_SKILLS
 ALLOWED = {"name", "description", "license", "metadata"}
 # Project names / dataset names that must never appear in the skills: one per line in the git-ignored
 # tests/leak_strings.local.txt (kept out of the public repo), plus the generic markers below.

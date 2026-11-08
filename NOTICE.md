@@ -23,6 +23,11 @@ v2.1.0（commit `43098dd`，MIT，© 2026 Haojae），原许可证见 `scipilot-
 
 ## 医学写作技能（medical-sci-* / medpaper-pipeline）
 
+`anti-defensive-writing/` 独立包含 [Adkid-Zephyr/anti-defensive-writing-Skill](https://github.com/Adkid-Zephyr/anti-defensive-writing-Skill)
+提交 `82d31402caa0db1790026824399044538483171b` 中的 `skills/anti-defensive-writing/SKILL.md`，原文未修改。
+MIT 许可保留在 `anti-defensive-writing/LICENSE`，来源与原文 SHA256 见 `anti-defensive-writing/.source.json`。
+它是 `medical-sci-finalize` 须实际读取的本地依赖；下表中的医学适配继续作为证据保留边界。
+
 | 来源 | 许可证 | 用在哪里 | 方式 |
 |---|---|---|---|
 | [Adkid-Zephyr/anti-defensive-writing-Skill](https://github.com/Adkid-Zephyr/anti-defensive-writing-Skill) | MIT（© 2026 Adkid-Zephyr；许可原文保留在 `medical-sci-finalize/references/polish-rules.md` 末尾） | `medical-sci-finalize/references/polish-rules.md` 的去防御性写作规则 | 改写为医学稿保守档，注明出处 |

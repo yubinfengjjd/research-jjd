@@ -24,11 +24,13 @@
 
 可以删不承载事实的 unfortunately、regrettably、we apologize、we must admit、自我贬损形容词、与研究证据无关的写作尝试流水账、同义 hedge 堆积。不能做全局字符串替换。`only`、`limited`、`may`、`not` 很可能是量/推断限定，必须读上下文；除非能证明冗余且不改证据含义，否则保留该处并记录未知点；只有真实待裁定问题才归入作者动作。
 
-## 规则来源与适配（仅静态参考，不调用）
+## 规则来源与适配（anti-defensive-writing 为必需依赖；其余为静态参考）
 
-### Anti-defensive-writing：十二项对应
+### Anti-defensive-writing：必需依赖与十二项医学适配
 
-来源：[Adkid-Zephyr/anti-defensive-writing-Skill 的 SKILL.md](https://github.com/Adkid-Zephyr/anti-defensive-writing-Skill/blob/main/skills/anti-defensive-writing/SKILL.md)，2026-10-15 读取；MIT，Copyright (c) 2026 Adkid-Zephyr。以下为改写要点，不是原规则原文照搬：
+每次执行 `medical-sci-finalize` 均须先读取并应用同一技能根下的 [独立 anti-defensive-writing 技能](../../anti-defensive-writing/SKILL.md)。缺失或不可读时停止，不以以下摘录替代依赖。以下十二项用于限定上游规则在医学稿中的应用；ARS 与 humanizer 仍只作静态参考，不调用其技能。
+
+来源：[Adkid-Zephyr/anti-defensive-writing-Skill 的 SKILL.md](https://github.com/Adkid-Zephyr/anti-defensive-writing-Skill/blob/main/skills/anti-defensive-writing/SKILL.md)，2026-10-15 读取；MIT，Copyright (c) 2026 Adkid-Zephyr。以下保留原有医学适配要点，不是原规则原文照搬；实际执行同时读取独立安装版本，版本与哈希记入修改记录：
 
 1. 围绕有证据的价值组织；不得隐藏弱项。
 2. 用研究逻辑替代过程流水账；结论相关失败/未执行事实公开保留；内部备用实验、审批与版本记录留在过程文件。

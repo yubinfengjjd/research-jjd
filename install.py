@@ -5,7 +5,7 @@ Copies ONLY the directories listed in SKILLS: medfig-suite, medfig-plan, medfig-
 medfig-outline, medfig-schematic, medfig-illustrator, scipilot-medimg-figure-skill (medfig-render calls its
 scripts/), medical-sci-methods, medical-sci-legends, medical-sci-results, medical-sci-introduction,
 medical-sci-discussion, medical-sci-abstract, medical-sci-finalize, medical-sci-references, medical-sci-submission, medpaper-pipeline,
-medical-research-plan, medimg-experiment and socratic-project-manager.
+medical-research-plan, medimg-experiment, socratic-project-manager and anti-defensive-writing.
 Existing installs are moved to a timestamped backup before being replaced;
 nothing is ever deleted. After copying, every file is SHA-256 verified
 against the source and a `.medfig_install.json` stamp is written.
@@ -31,7 +31,9 @@ SKILLS = ("medfig-suite", "medfig-plan", "medfig-render", "medfig-orchestrate", 
           "medfig-illustrator", "scipilot-medimg-figure-skill",
           "medical-sci-methods", "medical-sci-legends", "medical-sci-results", "medical-sci-introduction",
           "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references", "medical-sci-submission",
-          "medpaper-pipeline", "medical-research-plan", "medimg-experiment", "socratic-project-manager")
+          "medpaper-pipeline", "medical-research-plan", "medimg-experiment", "socratic-project-manager",
+          "anti-defensive-writing")
+SKILL_DEPENDENCIES = {"medical-sci-finalize": ("anti-defensive-writing",)}
 STAMP = ".medfig_install.json"
 
 EXCLUDED_DIR_NAMES = {"__pycache__", ".pytest_cache", ".git"}
@@ -137,6 +139,12 @@ class Installer:
         self.skills = tuple(SKILLS if skills is None else dict.fromkeys(skills))
         if not self.skills or any(name not in SKILLS for name in self.skills):
             raise ValueError('Select one or more known skills')
+        # Install/verify dependencies before their parent. Uninstall uses only
+        # the explicit selection, preserving independently usable dependencies.
+        self.required_skills = tuple(dict.fromkeys(
+            required for skill in self.skills
+            for required in (*SKILL_DEPENDENCIES.get(skill, ()), skill)
+        ))
         self.targets = [Path(t).expanduser().resolve() for t in targets]
         src = Path(src_root).resolve()
         for t in self.targets:
@@ -181,13 +189,15 @@ class Installer:
 
     # -- actions ---------------------------------------------------------
     def install(self, update: bool = False) -> int:
+        for skill in self.required_skills:
+            self._src(skill)
         version = git_version(self.src_root)
         self.log(f"source: {self.src_root} (version {version})")
         self.log(f"targets: {', '.join(str(t) for t in self.targets)}")
         self.log(f"backup dir (if needed): {self.backup_dir}")
         for target in self.targets:
             self.log(f"target {target}:")
-            for skill in self.skills:
+            for skill in self.required_skills:
                 self._install_one(target, skill, version, update)
         return self._finish()
 
@@ -240,7 +250,7 @@ class Installer:
     def verify_all(self) -> int:
         for target in self.targets:
             self.log(f"target {target}:")
-            for skill in self.skills:
+            for skill in self.required_skills:
                 problems = verify(self._src(skill), target / skill)
                 if problems:
                     self.failures += [f"{target / skill}: {p}" for p in problems]
@@ -272,7 +282,8 @@ def main(argv=None) -> int:
                    help="where backups go (default ~/skill_backups)")
     p.add_argument("--dry-run", action="store_true", help="print the plan, change nothing")
     p.add_argument("--skill", action="append", choices=SKILLS,
-                   help="install, verify or uninstall only this skill (repeatable; default all)")
+                   help="select skills (repeatable; default all); install/verify includes dependencies, "
+                        "uninstall affects only the selection")
     mode = p.add_mutually_exclusive_group()
     mode.add_argument("--update", action="store_true",
                       help="only reinstall skills whose manifest hash differs")

@@ -1,17 +1,25 @@
 ---
 name: medical-sci-finalize
-description: Use when a complete medical SCI manuscript needs final Word assembly and whole-manuscript English polishing or conservative removal of defensive writing, after Methods, Results, legends, Introduction, Discussion and Abstract are complete. Not for individual section drafting, research planning, or generating new results.
+description: Use when a complete medical SCI manuscript needs final Word assembly and whole-manuscript English polishing or conservative removal of defensive writing, after Methods, Results, legends, Introduction, Discussion and Abstract are complete. Requires the installed anti-defensive-writing skill. Not for individual section drafting, research planning, or generating new results.
 ---
 
 # medical-sci-finalize
 
 流水线第 11 步，一个技能两个阶段：组装主稿与补充材料 Word；随后对全部英文作证据保留的结构润色，同步对应中文和已有双语稿，再重新组装。不用于单个章节写作、研究计划、补做分析或重绘图表。
 
+## 必需依赖：anti-defensive-writing
+
+**REQUIRED SUB-SKILL：必须使用 `anti-defensive-writing`。** 每次使用本技能时，先读取同一技能根目录下的 [anti-defensive-writing/SKILL.md](../anti-defensive-writing/SKILL.md)，再读取本技能的医学适配与结构审查规则；两者均读完后，在医学证据边界内应用依赖。独立技能缺失、链接失效或不可读时，报告缺失路径并停止本技能；不得仅靠本技能内的静态摘录继续，也不得宣称已经使用依赖。安装须在独立维护任务中完成，稿件流程保持离线。
+
+依赖负责去防御性写作的叙事与语言审查；[polish-rules.md](references/polish-rules.md) 的证据保留和医学适配规则同时适用。冲突时保留数据、已定评价口径、不利结果、必要不确定性和结论相关局限，不执行上游规则中会隐藏证据、改变评价维度或将不利结果改称合理权衡的部分。允许有证据的结构重组和重复限定合并。
+
+在 `修改记录.md` 中记录实际读取的依赖路径、版本/提交号（如 `.source.json` 提供）与 `SKILL.md` 的 SHA256，以及实际应用或因医学证据边界未采用的规则。脚本不能代替这一步审查。
+
 ## 入口与硬门槛
 
 先读 [当前润色规则](references/polish-rules.md) 与 [结构审查契约](references/structural-review.md)；[原始要求与确认选择](references/original-finalize-prompt.md) 仅保留历史来源。确认项目根、版本及阶段；已有明确指令直接执行，不重复访谈。仅有完整的 Methods、Results、图注、Introduction、Discussion、Abstract 时开始；缺任一类停止并列缺项。“完整成稿”和“作者已确认”分开：保留 PROJECT.md 中待确认状态，不能把文件存在或脚本通过当作作者同意。读取口径表、作者决定、冲突台账，沿用所有未决事项。
 
-全程本地离线，不联网，不派子代理，不调用 ARS 流水线或 humanizer。参考规则已经静态并入 references。所有 Python 命令用 `python -X utf8` 运行（PATH 上的 `python` 若是 Windows 商店空壳，改用真实解释器的完整路径）。开发/盲测时先复制获准材料到隔离工作目录；绝不把开发操作指向原项目或已安装技能目录。
+全程本地离线，不联网，不派子代理，不调用 ARS 流水线或 humanizer。`anti-defensive-writing` 是须实际读取并应用的本地依赖；ARS 与 humanizer 仅使用 references 中的静态摘录。所有 Python 命令用 `python -X utf8` 运行（PATH 上的 `python` 若是 Windows 商店空壳，改用真实解释器的完整路径）。开发/盲测时先复制获准材料到隔离工作目录；绝不把开发操作指向原项目或已安装技能目录。
 
 ## 阶段一：组装
 
@@ -23,7 +31,7 @@ description: Use when a complete medical SCI manuscript needs final Word assembl
 
 ## 阶段二：润色、归档、重新组装
 
-阅读 [润色规则](references/polish-rules.md) 与 [判断示例](references/examples.md)。润色由当前代理逐段完成，脚本只执行确定性检查与归档覆盖，不会自动润色或自动删句。
+确认已加载必需依赖 `anti-defensive-writing`，并按其叙事、语言和交稿前自查规则开展审查；结合本地医学适配，阅读 [润色规则](references/polish-rules.md) 与 [判断示例](references/examples.md)。润色由当前代理逐段完成，脚本只执行确定性检查与归档覆盖，不会自动润色或自动删句。
 
 1. 保存 `04_manuscript` 改前快照与 SHA256，建立保持相对路径的候选树。审阅全部 EN 正文、Abstract/Keywords/Highlights、主附图注及表题表注；结构调整后同步对应 ZH 和已有 EN_ZH。数据、源表、02_figures 和 03_outline 不变。
 2. 通读全文，核对关键事实、限定、CI 归属与补充图注/表注/核查说明。按 [结构审查契约](references/structural-review.md) 建立绑定改前及候选内容的 `review.json`；精确原文用于溯源，不要求限定永远保持独立原句。允许同节合并、去重和重排，分析范围与引用支持关系不变。
