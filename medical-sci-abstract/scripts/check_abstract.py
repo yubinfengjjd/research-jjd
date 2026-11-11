@@ -58,9 +58,8 @@ def analyze(text, limit=250, headings=DEFAULT_HEADINGS):
             'results_sentences_estimate': sentence_count, 'errors': errors,
             'manual_checks': ['Confirm 4-6 Results sentences (or natural sentences within the word limit); no semicolon chains; abbreviations may affect the estimate',
                               'Check all facts, numbers, uncertainty, claim strength and EN/ZH alignment against sources',
-                              'Confirm every major analysis family (transfer / explanation / uncertainty / secondary '
-                              'endpoints, as present in the manuscript) appears in Methods and in Results; numbers '
-                              'may be trimmed, whole families must not be dropped']}
+                              'Confirm that the abstract prioritizes the primary endpoint, key supporting evidence and decisive adverse findings; '
+                              'record omitted secondary analyses and their source locations in the internal coverage table']}
 
 
 def main():

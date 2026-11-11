@@ -17,6 +17,8 @@ description: Use when a complete medical SCI manuscript needs final Word assembl
 
 ## 入口与硬门槛
 
+收到外部审查意见时，先执行 [润色规则的版本绑定与处置](references/polish-rules.md#审查意见的版本绑定与处置)，区分旧稿缺陷与当前残留后再编辑。
+
 先读 [当前润色规则](references/polish-rules.md) 与 [结构审查契约](references/structural-review.md)；[原始要求与确认选择](references/original-finalize-prompt.md) 仅保留历史来源。确认项目根、版本及阶段；已有明确指令直接执行，不重复访谈。仅有完整的 Methods、Results、图注、Introduction、Discussion、Abstract 时开始；缺任一类停止并列缺项。“完整成稿”和“作者已确认”分开：保留 PROJECT.md 中待确认状态，不能把文件存在或脚本通过当作作者同意。读取口径表、作者决定、冲突台账，沿用所有未决事项。
 
 全程本地离线，不联网，不派子代理，不调用 ARS 流水线或 humanizer。`anti-defensive-writing` 是须实际读取并应用的本地依赖；ARS 与 humanizer 仅使用 references 中的静态摘录。所有 Python 命令用 `python -X utf8` 运行（PATH 上的 `python` 若是 Windows 商店空壳，改用真实解释器的完整路径）。开发/盲测时先复制获准材料到隔离工作目录；绝不把开发操作指向原项目或已安装技能目录。
