@@ -1,5 +1,7 @@
 # 作者样例字段格式
 
+本页的“原标识结果/空文献表”描述原生域中间阶段，供I1–I9无损核对；最终交付另须按[可见引用交付](rendered-delivery.md)填充实际CSL缓存并检查完整书目。不能将中间阶段PASS解释为最终编号/文献表已生成。
+
 样例只读保存在 assets/baseline-sample.docx 与 assets/baseline-sample-types.docx；前者缺失拒绝注入，后者缺失仅标注 preprint 映射未经样例验证。下列原始片段来自这两份文件，不依赖任何其他项目文件。
 
 复杂域结构：w:r/w:fldChar(begin) → 一个或多个w:instrText → fldChar(separate) → 原结果run → fldChar(end)。必须先拼接begin至separate之间全部instrText再解析JSON；第一份样例首域拆成1020/765/510/255/1106字符。新字段可用单段指令，首尾各一空格。一个标识处对应一个域，多篇按原顺序放 citationItems。citationID 与文档session均为8位字母数字随机串。

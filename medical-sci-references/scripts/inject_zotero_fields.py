@@ -133,6 +133,7 @@ def candidate(source,manifest,snapshot,baseline,output,previous=None):
     author_rows=[{'identifier':r['id'],'resolution':copy.deepcopy(r['resolution']),'level':'WARN'} for r in refs.values() if r['status']=='作者指定']
     type_warnings.extend('作者映射、需作者确认：'+json.dumps(row,ensure_ascii=False) for row in author_rows)
     report={**({'author_resolutions':author_rows} if author_rows else {}),'warnings':type_warnings,'source':str(source.resolve()),'source_sha256':sha(source),'candidate':str(output.resolve()),'candidate_sha256':sha(output),'citation_fields':sum(x['status']!='人工保留' for x in receipt),'bibliography_fields':1,'fields':list(reversed(receipt)),'status':'字段未刷新；文献表待刷新','word_validation':'待作者验收'}
+    report.update(delivery_ready=False, required_next='Render and verify numeric citation and bibliography caches before final delivery')
     save(output.parent/'字段注入报告.json',report);return report
 
 def gate(project,authorization=None):
@@ -188,7 +189,7 @@ def apply_candidate(source,cand,manifest,snapshot,baseline,project=None,output_d
         for j,(path,tmp,old) in enumerate(tx):
             os.replace(tmp,path)
             if fail_after=='tracking' and j==0:raise OSError('Injected tracking failure')
-        result={'status':'待确认','new_manuscript':str(dest),'sha256':newsha,'archive':str(archive),'word_validation':'待作者验收；字段未刷新'};save(cand.parent/'apply报告.json',result);return result
+        result={'status':'待确认','new_manuscript':str(dest),'sha256':newsha,'archive':str(archive),'word_validation':'待作者验收；字段未刷新','delivery_ready':False,'required_next':'Render and verify numeric citation and bibliography caches before final delivery'};save(cand.parent/'apply报告.json',result);return result
     except Exception:
         if published and dest.exists():os.replace(dest,cand.parent/('rollback-'+dest.name))
         if archived and oldpath.exists():os.replace(oldpath,source)

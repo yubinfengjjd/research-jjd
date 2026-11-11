@@ -7,6 +7,8 @@ description: "Use when a medical manuscript is ready for submission and needs Zo
 
 将主稿的 PMID/DOI/arXiv 标识收集进 Zotero，在原位置替换为原生字段，文末加 References 文献表字段。只处理主稿（正文、主图注、主表题表注）。不处理补充材料，不重写正文，不代替写作阶段的证据核验。
 
+**最终交付必须已显示编号及完整书目。** 原生域存在、Word可打开或旧I1–I9通过，只能证明中间阶段，不能把仍显示PMID/DOI/URL占位、空书目或缺少条目的文件作为完成稿。使用[可见引用交付](references/rendered-delivery.md)在本地按真实CSL样式生成缓存并验证；保留原生Zotero字段。实际Zotero Refresh与作者验收另记，离线CSL渲染不能冒称Refresh成功。
+
 ## 开始前
 
 完整读 [运行与连接](references/zotero-setup.md)、[收集规则](references/collect-rules.md)、[字段格式](references/field-format.md)、[核对规则](references/verification-rules.md)。[原始需求](references/original-request.md) 保存范围和作者动作。
@@ -27,14 +29,15 @@ Zotero 由作者保持运行。**不得自行启动、重启、关闭或改设�
 2. `scripts/extract_citations.py <M> --project-root <P> --output-dir <R>`：按出现顺序抽取、去重，与 finalize 候选及各节核验表交叉核对。重跑字段版加 `--previous-manifest <上一轮引用清单.json>`。
 3. `scripts/zotero_collect.py collect --manifest <R>/引用清单.json --project-root <P> --output-dir <R> --collection <集合> --work-dir <T> [--resolve-file <作者映射.json>]`：自动查重、补齐、写入及回查；可选作者映射将指定URL复用到已存在条目，单列“作者指定”、记录来源及WARN；无效key硬错误，不为映射新增条目。映射语义与精确匹配规则见collect-rules；A 不可用时选 B。开发测试显式限制集合，B 落点不符即停下报告，等作者改选；不要自动操作 Zotero UI。
 4. **停下汇报并等作者点头**：既有/新增/人工数及作者指定数（若有）、逐条 WARN、将注入字段数（非人工标识处数）、文献表位于 Discussion 后文末。元数据与本地核验材料冲突先裁决。写后失败先用清单回查，禁止直接重发 POST。已经明确授权完整隔离夹具测试时按该授权执行。作者已整体授权一次跑完（含无人值守但获授权的情形）时，跳过交互等待直接继续，并在报告中记为“已获整体授权”。
-5. `scripts/inject_zotero_fields.py candidate <M> --manifest <R>/引用清单.json --snapshot <R>/zotero条目快照.json --baseline <B> --candidate <R>/candidate.docx --project-root <P> --approved`：只生成新候选，结果仍显示原标识；不改源稿。缺少主样例拒绝注入；类型样例缺失仅标注 preprint 未经样例验证。
+5. `scripts/inject_zotero_fields.py candidate <M> --manifest <R>/引用清单.json --snapshot <R>/zotero条目快照.json --baseline <B> --candidate <R>/candidate.docx --project-root <P> --approved`：生成原生域中间候选，保留原标识供无损比较；不作为最终交付。缺少主样例拒绝注入；类型样例缺失仅标注 preprint 未经样例验证。
 6. `scripts/check_references.py <M> <R>/candidate.docx --manifest <R>/引用清单.json --snapshot <R>/zotero条目快照.json --baseline <B> --gaps <R>/缺口与人工清单.md --output-dir <R>`：ERROR 必须清零，WARN 逐条说明。
 7. `scripts/inject_zotero_fields.py apply <M> ...`：用第5步同样参数，只把模式改为 apply；脚本再次核对，归档旧稿，发布版本 N+1，失败回滚。PROJECT 第12行只写“待确认”。apply 的阻断条件只有：核对报告 ERROR、写入或跟踪失败、未经授权；**Word 未能自动打开候选稿不构成阻断**（如实记录即可）。
+8. 原生域apply仍是中间阶段。按[可见引用交付](references/rendered-delivery.md)生成真实CSL计划、填充字段缓存、运行新增交付检查；通过后先归档未渲染版本，再原子发布可见编号与书目稿并更新PROJECT。已交付过中间稿的修复应递增版本，防止读者继续打开旧副本。失败时保留中间文件与报告，明确未完成；不得用纯文本编号、手写书目、删域或降低旧保护检查来冒充修复。
 
 独立使用：抽取/收集不传 `--project-root`；注入/apply 改传 `--output-dir <作者指定输出目录>`，候选和过程材料均放该目录内。源稿仍需命名 `<项目名>_Manuscript_v<N>.docx`。书面先行授权参数按需同时传给 collect/candidate/apply。字段源重跑给 extract/candidate/check/apply 一致的 previous-manifest。
 
 ## 交付与边界
 
-交付新版本主稿、引用清单、Zotero写入报告、条目快照、字段注入报告、核对报告和缺口清单。字段未刷新、文献表待刷新；请作者在 Word 打开新稿、点 Zotero 的 Refresh（引文随即变为编号），再检查至少3处引用及文献表，最后由作者确认阶段12。**作者实测（2026-10-16）：若 Refresh 后文末文献表仍为空，点一次 Zotero 的 Add/Edit Bibliography 即生成**——把这一步写进给作者的验收说明。不能代签或宣称期刊排版、临床/科学支持已验证。重新 finalize 后阶段12置需返工，不改 finalize 检查脚本；字段版以本技能核对器为准。
+交付已显示编号和完整书目的新版本主稿，以及引用清单、Zotero报告/快照、原生域核对报告、CSL输入/计划与可见交付检查报告。报告区分原生字段构造、可见CSL缓存、实际插件Refresh、作者验收四种状态。作者可在Word使用Refresh继续编辑，再核查至少3处引用及完整文献表，最后确认阶段12；不以“请作者Refresh”代替当前交付内容的完整性检查。若作者反馈只识别部分条目，保存原文件并核对字段唯一item/URI、实际书目条数和缓存，不据计数PASS否定反馈。不能代签科学或期刊验收。重新finalize后阶段12置需返工。
 
 离线回归：`scripts/test_references.py --work-dir <T> --report <可写路径>/test-results.json`。自测不等于无上下文行为盲测；作者另开全新会话验证技能发现、执行和边界。
