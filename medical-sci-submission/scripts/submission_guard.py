@@ -214,6 +214,150 @@ def assess(record):
             "scope": "record completeness only; facts, source authority and human approval are not authenticated"}
 
 
+def _title_text(value):
+    """Normalize typography/spacing, never case, words or semantic scope."""
+    table = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"'})
+    return re.sub(r"\s+", " ", unicodedata.normalize("NFC", value).translate(table)).strip()
+
+
+def _title_missing(value):
+    if not isinstance(value, str) or not value.strip():
+        return True
+    value = _title_text(value).casefold()
+    return value in {"[manuscript title]", "[title]", "[article title]", "title here", "tbd",
+                     "论文标题待定", "[论文标题]", "[标题]", "待定"}
+
+
+def _title_artifact(root, value):
+    rel = PurePosixPath(value)
+    if (not rel.parts or rel.is_absolute() or ".." in rel.parts or "\\" in value or ":" in value
+            or any(p.lower() in PRIVATE_PARTS for p in rel.parts)):
+        raise ValueError("unsafe title artifact: " + value)
+    path = root.joinpath(*rel.parts)
+    if not path.is_file() or any(p.is_symlink() for p in [path, *path.parents]) or not path.resolve().is_relative_to(root):
+        raise ValueError("title artifact must be a regular file within deliverables: " + value)
+    return path
+
+
+def _title_at(path, target):
+    if path.suffix.lower() == '.docx':
+        with zipfile.ZipFile(path) as archive:
+            if target.get('location') == 'metadata_title':
+                root = ET.fromstring(archive.read('docProps/core.xml'))
+                return root.findtext('{http://purl.org/dc/elements/1.1/}title', '')
+            part = target.get('part', 'word/document.xml')
+            if not re.fullmatch(r'word/(?:document|header\d+|footer\d+)\.xml', part):
+                raise ValueError('unsupported title story: ' + part)
+            root = ET.fromstring(archive.read(part))
+            paragraphs = list(root.iter(W+'p'))
+            index = target.get('paragraph')
+            if type(index) is not int or not 1 <= index <= len(paragraphs):
+                raise ValueError('title paragraph outside document: ' + str(index))
+            paragraph = paragraphs[index-1]
+            if any(n.tag in {W+'ins',W+'del',W+'moveFrom',W+'moveTo'} for n in paragraph.iter()):
+                raise ValueError('title contains unresolved tracked changes')
+            return ''.join((n.text or '') if n.tag == W+'t' else '\t' if n.tag == W+'tab' else '\n'
+                           for n in paragraph.iter() if n.tag in {W+'t',W+'tab',W+'br',W+'cr'})
+    if path.suffix.lower() in {'.md','.txt'}:
+        paragraphs = re.split(r'\n\s*\n', path.read_text(encoding='utf-8-sig').strip())
+        index = target.get('paragraph')
+        if type(index) is not int or not 1 <= index <= len(paragraphs):
+            raise ValueError('title paragraph outside text artifact: ' + str(index))
+        return paragraphs[index-1]
+    raise ValueError('unsupported title artifact format: ' + path.suffix)
+
+
+def check_titles(record, root, allowlist):
+    """Read actual located titles; never writes, judges science, or authenticates decisions."""
+    root = Path(root).resolve()
+    gaps, counts, hashes, located_counts = [], {}, {}, []
+    full, short = record.get('full_title'), record.get('short_title')
+    for role, title in [('full',full),('short',short)]:
+        if title is not None and not isinstance(title, str):
+            raise ValueError('title must be text: ' + role)
+        if title is not None:
+            counts[role] = {'words':len(title.split()), 'characters':len(title)}
+        if role == 'full' and _title_missing(title):
+            gaps.append('full_title_missing_or_placeholder')
+    decision = record.get('decision',{})
+    mode = decision.get('mode')
+    if mode == 'retain':
+        original = record.get('original_title')
+        if (_title_missing(original) or _title_missing(full) or _title_text(original) != _title_text(full)
+                or not _nonblank(decision.get('reason'))):
+            gaps.append('retained_title_changed_or_unjustified')
+    elif mode not in {'author_selected','delegated'} or any(not _nonblank(decision.get(k)) for k in ('by','evidence')):
+        gaps.append('title_decision_unresolved')
+    rules = record.get('requirements',{})
+    try:
+        datetime.date.fromisoformat(rules.get('access_date',''))
+        date_valid = True
+    except (TypeError,ValueError):
+        date_valid = False
+    if (rules.get('verification') not in {'current','supplied_official'} or not date_valid
+            or not _http_url(rules.get('url')) or not _nonblank(rules.get('locator'))
+            or type(rules.get('short_required')) is not bool):
+        gaps.append('title_rules_unresolved')
+    if rules.get('short_required') is True and _title_missing(short):
+        gaps.append('short_title_required')
+    for role in counts:
+        limits = rules.get(role+'_limits')
+        if not isinstance(limits,dict) or not {'max_words','max_characters'} <= limits.keys():
+            gaps.append('title_limits_unresolved:' + role)
+            continue
+        for metric in ('words','characters'):
+            maximum = limits['max_'+metric]
+            if maximum is not None and (type(maximum) is not int or maximum < 1):
+                raise ValueError('title limit must be a positive integer or null')
+            if maximum is not None and counts[role][metric] > maximum:
+                gaps.append('title_limit:' + role + ':' + metric)
+    expected = {e['path'] for e in allowlist if e.get('kind') in {'manuscript','title_page','cover_letter'}}
+    if not expected:
+        gaps.append('title_artifact_inventory_missing')
+    listed = {e['path'] for e in allowlist}
+    covered, short_covered = set(), False
+    for target in record.get('targets',[]):
+        relative = target['path']
+        path = _title_artifact(root,relative)
+        if relative not in listed:
+            raise ValueError('title target is not in deliverable allowlist: ' + relative)
+        role = target.get('role')
+        if role not in {'full','short'}:
+            raise ValueError('unsupported title role')
+        title = full if role == 'full' else short
+        actual = _title_at(path,target)
+        wanted = target.get('prefix','') + (title or '') + target.get('suffix','')
+        if _title_missing(title) or _title_text(actual) != _title_text(wanted):
+            gaps.append('title_mismatch:' + relative + ':' + str(target.get('paragraph',target.get('location'))))
+        # Check the actual title fragment too; extra spaces must not hide a character-limit failure.
+        quote_table = str.maketrans({"‘":"'", "’":"'", "“":'"', "”":'"'})
+        typography = lambda s: unicodedata.normalize('NFC',s).translate(quote_table)
+        pattern = lambda s: ''.join(r'\s+' if token.isspace() else re.escape(token)
+                                    for token in re.split(r'(\s+)',typography(s)))
+        match = re.fullmatch(pattern(target.get('prefix','')) + '(.*?)' + pattern(target.get('suffix','')),
+                             typography(actual).strip(),re.S)
+        if match is not None:
+            measured = {'words':len(match[1].split()),'characters':len(match[1])}
+            located_counts.append({'path':relative,'role':role,'paragraph':target.get('paragraph'),**measured})
+            for metric in ('words','characters'):
+                limits = rules.get(role+'_limits')
+                maximum = limits.get('max_'+metric) if isinstance(limits,dict) else None
+                if maximum is not None and measured[metric] > maximum:
+                    gaps.append('title_limit:' + role + ':' + metric + ':' + relative)
+        if role == 'full' and target.get('location') != 'metadata_title':
+            covered.add(relative)
+        if role == 'short':
+            short_covered = True
+        hashes[relative] = digest(path)
+    gaps.extend('title_target_missing:' + name for name in sorted(expected-covered))
+    if short is not None and not short_covered:
+        gaps.append('short_title_target_missing')
+    return {'ok':not gaps,'status':'draft' if gaps else 'pending_author','gaps':gaps,
+            'counts':counts,'located_counts':located_counts,'artifacts':hashes,
+            'scope':'located title text, declared limits and decision-record completeness only; '
+                    'not scientific accuracy, authoritative rules, authentic author selection or submission readiness'}
+
+
 def package(root, entries, output):
     """Create a new ZIP from explicit relative artifact records, never recursive discovery."""
     root, output = Path(root).resolve(), Path(output).resolve()
@@ -251,6 +395,10 @@ def main(argv=None):
     check.add_argument("candidate", type=Path)
     audit = commands.add_parser("assess", help="Audit preparation record; never approves submission")
     audit.add_argument("record", type=Path)
+    titles = commands.add_parser("titles", help="Read actual title locations and declared limits; never approves titles")
+    titles.add_argument("record", type=Path)
+    titles.add_argument("root", type=Path)
+    titles.add_argument("allowlist", type=Path)
     pack = commands.add_parser("package", help="ZIP explicit artifact allowlist into a new path")
     pack.add_argument("root", type=Path)
     pack.add_argument("allowlist", type=Path)
@@ -264,6 +412,8 @@ def main(argv=None):
             result = compare(read(args.baseline), args.source, args.candidate)
         elif args.command == "assess":
             result = assess(read(args.record))
+        elif args.command == "titles":
+            result = check_titles(read(args.record), args.root, read(args.allowlist))
         else:
             result = {"artifacts": package(args.root, read(args.allowlist), args.output)}
         print(json.dumps(result, ensure_ascii=False, indent=2))

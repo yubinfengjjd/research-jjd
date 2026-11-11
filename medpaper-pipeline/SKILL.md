@@ -81,6 +81,8 @@ description: Use when running or resuming the medical SCI paper pipeline from fi
 
 12 已确认且 13 未确认时，“下一步”取 13，调用 medical-sci-submission；准备完成先 `待确认`。旧 PROJECT 缺 13 行补 `未开始`，不视为已完成；缺 12 时先按第12步约定补齐。可用 `scripts/submission_state.py PROJECT.md` 输出迁移文本供核对保存，脚本不覆盖原文件。独立 DOCX 适配直接用 medical-sci-submission，不要求先建流水线或补写 Methods/Results。
 
+第13步包含论文题名审查：合适原标题保留；缺失、实质问题或作者要求时，默认提出3个英文候选及中文对照。作者选定或明确授权后再同步新投稿副本的主稿、实际需要的标题页/cover letter及短标题。具体证据、期刊限制和实际文件检查以medical-sci-submission的标题规则为准，不因第11步标题占位或已完成组装而跳过。仅改投稿题名不倒推覆盖05_final或上游语言稿。
+
 源稿保持在 `05_final/`；新版本材料在 `06_submission/<journal>/<version>/`，过程/核查在 `_process/Submission/<date>_<version>/`，作者决定追加 `04_manuscript/作者决定.md` 的 `## Submission`。交付目录不放原始证据、同意书、私有作者材料或日志。旧版保留，不覆盖。
 
 第 11/12 步重做或上游变更影响主稿/引用时，13 需重核或重建并置 `需返工`；第 11 步影响 12 的规则仍适用。`submission_state.py --changed-stage N` 只辅助 12/13 的有界传播，不替代其他阶段依赖管理。第 13 步常规排版不使已确认的上游科学工作失效。事实缺失或官方指南不可用仍可交草稿，必须列待办；材料作者批准与 Word/Zotero Refresh 验收分开记录，文件存在、模型声明和校验通过都不能自动写 `已确认`。本阶段只准备材料，不发送或投稿。

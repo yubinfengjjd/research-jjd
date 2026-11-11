@@ -1,6 +1,6 @@
 ---
 name: medical-sci-submission
-description: Use when adapting an existing medical manuscript to a chosen journal and article type, preparing author details, declarations, cover-letter drafts, relevant reporting checklists and submission files, or checking journal readiness (期刊适配、投稿材料准备). Supports original research, case reports, systematic reviews/meta-analyses and narrative reviews, including standalone DOCX. Does not upload or submit materials.
+description: Use when adapting an existing medical manuscript to a chosen journal and article type, reviewing or proposing evidence-grounded manuscript titles, preparing author details, declarations, cover-letter drafts, reporting checklists and submission files (期刊适配、论文标题审查与拟定、投稿材料准备). Supports standalone DOCX and multiple medical article types. Does not upload or submit materials.
 ---
 
 # 期刊适配与投稿材料准备
@@ -17,10 +17,10 @@ description: Use when adapting an existing medical manuscript to a chosen journa
 
 1. **保护与盘点**：给每份原始输入做 SHA-256 和只读留存副本；检查 DOCX 字段。先保存 `submission_guard.py snapshot` 基线到过程目录，再从副本编辑。不得覆盖源稿、旧版或历史证据。盘点期刊/文章类型、图表、补充材料、作者信息及未解决事项。
 2. **核对要求**：每次真实运行查询当前官方 general instructions、对应 article-type instructions 和适用报告指南的原始来源。记录完整 URL、访问日期、适用条款及摘录定位；不能取得官方要求时记录失败与受影响事项，继续不依赖它的草稿准备。不得套用固定期刊模板。按实际研究设计选择指南，见 [事实与期刊要求](references/intake-and-rules.md)。
-3. **作者核实**：建立逐事实的“拟填值—来源与定位—确认人/对话依据—待办”表。中文材料可先翻译建议，但英文人名、顺序、机构映射、通信、基金关联、伦理/同意分别确认。模板句、文件存在、模型自称 confirmed 都不构成确认。贡献分配提案须各位作者确认。
+3. **标题与作者核实**：先按[标题审查与定稿](references/title-review.md)审查原标题；标题准确且合规时保留并说明理由。无标题、存在实质问题或作者要求时，默认给3个英文候选及中文对照，说明重点、证据边界和推荐理由。推荐不等于选定；作者选定或明确授权自动定稿后才写入投稿副本。同步核对主稿、实际要求的标题页/cover letter和短标题，保留原稿。再建立逐事实的“拟填值—来源与定位—确认人/对话依据—待办”表。中文材料可先翻译建议；英文人名、顺序、机构映射、通信、基金关联、伦理/同意分别确认。模板句、文件存在、模型自称 confirmed 都不构成确认。贡献分配提案须各位作者确认。
 4. **适配副本**：按已核要求做字体、段落、页码、标题页、行号等常规格式，并填入已确认信息。摘要/正文压缩、实质重排、论证调整和引用增删替换，先给出具体改动及影响，等作者确认再执行。临床/数值冲突保留双方出处，不凭合理性选值。
 5. **条件材料**：只准备期刊实际要求或作者请求的作者/标题页、独立声明、cover-letter draft、相关 reporting checklist、图/附件。不默认增加 Highlights 或图文摘要。Checklist 填真实页/行/节定位及缺口；未报告不能填“已满足”。Cover letter 中原创性、独投、所有作者同意等陈述须有真实确认，否则留明确待填项。
-6. **核查交付**：按 [保护、核查与打包](references/verification.md) 检查字段、源哈希、内容改动、版面和要求覆盖；按白名单打包。交付适配稿、变更记录、要求核查与待作者事项，明确草稿状态、未核官方条款和未完成 Word/Zotero Refresh 验收。机械核查通过不代表投稿就绪。
+6. **核查交付**：按 [保护、核查与打包](references/verification.md) 检查字段、源哈希、内容改动、版面和要求覆盖；对实际交付白名单运行`submission_guard.py titles`，核对选定记录、标题位置、已知字数/字符限制及文件间一致性。科学含义和期刊条款仍须实际审阅，不能用计数或记录完整代替。按白名单打包，交付适配稿、变更记录、要求核查与待作者事项，明确草稿状态、未核官方条款和未完成 Word/Zotero Refresh 验收。机械核查通过不代表投稿就绪。
 
 ## 复用与状态
 

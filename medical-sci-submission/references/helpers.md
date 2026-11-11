@@ -6,6 +6,7 @@
 python scripts/submission_guard.py snapshot SOURCE.docx
 python scripts/submission_guard.py compare BASELINE.json SOURCE.docx ADAPTED.docx
 python scripts/submission_guard.py assess RECORD.json
+python scripts/submission_guard.py titles TITLE_CHECK.json DELIVERABLE_DIR ALLOWLIST.json
 python scripts/submission_guard.py package DELIVERABLE_DIR ALLOWLIST.json NEW_PACKAGE.zip
 ```
 
@@ -37,6 +38,47 @@ RECORD 的实际结构：
 word_refresh 仅在源稿确无原生引用字段且本次不改变引用集成时可 not_applicable；否则 pending/pass/fail 取实际验收。对字段保护工具不能覆盖的合法引用样式变更保留 compare 失败及独立的字段/文献表核查和作者 Refresh 证据，不伪造 pass。记录工具不会验证这些外部事实，也不能授予就绪状态。
 
 ALLOWLIST 是 JSON 数组：`[{"path":"adapted.docx","kind":"manuscript"}]`。path 必须为交付目录内相对路径。kind 仅接受 manuscript、title_page、statements、cover_letter、checklist、figure、attachment、changes、requirements、pending。每项必须实际核实为投稿材料，attachment 不能借作隐私文件通道。脚本拒绝越界、符号链接、过程/隐私目录、非材料扩展名和重复条目，但不是内容隐私扫描器。
+
+## 题名的独立机械检查
+
+`titles`读取实际交付文件，不写入文件、不联网、不改Zotero。返回`ok`、`draft/pending_author`、具体`gaps`、登记标题及实际位置的计数、已读文件SHA256。通过退出0，有未决项退出1，路径/解析/不支持错误退出2；无论哪种结果都不授予投稿或题名批准。源稿保护仍独立运行snapshot/compare，普通assess不能代替本检查。
+
+TITLE_CHECK示例（合成数据，不代表真实期刊核验或作者选择）：
+
+```json
+{
+  "original_title": "Retinal imaging in diabetes: a retrospective study",
+  "full_title": "Retinal imaging in diabetes: a retrospective study",
+  "decision": {
+    "mode": "retain",
+    "reason": "原标题与实际研究设计、主要证据及适用要求相符，证据定位另存审阅记录"
+  },
+  "requirements": {
+    "verification": "current",
+    "url": "https://example.org/author-guide",
+    "access_date": "2026-11-12",
+    "locator": "本例是合成条款，实际运行必须改为已读取的官方条款定位",
+    "full_limits": {"max_words": 15, "max_characters": 100},
+    "short_required": false
+  },
+  "targets": [
+    {"path": "adapted.docx", "role": "full", "paragraph": 1},
+    {"path": "title-page.docx", "role": "full", "paragraph": 1},
+    {"path": "letter.md", "role": "full", "paragraph": 2,
+      "prefix": "We submit “", "suffix": "”."}
+  ]
+}
+```
+
+- ALLOWLIST与打包使用同一清单，不为运行检查而另造缺少文件的精简清单；所有kind为manuscript/title_page/cover_letter的实际文件须有可见完整标题位置。没有要求的文件不新增。不能把只含元数据的位置当作可见标题位置。
+- 支持DOCX指定story中的一基`w:p`序号（包括表内段落，默认`word/document.xml`；还支持`word/headerN.xml`/`word/footerN.xml`），或UTF-8 MD/TXT按空行分隔的一基段落。信中嵌入题名用prefix/suffix声明上下文；比较指定段落，不在全文搜索一个匹配就放行。确实存储论文题名的DOCX元数据可另给`location: metadata_title`，不指定paragraph。
+- 如需短标题，增加`short_title`、`short_limits`（位于requirements）、对应`role: short`的实际位置。短标题是否必需未知时用`short_required: null`并保持待核。仅给出短标题字符串而未定位实际文件也不能通过。
+- `full_limits/short_limits`的max_words、max_characters是正整数或null。null仅在实际已核实无明文限制时使用；未知规则用unavailable和缺口表示，不能拿null掩盖未核查。默认空白分词（连字符词为一个词），字符按Unicode码位且含空格；也检查实际位置的标题片段，防止输入中删空格后假称符合限制。期刊另有算法时须额外核算、保存证据，当前脚本不假装覆盖不同算法。
+- 保留原标题时mode=retain并填写理由，完整题名必须与原标题相符。新题名选择使用author_selected或delegated，填写真实by/evidence来源；推荐本身不算选择。候选、中英语义与科学依据另存审阅记录，不由本脚本判断。`supplied_official`同原接口记录版本/来源及未在线核实的局限，unavailable产生待核项。
+- 不支持的文件类型、无法定位的字段/段落和含未解决修订的题名须如实记录失败；必要时用适用文档工具补做有定位的人工检查，保留原失败和独立证据，不能修改脚本或重写输入伪造PASS。PDF等导出物还须核对实际渲染题名；脚本没有PDF题名解析能力。
+- 此检查仅覆盖显式声明的位置和规则、记录完整性；仍须通读其他标题出现位置、核对稿件科学范围、实际作者选择及当前官方条款。过程输入/回执不放进干净投稿包。
+
+## 流水线状态辅助
 
 流水线辅助工具位于 `medpaper-pipeline/scripts/submission_state.py`：
 
