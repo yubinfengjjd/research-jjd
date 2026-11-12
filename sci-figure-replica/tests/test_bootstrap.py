@@ -16,14 +16,22 @@ def test_missing_package_reports_command(monkeypatch):
     assert 'pip install' in result
 
 
-def test_r_probe_single_expression_and_stderr(monkeypatch, capsys):
+def test_r_probe_single_expression_and_stderr(monkeypatch, capsys, tmp_path):
     import bootstrap_env
+    # Probes are stubbed; the files only have to exist. config.json still points at a Windows venv.
+    python_exe = tmp_path / 'python'
+    rscript_exe = tmp_path / 'Rscript'
+    python_exe.write_bytes(b'')
+    rscript_exe.write_bytes(b'')
     monkeypatch.setattr(bootstrap_env, 'check_python', lambda exe: ('fixture Python', []))
     def run(executable, expression, timeout):
+        assert executable == rscript_exe
         assert expression is None or '\n' not in expression  # Windows Rscript -e truncates multiline expressions.
         packages = 'ggplot2\npatchwork\nsvglite\nscales\nggbeeswarm'
         return 0, packages if 'installed.packages()' in expression else 'TRUE', 'locale warning', False
     monkeypatch.setattr(bootstrap_env, 'run_r', run)
-    assert bootstrap_env.main(['--check-r']) == 0
+    assert bootstrap_env.main([
+        '--check-r', '--python-exe', str(python_exe), '--rscript-exe', str(rscript_exe),
+    ]) == 0
     captured = capsys.readouterr()
     assert 'ggplot2' in captured.out and 'locale warning' in captured.err
