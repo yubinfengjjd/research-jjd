@@ -1,0 +1,795 @@
+{
+  "status": "review",
+  "name": "post01-fig4",
+  "code_provenance": "reconstructed",
+  "original_code_provenance": "example_not_target",
+  "archive_execution": "archived_only",
+  "data_provenance": {
+    "bars_and_rings": "uncertain visual transcription",
+    "beeswarms": "estimated"
+  },
+  "source_image": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\samples\\post01\\source\\fig01.png",
+  "source_image_sha256": "a0111cfba26b6460cd7ab79a079b7c31112970cff6ce03ba05df944ef97831ab",
+  "data_files_sha256": {
+    "estimated_data.csv": "2e214a76cb84afa44e1da7f0dafe3361c1965ec83842f78dfeacdd694e373777",
+    "estimated_beeswarm.csv": "083a1b816d6fa80ef35d1a80b571a1c996ef973f6e05dbb18d35bcec71030c04"
+  },
+  "canvas": {
+    "source_px": [
+      893,
+      509
+    ],
+    "figsize_inches": [
+      12,
+      6.84
+    ],
+    "dpi": 600
+  },
+  "rows": 2,
+  "cols": 3,
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial",
+    "file": "C:\\Windows\\Fonts\\arial.ttf"
+  },
+  "panels": {
+    "A": {
+      "kind": "bar_inset",
+      "axes_bounds": [
+        0.123,
+        0.564,
+        0.259,
+        0.405
+      ],
+      "features": [
+        "Complexity_per_MW",
+        "Chi3v",
+        "SMR_VSA10",
+        "MR_per_MW",
+        "AromaticRing_Ratio",
+        "Ketone",
+        "Kappa3",
+        "MinPartialCharge",
+        "Charge_Span",
+        "MolLogP",
+        "SlogP_VSA2",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "MinAbsPartialCharge",
+        "FractionCSP3"
+      ],
+      "shap": [
+        0.1534,
+        0.1178,
+        0.1171,
+        0.0835,
+        0.0811,
+        0.0767,
+        0.0735,
+        0.0729,
+        0.0589,
+        0.0507,
+        0.0501,
+        0.0492,
+        0.0471,
+        0.0403,
+        0.0402
+      ],
+      "percent": [
+        13.8,
+        10.6,
+        10.5,
+        7.5,
+        7.3,
+        6.9,
+        6.6,
+        6.6,
+        5.3,
+        4.6,
+        4.5,
+        4.4,
+        4.2,
+        3.6,
+        3.6
+      ],
+      "insets": {
+        "colorbar": {
+          "bounds": [
+            -0.055,
+            0,
+            0.02,
+            1
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        },
+        "radial_inset": {
+          "bounds": [
+            -0.01,
+            0.11,
+            0.36,
+            0.4
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": "polar"
+        }
+      },
+      "color_domain": [
+        0.0402,
+        0.1534
+      ],
+      "palette_samples_rgb": [
+        [
+          0.6941176470588235,
+          0.09411764705882353,
+          0.1803921568627451
+        ],
+        [
+          0.6862745098039216,
+          0.09803921568627451,
+          0.16862745098039217
+        ],
+        [
+          0.6941176470588235,
+          0.09019607843137255,
+          0.16862745098039217
+        ],
+        [
+          0.6980392156862745,
+          0.09411764705882353,
+          0.17647058823529413
+        ],
+        [
+          0.7176470588235294,
+          0.16862745098039217,
+          0.19607843137254902
+        ],
+        [
+          0.8588235294117647,
+          0.4117647058823529,
+          0.33725490196078434
+        ],
+        [
+          0.9450980392156862,
+          0.615686274509804,
+          0.48627450980392156
+        ],
+        [
+          0.9450980392156862,
+          0.6392156862745098,
+          0.5098039215686274
+        ],
+        [
+          0.8196078431372549,
+          0.8941176470588236,
+          0.9372549019607843
+        ],
+        [
+          0.3254901960784314,
+          0.615686274509804,
+          0.7764705882352941
+        ],
+        [
+          0.2901960784313726,
+          0.592156862745098,
+          0.7647058823529411
+        ],
+        [
+          0.26666666666666666,
+          0.5803921568627451,
+          0.7607843137254902
+        ],
+        [
+          0.2823529411764706,
+          0.5725490196078431,
+          0.7529411764705882
+        ],
+        [
+          0.26666666666666666,
+          0.5803921568627451,
+          0.7647058823529411
+        ],
+        [
+          0.25882352941176473,
+          0.5803921568627451,
+          0.7647058823529411
+        ]
+      ],
+      "normalization": "piecewise source-interior color calibration; not holdout validation",
+      "label": {
+        "text": "A",
+        "figure_xy": [
+          0.057,
+          0.968
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.05,
+        0.49899999999999994,
+        0.475,
+        0.49
+      ]
+    },
+    "B": {
+      "kind": "beeswarm",
+      "axes_bounds": [
+        0.527,
+        0.564,
+        0.138,
+        0.405
+      ],
+      "features_shared_with": "A",
+      "features": [
+        "Complexity_per_MW",
+        "Chi3v",
+        "SMR_VSA10",
+        "MR_per_MW",
+        "AromaticRing_Ratio",
+        "Ketone",
+        "Kappa3",
+        "MinPartialCharge",
+        "Charge_Span",
+        "MolLogP",
+        "SlogP_VSA2",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "MinAbsPartialCharge",
+        "FractionCSP3"
+      ],
+      "xlim": [
+        -0.64,
+        0.55
+      ],
+      "point_counts": [
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180
+      ],
+      "data_provenance": "estimated",
+      "color_domain": [
+        0,
+        1
+      ],
+      "insets": {
+        "feature_value_colorbar": {
+          "bounds": [
+            1.067,
+            0,
+            0.014,
+            1
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        }
+      },
+      "label": {
+        "text": "B",
+        "figure_xy": [
+          0.524,
+          0.968
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.523,
+        0.49899999999999994,
+        0.176,
+        0.49
+      ]
+    },
+    "C": {
+      "kind": "radial_bar",
+      "axes_bounds": [
+        0.714,
+        0.5398333333333334,
+        0.18999999999999995,
+        0.33333333333333326
+      ],
+      "features": [
+        "Complexity_per_MW",
+        "Chi3v",
+        "SMR_VSA10",
+        "MR_per_MW",
+        "AromaticRing_Ratio",
+        "Ketone",
+        "Kappa3",
+        "MinPartialCharge",
+        "Charge_Span",
+        "MolLogP",
+        "SlogP_VSA2",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "MinAbsPartialCharge",
+        "FractionCSP3"
+      ],
+      "shap": [
+        0.1534,
+        0.1178,
+        0.1171,
+        0.0835,
+        0.0811,
+        0.0767,
+        0.0735,
+        0.0729,
+        0.0589,
+        0.0507,
+        0.0501,
+        0.0492,
+        0.0471,
+        0.0403,
+        0.0402
+      ],
+      "percent": [
+        13.8,
+        10.6,
+        10.5,
+        7.5,
+        7.3,
+        6.9,
+        6.6,
+        6.6,
+        5.3,
+        4.6,
+        4.5,
+        4.4,
+        4.2,
+        3.6,
+        3.6
+      ],
+      "color_domain": [
+        0.035,
+        0.155
+      ],
+      "color_ticks": [
+        0.05,
+        0.075,
+        0.1,
+        0.125,
+        0.15
+      ],
+      "theta_direction": "clockwise",
+      "theta_offset_degrees": 78,
+      "insets": {
+        "central_colorbar": {
+          "bounds": [
+            0.47,
+            0.38,
+            0.028,
+            0.24
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        }
+      },
+      "label": {
+        "text": "C",
+        "figure_xy": [
+          0.711,
+          0.968
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.7,
+        0.49899999999999994,
+        0.29,
+        0.49
+      ]
+    },
+    "D": {
+      "kind": "bar_inset",
+      "axes_bounds": [
+        0.123,
+        0.069,
+        0.259,
+        0.405
+      ],
+      "features": [
+        "Complexity_per_MW",
+        "BertzCT",
+        "Ipc",
+        "Chi4v",
+        "Kappa_Anisotropy",
+        "NumValenceElectrons",
+        "Chi3v",
+        "HallKierAlpha",
+        "MolWt",
+        "SlogP_VSA5",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "LogP_TPSA",
+        "HalogenRatio",
+        "SMR_VSA7"
+      ],
+      "shap": [
+        0.0965,
+        0.0908,
+        0.0682,
+        0.0628,
+        0.0442,
+        0.0406,
+        0.0388,
+        0.0284,
+        0.0279,
+        0.0241,
+        0.0199,
+        0.0174,
+        0.0173,
+        0.0169,
+        0.0161
+      ],
+      "percent": [
+        15.8,
+        14.9,
+        11.2,
+        10.3,
+        7.2,
+        6.7,
+        6.4,
+        4.7,
+        4.6,
+        4.0,
+        3.3,
+        2.9,
+        2.8,
+        2.8,
+        2.6
+      ],
+      "insets": {
+        "colorbar": {
+          "bounds": [
+            -0.055,
+            0,
+            0.02,
+            1
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        },
+        "radial_inset": {
+          "bounds": [
+            -0.01,
+            0.11,
+            0.36,
+            0.4
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": "polar"
+        }
+      },
+      "color_domain": [
+        0.0161,
+        0.0965
+      ],
+      "palette_samples_rgb": [
+        [
+          0.6941176470588235,
+          0.09019607843137255,
+          0.16862745098039217
+        ],
+        [
+          0.6980392156862745,
+          0.09411764705882353,
+          0.17647058823529413
+        ],
+        [
+          0.6823529411764706,
+          0.10196078431372549,
+          0.1568627450980392
+        ],
+        [
+          0.6784313725490196,
+          0.10588235294117647,
+          0.16470588235294117
+        ],
+        [
+          0.9372549019607843,
+          0.6,
+          0.48627450980392156
+        ],
+        [
+          0.9764705882352941,
+          0.7607843137254902,
+          0.6666666666666666
+        ],
+        [
+          0.984313725490196,
+          0.8470588235294118,
+          0.7568627450980392
+        ],
+        [
+          0.8666666666666667,
+          0.9137254901960784,
+          0.9529411764705882
+        ],
+        [
+          0.8,
+          0.8862745098039215,
+          0.9333333333333333
+        ],
+        [
+          0.6039215686274509,
+          0.788235294117647,
+          0.8666666666666667
+        ],
+        [
+          0.2980392156862745,
+          0.592156862745098,
+          0.7803921568627451
+        ],
+        [
+          0.27058823529411763,
+          0.5764705882352941,
+          0.7725490196078432
+        ],
+        [
+          0.26666666666666666,
+          0.5803921568627451,
+          0.7647058823529411
+        ],
+        [
+          0.26666666666666666,
+          0.5803921568627451,
+          0.7647058823529411
+        ],
+        [
+          0.2784313725490196,
+          0.5803921568627451,
+          0.7686274509803922
+        ]
+      ],
+      "normalization": "piecewise source-interior color calibration; not holdout validation",
+      "label": {
+        "text": "D",
+        "figure_xy": [
+          0.057,
+          0.472
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.05,
+        0.0040000000000000036,
+        0.475,
+        0.49
+      ]
+    },
+    "E": {
+      "kind": "beeswarm",
+      "axes_bounds": [
+        0.527,
+        0.069,
+        0.138,
+        0.405
+      ],
+      "features_shared_with": "D",
+      "features": [
+        "Complexity_per_MW",
+        "BertzCT",
+        "Ipc",
+        "Chi4v",
+        "Kappa_Anisotropy",
+        "NumValenceElectrons",
+        "Chi3v",
+        "HallKierAlpha",
+        "MolWt",
+        "SlogP_VSA5",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "LogP_TPSA",
+        "HalogenRatio",
+        "SMR_VSA7"
+      ],
+      "xlim": [
+        -0.17,
+        0.21
+      ],
+      "point_counts": [
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180,
+        180
+      ],
+      "data_provenance": "estimated",
+      "color_domain": [
+        0,
+        1
+      ],
+      "insets": {
+        "feature_value_colorbar": {
+          "bounds": [
+            1.067,
+            0,
+            0.014,
+            1
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        }
+      },
+      "label": {
+        "text": "E",
+        "figure_xy": [
+          0.524,
+          0.472
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.523,
+        0.0040000000000000036,
+        0.176,
+        0.49
+      ]
+    },
+    "F": {
+      "kind": "radial_bar",
+      "axes_bounds": [
+        0.714,
+        0.044833333333333406,
+        0.18999999999999995,
+        0.33333333333333326
+      ],
+      "features": [
+        "Complexity_per_MW",
+        "BertzCT",
+        "Ipc",
+        "Chi4v",
+        "Kappa_Anisotropy",
+        "NumValenceElectrons",
+        "Chi3v",
+        "HallKierAlpha",
+        "MolWt",
+        "SlogP_VSA5",
+        "BalabanJ",
+        "TPSA_x_LogP",
+        "LogP_TPSA",
+        "HalogenRatio",
+        "SMR_VSA7"
+      ],
+      "shap": [
+        0.0965,
+        0.0908,
+        0.0682,
+        0.0628,
+        0.0442,
+        0.0406,
+        0.0388,
+        0.0284,
+        0.0279,
+        0.0241,
+        0.0199,
+        0.0174,
+        0.0173,
+        0.0169,
+        0.0161
+      ],
+      "percent": [
+        15.8,
+        14.9,
+        11.2,
+        10.3,
+        7.2,
+        6.7,
+        6.4,
+        4.7,
+        4.6,
+        4.0,
+        3.3,
+        2.9,
+        2.8,
+        2.8,
+        2.6
+      ],
+      "color_domain": [
+        0.015,
+        0.1
+      ],
+      "color_ticks": [
+        0.025,
+        0.05,
+        0.075
+      ],
+      "theta_direction": "clockwise",
+      "theta_offset_degrees": 78,
+      "insets": {
+        "central_colorbar": {
+          "bounds": [
+            0.47,
+            0.38,
+            0.028,
+            0.12
+          ],
+          "coordinate_system": "axes_fraction",
+          "projection": null
+        }
+      },
+      "label": {
+        "text": "F",
+        "figure_xy": [
+          0.711,
+          0.472
+        ],
+        "fontsize_pt": 14
+      },
+      "bbox_figure": [
+        0.7,
+        0.0040000000000000036,
+        0.29,
+        0.49
+      ]
+    }
+  },
+  "radial_and_beeswarm_palette": "matplotlib RdBu_r; blue low / red high",
+  "data_sources": [
+    "fig01.png",
+    "provided panel_A_4x.png through panel_F_4x.png"
+  ],
+  "scientific_scope": "visual reconstruction only; no original observations or fitted model",
+  "text_outside_canvas": [],
+  "crop": {
+    "original_size": [
+      893,
+      579
+    ],
+    "background": [
+      255,
+      255,
+      255
+    ],
+    "crop_bbox": [
+      0,
+      0,
+      893,
+      509
+    ],
+    "caption_bbox": [
+      6,
+      519,
+      880,
+      579
+    ],
+    "caption_detection": "geometric_text_band",
+    "quality_flags": [],
+    "quality_assessment": {
+      "blur": "heuristic_only",
+      "watermark": "manual_review_required",
+      "truncation": "edge_contact_heuristic"
+    }
+  }
+}

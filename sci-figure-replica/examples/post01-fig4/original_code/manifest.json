@@ -1,0 +1,34 @@
+[
+  {
+    "file": "code_block_01.py",
+    "fence_language": "python",
+    "sha256": "803a94c15b285381648fa49325554325b39930d28c3dbe92e7bcd950425439bc",
+    "bytes": 2472,
+    "original_code_provenance": "example_not_target",
+    "execution": "archived_only"
+  },
+  {
+    "file": "code_block_02.txt",
+    "fence_language": "javascript",
+    "sha256": "9b37a15231cd90aa67a06dc942383069c7dd4825cf1c5265cd65463d0912d58b",
+    "bytes": 235,
+    "original_code_provenance": "example_not_target",
+    "execution": "archived_only"
+  },
+  {
+    "file": "code_block_03.txt",
+    "fence_language": "makefile",
+    "sha256": "11cdbe21abc789ed7477ffa5f6e19cead17809d7dd167425ed59f5790bfd8f28",
+    "bytes": 497,
+    "original_code_provenance": "example_not_target",
+    "execution": "archived_only"
+  },
+  {
+    "file": "code_block_04.txt",
+    "fence_language": "makefile",
+    "sha256": "9d0411add6d71b107e2bca492a895c4707365871e9734fc3ccd7e97c88d3199e",
+    "bytes": 488,
+    "original_code_provenance": "example_not_target",
+    "execution": "archived_only"
+  }
+]

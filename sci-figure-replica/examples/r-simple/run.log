@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-10-20T07:45:50.149429Z",
+  "language": "r",
+  "executable": "D:\\R-4.5.0\\bin\\Rscript.exe",
+  "version": "Rscript (R) version 4.5.0 (2025-04-11)",
+  "command": [
+    "D:\\R-4.5.0\\bin\\Rscript.exe",
+    "--vanilla",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\r-simple\\replica.R"
+  ],
+  "cwd": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\r-simple",
+  "timed_out": false,
+  "packages": {
+    "ggplot2": "3.5.2",
+    "patchwork": "1.3.1",
+    "scales": "1.4.0"
+  },
+  "cleanup_errors": [],
+  "session_info": "PACKAGE:ggplot2=3.5.2\r\nPACKAGE:patchwork=1.3.1\r\nPACKAGE:scales=1.4.0\r\nR version 4.5.0 (2025-04-11 ucrt)\r\nPlatform: x86_64-w64-mingw32/x64\r\nRunning under: Windows 11 x64 (build 26200)\r\n\r\nMatrix products: default\r\n  LAPACK version 3.12.1\r\n\r\nlocale:\r\n[1] LC_COLLATE=Chinese (Simplified)_China.utf8 \r\n[2] LC_CTYPE=Chinese (Simplified)_China.utf8   \r\n[3] LC_MONETARY=Chinese (Simplified)_China.utf8\r\n[4] LC_NUMERIC=C                               \r\n[5] LC_TIME=Chinese (Simplified)_China.utf8    \r\n\r\ntime zone: Asia/Shanghai\r\ntzcode source: internal\r\n\r\nattached base packages:\r\n[1] stats     graphics  grDevices utils     datasets  methods   base     \r\n\r\nloaded via a namespace (and not attached):\r\n[1] compiler_4.5.0 tools_4.5.0   \r\n",
+  "probe_stderr": "",
+  "exit_code": 0,
+  "stdout_tail": "Synthetic R example: 3 groups x 2 conditions; mean +/- SD; PNG/PDF/SVG exported\r\nR version 4.5.0 (2025-04-11 ucrt) \r\n",
+  "stderr_tail": "PNG: ggsave png, 600 dpi\r\nPDF: grDevices::cairo_pdf\r\nSVG: grDevices::svg (cairo fallback); WARN: glyph outlines, editable text not guaranteed\r\n"
+}

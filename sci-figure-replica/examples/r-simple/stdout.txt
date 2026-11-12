@@ -1,0 +1,2 @@
+Synthetic R example: 3 groups x 2 conditions; mean +/- SD; PNG/PDF/SVG exported
+R version 4.5.0 (2025-04-11 ucrt) 

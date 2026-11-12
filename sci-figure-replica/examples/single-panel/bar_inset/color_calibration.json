@@ -1,0 +1,200 @@
+{
+  "source": "samples/post01/source/article_images/img06.png",
+  "source_sha256": "af0bdc06f42a62e5b32974876628cec6ef2e1a936e8e6b55fafd54a2a62eac70",
+  "method": "empirical monotone interpolation fitted to 13 sampled bar colors; not recovered original normalization",
+  "domain": [
+    0,
+    17.4089
+  ],
+  "probes": [
+    {
+      "feature": "VSS/TSS",
+      "x": 568,
+      "y": 72,
+      "rgb": [
+        196,
+        0,
+        53
+      ]
+    },
+    {
+      "feature": "ana-time",
+      "x": 866,
+      "y": 131,
+      "rgb": [
+        212,
+        58,
+        81
+      ]
+    },
+    {
+      "feature": "infS",
+      "x": 874,
+      "y": 190,
+      "rgb": [
+        229,
+        116,
+        109
+      ]
+    },
+    {
+      "feature": "pH",
+      "x": 883,
+      "y": 248,
+      "rgb": [
+        245,
+        174,
+        137
+      ]
+    },
+    {
+      "feature": "MLSS",
+      "x": 887,
+      "y": 306,
+      "rgb": [
+        249,
+        202,
+        177
+      ]
+    },
+    {
+      "feature": "infP",
+      "x": 889,
+      "y": 365,
+      "rgb": [
+        252,
+        228,
+        216
+      ]
+    },
+    {
+      "feature": "salinity",
+      "x": 890,
+      "y": 422,
+      "rgb": [
+        255,
+        254,
+        254
+      ]
+    },
+    {
+      "feature": "infC",
+      "x": 899,
+      "y": 480,
+      "rgb": [
+        248,
+        252,
+        254
+      ]
+    },
+    {
+      "feature": "MLVSS",
+      "x": 901,
+      "y": 539,
+      "rgb": [
+        241,
+        249,
+        252
+      ]
+    },
+    {
+      "feature": "infAc",
+      "x": 910,
+      "y": 597,
+      "rgb": [
+        234,
+        246,
+        251
+      ]
+    },
+    {
+      "feature": "infpro",
+      "x": 911,
+      "y": 655,
+      "rgb": [
+        170,
+        207,
+        226
+      ]
+    },
+    {
+      "feature": "T",
+      "x": 919,
+      "y": 713,
+      "rgb": [
+        110,
+        170,
+        200
+      ]
+    },
+    {
+      "feature": "volume",
+      "x": 920,
+      "y": 772,
+      "rgb": [
+        48,
+        132,
+        177
+      ]
+    }
+  ],
+  "value_color_positions": [
+    [
+      0,
+      0
+    ],
+    [
+      0.1213,
+      0.001
+    ],
+    [
+      0.1524,
+      0.08425
+    ],
+    [
+      0.5624,
+      0.1675
+    ],
+    [
+      0.6102,
+      0.25075000000000003
+    ],
+    [
+      1.0542,
+      0.334
+    ],
+    [
+      1.153,
+      0.41725
+    ],
+    [
+      1.6067,
+      0.5005000000000001
+    ],
+    [
+      1.6652,
+      0.58375
+    ],
+    [
+      1.7396,
+      0.667
+    ],
+    [
+      1.9275,
+      0.7502500000000001
+    ],
+    [
+      2.3887,
+      0.8335
+    ],
+    [
+      2.799,
+      0.9167500000000001
+    ],
+    [
+      17.4089,
+      1.0
+    ]
+  ],
+  "note": "A bar/inset/colorbar share this mapping; C uses linear mapping with identical palette/domain/direction"
+}

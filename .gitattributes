@@ -1,0 +1,2 @@
+# Preserve the imported skill's source bytes, fixtures and existing evidence.
+sci-figure-replica/** -text

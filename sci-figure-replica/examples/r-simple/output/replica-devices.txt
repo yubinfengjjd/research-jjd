@@ -1,0 +1,3 @@
+PNG: ggsave png, 600 dpi
+PDF: grDevices::cairo_pdf
+SVG: grDevices::svg (cairo fallback); WARN: glyph outlines, editable text not guaranteed

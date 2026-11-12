@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>科研绘图画廊</title>
+<style>
+body{font:16px/1.5 system-ui,"Microsoft YaHei",sans-serif;margin:24px;background:#f4f6f8;color:#172334}
+header,nav{margin-bottom:20px}select{padding:8px;margin:4px;max-width:100%}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px}
+article{background:white;border:1px solid #dce2e8;border-radius:8px;padding:16px;overflow-wrap:anywhere}img{display:block;width:100%;height:220px;object-fit:contain;background:white}
+h2{font-size:18px}a{margin-right:12px;color:#075c98}small{color:#526174}.badge{display:inline-block;background:#e6eff7;border-radius:4px;padding:2px 6px;margin:2px}
+.pending{color:#8a6d3b}
+</style></head><body>
+<header><h1>科研绘图画廊</h1><small>生成时间 {{GENERATED_AT}} · 本地离线索引 · approved 仅由作者签核设置</small></header>
+<nav aria-label="筛选器">
+<label>主场景 <select id="filter-scenario"><option value="">全部场景</option></select></label>
+<label>语言 <select id="filter-language"><option value="">全部语言</option></select></label>
+<label>状态 <select id="filter-status"><option value="">全部状态</option></select></label>
+<span id="count"></span></nav><main id="cards" class="grid"></main>
+<noscript>启用本地 JavaScript 查看筛选卡片，或直接打开 index.json。</noscript>
+<script id="entries" type="application/json">{{ENTRIES_JSON}}</script>
+<script>
+'use strict';
+const entries=JSON.parse(document.getElementById('entries').textContent);
+const scenario=document.getElementById('filter-scenario'), language=document.getElementById('filter-language'), status=document.getElementById('filter-status');
+function fill(select, values){[...new Set(values)].sort().forEach(value=>{const option=document.createElement('option');option.value=value;option.textContent=value;select.append(option);});}
+fill(scenario,entries.flatMap(e=>e.scenarios.primary));fill(language,entries.map(e=>e.language));fill(status,entries.map(e=>e.status));
+function text(tag,content,parent){const node=document.createElement(tag);node.textContent=content;parent.append(node);return node;}
+function localURL(path){return path.split('/').map(encodeURIComponent).join('/');}
+function render(){const cards=document.getElementById('cards');cards.replaceChildren();
+const selected=entries.filter(e=>(!scenario.value||e.scenarios.primary.includes(scenario.value))&&(!language.value||e.language===language.value)&&(!status.value||e.status===status.value));
+selected.forEach(e=>{const card=document.createElement('article');const img=document.createElement('img');img.src=localURL(e.thumbnail);img.alt=e.title||e.id;img.loading='lazy';card.append(img);
+text('h2',e.title||e.id,card);text('p',[e.post.account||'公众号未知',e.post.publish_date||'日期未知'].join(' · '),card);
+text('p',[e.language,e.status,'v'+e.version].join(' · '),card);e.scenarios.primary.forEach(s=>text('span',s,card).className='badge');
+const links=text('p','',card);Object.entries({replica:'复刻 PNG',compare:'并排对比',readme:'README'}).forEach(([key,label])=>{
+if(e.links[key]){const a=text('a',label,links);a.href=localURL(e.links[key]);}
+else{const pending=e.pending.find(item=>item.key===key);text('span',(pending?pending.label:label)+'（待生成）',links).className='pending';}
+});cards.append(card);});
+document.getElementById('count').textContent=selected.length+' / '+entries.length+' 条';}
+[scenario,language,status].forEach(s=>s.addEventListener('change',render));render();
+</script></body></html>

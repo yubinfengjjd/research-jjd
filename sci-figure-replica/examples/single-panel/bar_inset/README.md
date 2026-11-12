@@ -1,0 +1,7 @@
+# A — horizontal bars with inset
+
+Source: dev `samples/post01/source/article_images/img06.png`, 1080×920. `estimated_data.csv` has 13 rows, canonical feature, SHAP value (`shap` and `value`), printed percent, panel A, provenance and uncertainty reason. Values are transcribed to four decimals exactly as specified by T2; percentages are printed, not recomputed (rounding sum is 100.0%). No original study samples are available. See the parent README for execution and output conventions.
+
+The inverted x axis extends left from right-hand zero, with ticks 17.5→0. Right feature labels and value annotations are bold; a left High/Low colorbar accompanies the bar/inset. Inset angles are equally spaced, anticlockwise, with importance-dependent radii and printed percentages; this is a radial contribution glyph rather than a pie whose angular areas encode percentages. A tiny center opening and translucent inner wedges match the source treatment. Bounds are recorded in `figure_spec.json`.
+
+`color_calibration.json` includes source SHA-256, probe coordinates/RGB, value/color-position anchors and method. The calibrated continuous monotone transform applies to any value independently of feature order; it is not a categorical palette. Bars, inset and colorbar use the same transform. The shared five-stop palette and value bounds remain identical to C, while A's nonlinear sampled transform and C's linear transform are explicit assumptions. Exact original normalization is unknown. See `qa_report.md`; author review is pending.

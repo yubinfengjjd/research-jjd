@@ -1,0 +1,79 @@
+{
+  "name": "bar_inset",
+  "status": "review",
+  "code_provenance": "reconstructed",
+  "data_provenance": "estimated",
+  "source_image": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\samples\\post01\\source\\article_images\\img06.png",
+  "source_image_sha256": "af0bdc06f42a62e5b32974876628cec6ef2e1a936e8e6b55fafd54a2a62eac70",
+  "canvas": {
+    "source_px": [
+      1080,
+      920
+    ],
+    "figsize_inches": [
+      4.5,
+      3.8333333333333335
+    ],
+    "dpi": 600
+  },
+  "rows": 1,
+  "cols": 1,
+  "feature_count": 13,
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial"
+  },
+  "palette": [
+    "#2f84b1",
+    "#eaf6fb",
+    "#ffffff",
+    "#f6b08a",
+    "#c40035"
+  ],
+  "color_domain": [
+    0,
+    17.4089
+  ],
+  "normalization": "sample-calibrated continuous monotonic interpolation",
+  "axes_bounds": [
+    0.166,
+    0.099,
+    0.689,
+    0.886
+  ],
+  "insets": {
+    "colorbar": {
+      "bounds": [
+        -0.16,
+        0.03,
+        0.022,
+        0.88
+      ],
+      "coordinate_system": "axes_fraction",
+      "projection": null
+    },
+    "radial_inset": {
+      "bounds": [
+        -0.115,
+        0.025,
+        0.63,
+        0.57
+      ],
+      "coordinate_system": "axes_fraction",
+      "projection": "polar"
+    }
+  },
+  "source_label_spelling": "volumn displayed; CSV canonical key volume",
+  "panel_label": "none: standalone source images have no A/B/C letter"
+}

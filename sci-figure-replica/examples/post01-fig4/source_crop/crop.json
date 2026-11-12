@@ -1,0 +1,30 @@
+{
+  "original_size": [
+    893,
+    579
+  ],
+  "background": [
+    255,
+    255,
+    255
+  ],
+  "crop_bbox": [
+    0,
+    0,
+    893,
+    509
+  ],
+  "caption_bbox": [
+    6,
+    519,
+    880,
+    579
+  ],
+  "caption_detection": "geometric_text_band",
+  "quality_flags": [],
+  "quality_assessment": {
+    "blur": "heuristic_only",
+    "watermark": "manual_review_required",
+    "truncation": "edge_contact_heuristic"
+  }
+}

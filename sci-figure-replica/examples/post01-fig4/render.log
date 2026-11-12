@@ -1,0 +1,56 @@
+{
+  "timestamp": "2026-10-20T07:26:58.957808Z",
+  "command": [
+    "C:\\Users\\86186\\.codex\\venvs\\sci-figure-replica\\Scripts\\python.exe",
+    "staged\\sci-figure-replica\\examples\\post01-fig4\\replica.py"
+  ],
+  "executable": "C:\\Users\\86186\\.codex\\venvs\\sci-figure-replica\\Scripts\\python.exe",
+  "cwd": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "exit_code": 0,
+  "packages": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "Pillow": "13.0.0"
+  },
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial",
+    "file": "C:\\Windows\\Fonts\\arial.ttf"
+  },
+  "source_image_sha256": "a0111cfba26b6460cd7ab79a079b7c31112970cff6ce03ba05df944ef97831ab",
+  "data_files_sha256": {
+    "estimated_data.csv": "2e214a76cb84afa44e1da7f0dafe3361c1965ec83842f78dfeacdd694e373777",
+    "estimated_beeswarm.csv": "083a1b816d6fa80ef35d1a80b571a1c996ef973f6e05dbb18d35bcec71030c04"
+  },
+  "outputs": [
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\post01-fig4\\output\\replica.png",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\post01-fig4\\output\\replica.pdf",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\post01-fig4\\output\\replica.svg"
+  ],
+  "text_outside_canvas": [],
+  "iterations": [
+    {
+      "round": 1,
+      "changes": "T2 templates composed at source-normalized axes; shared labels, paired insets, four outer and two central scales",
+      "qa": "one C label exceeded canvas; radial diagrams too high and large; inset fan differs"
+    },
+    {
+      "round": 2,
+      "changes": "lower and reduce C/F polar axes; reshape existing T2 inset artists into source open fan",
+      "qa": "estimated swarm / uncertain transcription / source font / PDF page review remain WARN"
+    }
+  ]
+}

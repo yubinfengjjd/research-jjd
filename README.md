@@ -14,6 +14,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | `medfig-schematic` | 研究设计图 / 网络架构图：写生图模型（ChatGPT 等）的英文提示词，检查提示词、打包每一轮，评估返回的图，逐轮迭代到定稿 |
 | `medfig-illustrator` | 把已有的参考图 1:1 复刻成可编辑矢量；在用户已打开的 Illustrator 文档里原生重画，文字保持真实可编辑、不做轮廓化；带布局闸门、交付校验与画布自动放大 |
 | `scipilot-medimg-figure-skill` | 依赖技能：期刊样式、导出与文件自检脚本（`medfig-render` 调用），以及医学影像 panel（影像 + 掩膜 / 轮廓 / 热力图，JSON 规格驱动）。派生自 [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill)（MIT），差异见其 `NOTICE.md` |
+| `sci-figure-replica` | 科研数据图的代表单 panel 复刻、样式去重咨询、对比 QA 与画廊维护；包含脚本、模板、完整示例和测试。与独立 research-wiki 技能衔接，详见其 [README](sci-figure-replica/README.md) |
 
 ## 路由
 

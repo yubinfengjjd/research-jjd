@@ -1,0 +1,14 @@
+panel,feature,shap,value,percent,provenance,uncertain_reason
+A,VSS/TSS,17.4089,17.4089,52.5,estimated,printed_label_transcription; rounding only; no original observations
+A,ana-time,2.7990,2.7990,8.4,estimated,printed_label_transcription; rounding only; no original observations
+A,infS,2.3887,2.3887,7.2,estimated,printed_label_transcription; rounding only; no original observations
+A,pH,1.9275,1.9275,5.8,estimated,printed_label_transcription; rounding only; no original observations
+A,MLSS,1.7396,1.7396,5.2,estimated,printed_label_transcription; rounding only; no original observations
+A,infP,1.6652,1.6652,5.0,estimated,printed_label_transcription; rounding only; no original observations
+A,salinity,1.6067,1.6067,4.8,estimated,printed_label_transcription; rounding only; no original observations
+A,infC,1.1530,1.1530,3.5,estimated,printed_label_transcription; rounding only; no original observations
+A,MLVSS,1.0542,1.0542,3.2,estimated,printed_label_transcription; rounding only; no original observations
+A,infAc,0.6102,0.6102,1.8,estimated,printed_label_transcription; rounding only; no original observations
+A,infpro,0.5624,0.5624,1.7,estimated,printed_label_transcription; rounding only; no original observations
+A,T,0.1524,0.1524,0.5,estimated,printed_label_transcription; rounding only; no original observations
+A,volume,0.1213,0.1213,0.4,estimated,printed_label_transcription; rounding only; no original observations

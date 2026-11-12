@@ -1,0 +1,2 @@
+comparison 3743x2313; content_height=2253; gap=24 -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\single-panel\radial\compare\side_by_side.png
+radial: rows=13; provenance=estimated; font=Arial; PNG/PDF/SVG -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\single-panel\radial\output

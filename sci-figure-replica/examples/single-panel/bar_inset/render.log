@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-10-20T07:02:29.534748Z",
+  "command": [
+    "C:\\Users\\86186\\.codex\\venvs\\sci-figure-replica\\Scripts\\python.exe",
+    "staged/sci-figure-replica/examples/single-panel/bar_inset/replica.py"
+  ],
+  "version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "cwd": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020",
+  "exit_code": 0,
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial"
+  },
+  "packages": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "Pillow": "13.0.0"
+  },
+  "outputs": [
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\bar_inset\\output\\replica.png",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\bar_inset\\output\\replica.pdf",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\bar_inset\\output\\replica.svg"
+  ],
+  "data_provenance": "estimated",
+  "source_image_sha256": "af0bdc06f42a62e5b32974876628cec6ef2e1a936e8e6b55fafd54a2a62eac70",
+  "iterations": [
+    {
+      "round": 1,
+      "changes": "initial templates; canvas, shared normalization, standalone labels"
+    },
+    {
+      "round": 2,
+      "changes": "A inset anticlockwise and variable label radii; C scale/center and upright values; B colorbar margin",
+      "qa": "source A and C appear differently normalized"
+    },
+    {
+      "round": 3,
+      "changes": "A continuous sampled nonlinear value-to-color calibration; A/C retain same palette/domain/direction",
+      "qa": "author visual review pending; no further automatic visual rounds"
+    }
+  ]
+}

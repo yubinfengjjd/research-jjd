@@ -1,0 +1,15 @@
+importance = np.abs(shap_values).mean(axis=0)
+order = np.argsort(importance)[::-1]
+
+feature_names = X_test.columns.to_numpy()[order]
+importance = importance[order]
+percentages = np.round(importance / importance.sum() * 100, 1)
+
+plot_radial_shap_importance(
+    feature_names.tolist(),
+    importance.tolist(),
+    percentages.tolist(),
+    output_path="radial_shap_plot.png",
+    cbar_title="|SHAP Value|",
+    cmap_colors=("#2f84b1", "#eaf6fb", "#ffffff", "#f6b08a", "#c40035"),
+)

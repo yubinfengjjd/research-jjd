@@ -5,7 +5,7 @@ Copies ONLY the directories listed in SKILLS: medfig-suite, medfig-plan, medfig-
 medfig-outline, medfig-schematic, medfig-illustrator, scipilot-medimg-figure-skill (medfig-render calls its
 scripts/), medical-sci-methods, medical-sci-legends, medical-sci-results, medical-sci-introduction,
 medical-sci-discussion, medical-sci-abstract, medical-sci-finalize, medical-sci-references, medical-sci-submission, medpaper-pipeline,
-medical-research-plan, medimg-experiment, socratic-project-manager and anti-defensive-writing.
+medical-research-plan, medimg-experiment, socratic-project-manager, anti-defensive-writing and sci-figure-replica.
 Existing installs are moved to a timestamped backup before being replaced;
 nothing is ever deleted. After copying, every file is SHA-256 verified
 against the source and a `.medfig_install.json` stamp is written.
@@ -32,7 +32,7 @@ SKILLS = ("medfig-suite", "medfig-plan", "medfig-render", "medfig-orchestrate", 
           "medical-sci-methods", "medical-sci-legends", "medical-sci-results", "medical-sci-introduction",
           "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references", "medical-sci-submission",
           "medpaper-pipeline", "medical-research-plan", "medimg-experiment", "socratic-project-manager",
-          "anti-defensive-writing")
+          "anti-defensive-writing", "sci-figure-replica")
 SKILL_DEPENDENCIES = {"medical-sci-finalize": ("anti-defensive-writing",)}
 STAMP = ".medfig_install.json"
 

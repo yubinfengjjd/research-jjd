@@ -1,0 +1,33 @@
+{
+  "title": "期刊配图：基于SHAP的特征驱动机制条形图、蜂群图与环形贡献配图形式",
+  "account": "Python机器学习AI",
+  "author": "deep",
+  "publish_time": "2026-08-17 16:28:18",
+  "url": "https://mp.weixin.qq.com/s/Shi2jsgSzbf4nYQEHhjhog",
+  "source_html": "article_raw.html",
+  "image_urls": [
+    "https://mmbiz.qpic.cn/sz_mmbiz_gif/qHBoqosjg4rakg7KPm75YgiaAYYfMjickBiaLGqXHZlj8BS19Rh5icaUongybUkmiappmoSgvSyribDQSyagdt9OPSNQ/640?wx_fmt=gif&wxfrom=5&wx_lazy=1&wx_co=1&retryload=1&tp=webp#imgIndex=0",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOUsZjFYibHHkfH0Bt4FoYiaSF2Fh9MvicZibmOBfnAQc0Pj94zuHa1dib1Rae6jl3ccT513zqjWyV2kONy1q3scIIvqFj0yYfgMHicdA/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOXiag6rP8Z60RyL8EjC8BCzKsPUq8zUj5YCHia04LNpbMPcXqZffLiaW2m2Rb3K0SZAQvYx2AJRpz4Sk3d0QdBBKygA2aT4RrfI54/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOXqPiawCdJ4bEZI0FJ3ToAJQVDuOhEpCW3cNZRvJCJCyvWUqLSV6wWlicF18oUZfmTAbqcMfueMnksyG7GIricQurwj6X4Ff2eEd8/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOXvtpyV2ibicgWasXBIJy2TdibibbsA3VjsP5GvqGCj222PZUicGvd1G7gz6WRspDicQPC2EMmIFic6WvynlsTsNJrN6NEibgCo5tFPu78/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOUz6K2ScspPXO3Euy1IMelMmT0jf82oS5ybXPPJ7OicmQ5oRNPaQWDe6ryEUpiaP4wtkJhyeYsSyV9HibWY1Vht99iaWAOKZnpL5j0/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOU5ecjAUUxd5HC22A0icsVcuX0Ne2zXBhjnylhNzPzEgbziaWO6VHGEa7jv40J5fFpWS7eyicmrYY2G3aKXBaLlPDic6OicIsBqAMEs/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOUCy6vIvFahcVJDN8AepdbL2ib5VRMrLuY33k5xR2TnFib7TmHxvGcRQdhGeibmDJcOiaeeXJcMCPmPjR6n1wDribo7jbqibhSDWEjW8/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOVhrvbeMQ5N9cicx8SyLYdHAktibqywHqnaKD9PW2zdI9umlK9YX6HE1UddPI79rDsLoHo3yaOnrn1PRXg86Ia1Lpaia6ibCsEkAng/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOUP2BpibZ6k9D9mnk5YztempIicg1HRzbmYEMTzdbKS2FPSruV82tcUxk8hMx3icWfSQ8pJeeAq0mpesIwNlcEhC4Png2YsIk6DFM/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOW0oq4ZU7z3gLzbx10Qn5q1111jHVkXpa99IDDCicicvRBrBlWzKPlBWzcKddlLBfMibcCzyDNU04ZVMnAssu94hK0jybubxw6l4M/640?wx_fmt=png&from=appmsg&watermark=1&wxfrom=5&wx_lazy=1&randomid=2086ckg2&tp=webp#imgIndex=6",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOW5UmKrOEAyVa9mXP7wm6WWJ4KEvTn6z9gQGgnvcicbDuzWtSZcsGXBocibsb0KLARdQic59SAZ7mr8tIR8eGznndk8KqgGWPNjBM/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/mmbiz_png/cCtGVD6h9mfF6Rctm7QfnQmSdK3Ont7Uia637kIkFTdHm9wbqu8hic3qnY2jvyLRGAjInby8yOo3ejaraJ2TIoiag/640?wx_fmt=png&from=appmsg&wxfrom=5&wx_lazy=1&wx_co=1&randomid=zhcgubsw&tp=webp#imgIndex=9",
+    "https://mmbiz.qpic.cn/mmbiz_png/jb0kicTZHlOX15otibM6wgIGpapObSsqLQq2ZrtfONUl3RBGMj5uSiaxW5LKQHgtVPfMljk6icYMgWYTtBKVXfj7HY6ibD946k6emJ0gxoPSX5dU/640?wx_fmt=png&from=appmsg",
+    "https://mmbiz.qpic.cn/sz_mmbiz_png/jb0kicTZHlOUh3qhqOAGemma8wUMyqq6naXib7T21qNLPNPwPWsxQ6uAAayL0MwEaw3ibdufvLGuXf4pEO6jiahB7yzUAvYXwnm0FIh95jFVnec/640?wx_fmt=png&from=appmsg&watermark=1&wxfrom=5&wx_lazy=1&tp=webp#imgIndex=11",
+    "https://mmbiz.qpic.cn/mmbiz_jpg/jb0kicTZHlOVtY6HyEpr95QIyJ6zn3iaq0Y1pJmJVmSKczAqALLicX1vvicsNapR7UY8eiamcbNTibLfrwwWEyft7yE0mcRe12A58EQxGqKHIicnnE/640?wx_fmt=jpeg&from=appmsg&watermark=1&wxfrom=5&wx_lazy=1&tp=webp#imgIndex=22"
+  ],
+  "code_block_count": 4,
+  "code_languages": [
+    "python",
+    "javascript",
+    "makefile",
+    "makefile"
+  ]
+}

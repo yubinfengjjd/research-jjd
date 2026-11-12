@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "scenarios": {
+    "machine-learning": {"label": "机器学习", "aliases": ["机器学习", "ML", "深度学习", "DL", "神经网络", "回归", "分类", "XGBoost", "LightGBM", "CatBoost"]},
+    "model-explanation-shap": {"label": "模型解释与特征重要性", "aliases": ["SHAP", "特征重要性", "模型可解释性"]},
+    "single-cell": {"label": "单细胞分析", "aliases": ["单细胞", "marker", "UMAP", "Seurat", "Scanpy"]},
+    "transcriptomics": {"label": "转录组", "aliases": ["差异表达", "火山图", "RNA-seq"]},
+    "proteomics": {"label": "蛋白组", "aliases": ["proteomics", "蛋白组学", "蛋白质组", "DIA", "DDA", "TMT", "LFQ"]},
+    "metabolomics": {"label": "代谢组", "aliases": ["metabolomics", "代谢组学", "LC-MS", "GC-MS", "代谢物"]},
+    "network-pharmacology": {"label": "网络药理与毒理", "aliases": ["network pharmacology", "网络药理学", "网络药理毒理学", "toxicology", "毒理", "网络毒理学", "网络毒理", "靶点网络"]},
+    "computational-drug-design": {"label": "计算药物设计", "aliases": ["计算机药物设计", "CADD", "docking", "分子对接", "虚拟筛选", "自由能计算"]},
+    "survival-analysis": {"label": "生存分析", "aliases": ["生存曲线", "森林图", "Cox", "Kaplan-Meier"]},
+    "diagnostic-roc": {"label": "诊断与预测评价", "aliases": ["ROC", "PR", "校准", "DCA"]},
+    "imaging-radiomics": {"label": "影像组学", "aliases": ["radiomics", "影像特征统计", "CAM统计"]},
+    "experimental-statistics": {"label": "实验统计", "aliases": ["组间比较", "误差棒", "实验统计"]},
+    "multi-omics": {"label": "多组学整合", "aliases": ["multiomics", "多组学", "组学整合"]},
+    "chem-informatics-qsar": {"label": "化学信息与QSAR", "aliases": ["分子描述符", "QSAR", "毒性预测"]},
+    "other": {"label": "其他数据图", "aliases": ["其他", "待分类"]}
+  },
+  "rules": {
+    "primary": "选1至2个受控键；不确定时other并待作者确认；别名由agent映射后传规范键",
+    "secondary": "补充受控键，可为空",
+    "free": "自由标签用于方法、模型、数据集和图型细类；保留原名，去除首尾空格和重复，不替代primary",
+    "scope": "imaging-radiomics只标数据图；分割影像网格、CAM叠图不在本技能范围；新受控键仅声明图库领域词汇，不声称对应方法已实现"
+  }
+}

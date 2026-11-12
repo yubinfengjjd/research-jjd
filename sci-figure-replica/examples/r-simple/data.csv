@@ -1,0 +1,7 @@
+group,condition,mean,sd,provenance
+A,Control,3.0,0.4,synthetic
+A,Treatment,4.2,0.5,synthetic
+B,Control,4.1,0.3,synthetic
+B,Treatment,5.4,0.6,synthetic
+C,Control,3.6,0.5,synthetic
+C,Treatment,4.8,0.4,synthetic

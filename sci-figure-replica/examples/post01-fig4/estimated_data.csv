@@ -1,0 +1,61 @@
+panel,feature,shap,percent,provenance,uncertain_reason
+A,Complexity_per_MW,0.1534,13.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,Chi3v,0.1178,10.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation; A Chi3v candidate 0.1178 (0.1179 also plausible)
+A,SMR_VSA10,0.1171,10.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,MR_per_MW,0.0835,7.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,AromaticRing_Ratio,0.0811,7.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,Ketone,0.0767,6.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,Kappa3,0.0735,6.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,MinPartialCharge,0.0729,6.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,Charge_Span,0.0589,5.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,MolLogP,0.0507,4.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,SlogP_VSA2,0.0501,4.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,BalabanJ,0.0492,4.4,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,TPSA_x_LogP,0.0471,4.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,MinAbsPartialCharge,0.0403,3.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+A,FractionCSP3,0.0402,3.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,Complexity_per_MW,0.1534,13.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,Chi3v,0.1178,10.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation; A Chi3v candidate 0.1178 (0.1179 also plausible)
+C,SMR_VSA10,0.1171,10.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,MR_per_MW,0.0835,7.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,AromaticRing_Ratio,0.0811,7.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,Ketone,0.0767,6.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,Kappa3,0.0735,6.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,MinPartialCharge,0.0729,6.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,Charge_Span,0.0589,5.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,MolLogP,0.0507,4.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,SlogP_VSA2,0.0501,4.5,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,BalabanJ,0.0492,4.4,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,TPSA_x_LogP,0.0471,4.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,MinAbsPartialCharge,0.0403,3.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+C,FractionCSP3,0.0402,3.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,Complexity_per_MW,0.0965,15.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation; D first label candidate 0.0965; F first percent candidate 15.8 (16.3 also plausible)
+D,BertzCT,0.0908,14.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,Ipc,0.0682,11.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,Chi4v,0.0628,10.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,Kappa_Anisotropy,0.0442,7.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,NumValenceElectrons,0.0406,6.7,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,Chi3v,0.0388,6.4,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,HallKierAlpha,0.0284,4.7,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,MolWt,0.0279,4.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,SlogP_VSA5,0.0241,4.0,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,BalabanJ,0.0199,3.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,TPSA_x_LogP,0.0174,2.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,LogP_TPSA,0.0173,2.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,HalogenRatio,0.0169,2.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+D,SMR_VSA7,0.0161,2.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,Complexity_per_MW,0.0965,15.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation; D first label candidate 0.0965; F first percent candidate 15.8 (16.3 also plausible)
+F,BertzCT,0.0908,14.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,Ipc,0.0682,11.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,Chi4v,0.0628,10.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,Kappa_Anisotropy,0.0442,7.2,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,NumValenceElectrons,0.0406,6.7,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,Chi3v,0.0388,6.4,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,HallKierAlpha,0.0284,4.7,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,MolWt,0.0279,4.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,SlogP_VSA5,0.0241,4.0,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,BalabanJ,0.0199,3.3,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,TPSA_x_LogP,0.0174,2.9,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,LogP_TPSA,0.0173,2.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,HalogenRatio,0.0169,2.8,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation
+F,SMR_VSA7,0.0161,2.6,uncertain,ring percentage candidate from enlarged image; low-resolution digits/rounding need author confirmation

@@ -17,7 +17,7 @@ WRITING_SKILLS = ["medical-sci-methods", "medical-sci-legends", "medical-sci-res
                   "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references", "medical-sci-submission",
                   "medpaper-pipeline"]
 # research planning / managed experiments / Socratic project interview
-EXTRA_SKILLS = ["medical-research-plan", "medimg-experiment", "socratic-project-manager"]
+EXTRA_SKILLS = ["medical-research-plan", "medimg-experiment", "socratic-project-manager", "sci-figure-replica"]
 # dependency skill derived from Haojae/scipilot-figure-skill (MIT): leak scan + forbidden-workflow scan only
 ALL_SKILLS = SKILLS + ["scipilot-medimg-figure-skill", "anti-defensive-writing"] + WRITING_SKILLS + EXTRA_SKILLS
 ALLOWED = {"name", "description", "license", "metadata"}

@@ -1,0 +1,6 @@
+crop_bbox=[0, 0, 893, 509]; caption_bbox=[6, 519, 880, 579]; quality_flags=[] -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\post01-fig4\source_crop
+comparison 14424x4164; content_height=4104; gap=24 -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\post01-fig4\compare\side_by_side.png
+post01-fig4: A-F; 2x3; shared labels A/B,D/E; A/D radial insets; B/E Feature value scales; C/F polar scales
+data: bars/rings=uncertain transcription; B=2700 E=2700 points (estimated); font=Arial
+PNG=7200x4104; aspect_error=0.001965%; text_outside_canvas=0; status=review
+PNG/PDF/SVG -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\post01-fig4\output; compare -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\post01-fig4\compare\side_by_side.png

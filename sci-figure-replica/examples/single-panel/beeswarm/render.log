@@ -1,0 +1,59 @@
+{
+  "timestamp": "2026-10-20T07:08:06.309961Z",
+  "command": [
+    "C:\\Users\\86186\\.codex\\venvs\\sci-figure-replica\\Scripts\\python.exe",
+    "staged\\sci-figure-replica\\examples\\single-panel\\beeswarm\\replica.py"
+  ],
+  "version": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "cwd": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020",
+  "exit_code": 0,
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial"
+  },
+  "packages": {
+    "matplotlib": "3.11.2",
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "Pillow": "13.0.0"
+  },
+  "outputs": [
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\beeswarm\\output\\replica.png",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\beeswarm\\output\\replica.pdf",
+    "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\staged\\sci-figure-replica\\examples\\single-panel\\beeswarm\\output\\replica.svg"
+  ],
+  "data_provenance": "estimated",
+  "source_image_sha256": "b6cbe5680fa2b0c5542998fcacf74e990ef1b56e96f40665895be625772841d5",
+  "iterations": [
+    {
+      "round": 1,
+      "changes": "initial templates; canvas, shared normalization, standalone labels"
+    },
+    {
+      "round": 2,
+      "changes": "A inset anticlockwise and variable label radii; C scale/center and upright values; B colorbar margin",
+      "qa": "source A and C appear differently normalized"
+    },
+    {
+      "round": 3,
+      "changes": "A continuous sampled nonlinear value-to-color calibration; A/C retain same palette/domain/direction",
+      "qa": "author visual review pending; no further automatic visual rounds"
+    },
+    {
+      "round": "T2 F2 revision",
+      "changes": "match img07: no colorbar, axes width .984, 192 estimated points per row, jitter .30",
+      "qa": "synthetic distribution remains WARN; author visual review pending"
+    }
+  ]
+}

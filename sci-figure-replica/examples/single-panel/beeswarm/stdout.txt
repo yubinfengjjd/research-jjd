@@ -1,0 +1,3 @@
+comparison 5423x2440; content_height=2380; gap=24 -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\single-panel\beeswarm\compare\side_by_side.png
+beeswarm: rows=2496; provenance=estimated; font=Arial; PNG/PDF/SVG -> E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\single-panel\beeswarm\output
+PNG size=2700x2380; compare=E:\桌面\ARIS\sci-figure-replica-dev-20261020\staged\sci-figure-replica\examples\single-panel\beeswarm\compare\side_by_side.png

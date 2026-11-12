@@ -1,0 +1,8 @@
+plot_shap_beeswarm(
+    shap_values=shap_values,
+    X=X_test,
+    feature_names=X_test.columns,
+    cmap_colors=("#2f84b1", "#eaf6fb", "#ffffff", "#f6b08a", "#c40035"),
+    save_path="shap_beeswarm.png",
+    figsize=(10, 6)
+)

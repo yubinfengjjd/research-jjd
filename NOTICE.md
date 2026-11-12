@@ -35,3 +35,7 @@ MIT 许可保留在 `anti-defensive-writing/LICENSE`，来源与原文 SHA256 �
 | academic-research-skills 插件 | 以来源仓库为准 | `medical-sci-finalize/references/polish-rules.md` 的写作质量与 anti-pattern 要点 | 仅摘录规则意旨 |
 
 写作技能的其他规则来自本课题写作流程中积累的缺陷与修正，未包含上述来源之外的第三方代码。
+
+## sci-figure-replica 来源材料
+
+`sci-figure-replica/samples/post01/source/` 的公开帖子、图片及 `examples/` 内相应来源截图和归档代码保留原始出处，详见样本 `meta.json` 与各示例 README。第三方材料及其派生图像不因收录而变更许可证，不适用仓库 MIT 的重新授权。估读与合成数据保持原标识；这些例子不是新的研究观测。

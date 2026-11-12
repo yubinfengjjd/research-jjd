@@ -1,0 +1,13 @@
+{
+  "skill_name": "sci-figure-replica",
+  "evals": [
+    {"id": 1, "prompt": "复刻这个帖子，全文和fig01原图已提供，请保留可视化代码画廊。", "should_trigger": true, "expected": "解析、列图确认，保留来源；不执行提取代码"},
+    {"id": 2, "prompt": "帮我1:1 复刻这张图，存进科研画廊。", "should_trigger": true, "expected": "只对数据图进入流程，最终作者目视签核"},
+    {"id": 3, "prompt": "这张条形图没有数据代码，请按图估读数据并复刻。", "should_trigger": true, "expected": "先询问推荐语言，估读标estimated/uncertain"},
+    {"id": 4, "prompt": "公众号科研绘图的六面板SHAP图，请连同原帖保存并复刻。", "should_trigger": true, "expected": "确认目标与panel，区分示例代码和目标图生成代码"},
+    {"id": 5, "prompt": "画一个细胞信号通路机制示意图。", "should_trigger": false, "expected": "不处理示意图"},
+    {"id": 6, "prompt": "将OCT分割影像与掩膜拼成医学影像网格。", "should_trigger": false, "expected": "路由医学影像出图技能"},
+    {"id": 7, "prompt": "依据论文图表撰写Results正文。", "should_trigger": false, "expected": "路由medical-sci-results"},
+    {"id": 8, "prompt": "两组独立样本应该做什么统计检验？", "should_trigger": false, "expected": "单纯统计咨询，不进入复刻画廊"}
+  ]
+}

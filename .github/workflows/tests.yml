@@ -36,3 +36,10 @@ jobs:
           rm -rf ~/.cache/matplotlib
       - name: Run tests
         run: python -m pytest -q -p no:cacheprovider
+      - name: Replica portable checks
+        working-directory: sci-figure-replica
+        run: >-
+          python -m pytest -q
+          tests/test_gallery.py tests/test_index.py tests/test_crop.py
+          tests/test_estimate.py tests/test_parse_post.py tests/test_qa.py
+          tests/test_install.py tests/test_bootstrap.py

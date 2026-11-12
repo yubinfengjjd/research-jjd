@@ -1,0 +1,58 @@
+{
+  "name": "beeswarm",
+  "status": "review",
+  "code_provenance": "reconstructed",
+  "data_provenance": "estimated",
+  "source_image": "E:\\桌面\\ARIS\\sci-figure-replica-dev-20261020\\samples\\post01\\source\\article_images\\img07.png",
+  "source_image_sha256": "b6cbe5680fa2b0c5542998fcacf74e990ef1b56e96f40665895be625772841d5",
+  "canvas": {
+    "source_px": [
+      1048,
+      924
+    ],
+    "figsize_inches": [
+      4.5,
+      3.967557251908397
+    ],
+    "dpi": 600
+  },
+  "rows": 1,
+  "cols": 1,
+  "feature_count": 13,
+  "font": {
+    "requested": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "available": [
+      "Arial",
+      "Microsoft YaHei",
+      "SimHei",
+      "DejaVu Sans"
+    ],
+    "actual": "Arial"
+  },
+  "palette": [
+    "#2f84b1",
+    "#eaf6fb",
+    "#ffffff",
+    "#f6b08a",
+    "#c40035"
+  ],
+  "color_domain": [
+    0,
+    1
+  ],
+  "normalization": "linear",
+  "axes_bounds": [
+    0.008,
+    0.095,
+    0.984,
+    0.893
+  ],
+  "insets": {},
+  "source_label_spelling": "volumn displayed; CSV canonical key volume",
+  "panel_label": "none: standalone source images have no A/B/C letter"
+}

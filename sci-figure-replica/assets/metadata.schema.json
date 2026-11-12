@@ -1,0 +1,233 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "sci-figure-replica figure entry",
+  "type": "object",
+  "required": [
+    "id",
+    "post",
+    "figure",
+    "scenarios",
+    "language",
+    "data_provenance",
+    "code_provenance",
+    "files",
+    "status",
+    "version",
+    "source_image_sha256",
+    "created_at",
+    "updated_at"
+  ],
+  "$defs": {
+    "nullableString": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "scenario": {
+      "enum": [
+        "machine-learning",
+        "model-explanation-shap",
+        "single-cell",
+        "transcriptomics",
+        "proteomics",
+        "metabolomics",
+        "network-pharmacology",
+        "computational-drug-design",
+        "survival-analysis",
+        "diagnostic-roc",
+        "imaging-radiomics",
+        "experimental-statistics",
+        "multi-omics",
+        "chem-informatics-qsar",
+        "other"
+      ]
+    },
+    "codeProvenance": {
+      "enum": [
+        "original_runs",
+        "adapted",
+        "archived_only",
+        "reconstructed",
+        "example_not_target"
+      ]
+    }
+  },
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*__fig[0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "post": {
+      "type": "object",
+      "required": [
+        "title",
+        "account",
+        "author",
+        "publish_date",
+        "url"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "account": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "author": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "publish_date": {
+          "$ref": "#/$defs/nullableString"
+        },
+        "url": {
+          "$ref": "#/$defs/nullableString"
+        }
+      }
+    },
+    "figure": {
+      "type": "object",
+      "required": [
+        "index",
+        "label",
+        "caption",
+        "panels",
+        "chart_types",
+        "canvas_px"
+      ],
+      "properties": {
+        "index": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "caption": {
+          "type": "string"
+        },
+        "panels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "chart_types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "panel_map": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "canvas_px": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "type": "object",
+      "required": [
+        "primary",
+        "secondary",
+        "free"
+      ],
+      "properties": {
+        "primary": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        },
+        "secondary": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/scenario"
+          }
+        },
+        "free": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "language": {
+      "enum": [
+        "python",
+        "r",
+        "unknown"
+      ]
+    },
+    "data_provenance": {
+      "enum": [
+        "original",
+        "estimated",
+        "synthetic",
+        "mixed"
+      ]
+    },
+    "code_provenance": {
+      "$ref": "#/$defs/codeProvenance"
+    },
+    "original_code_provenance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/codeProvenance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^(?!/)(?![A-Za-z]:)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$)).+"
+      }
+    },
+    "status": {
+      "enum": [
+        "draft",
+        "review",
+        "approved",
+        "blocked"
+      ]
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_image_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+importance = best_model_xgb.feature_importances_
+feature_names = np.array(X_train.columns)
+
+order = np.argsort(importance)[::-1]
+importance = importance[order]
+feature_names = feature_names[order]
+
+percentages = np.round(importance / importance.sum() * 100, 1)
+
+fig, ax = plot_radial_shap_importance(
+    feature_names.tolist(),
+    importance.tolist(),
+    percentages.tolist(),
+    output_path="radial_xgb_importance.png",
+    cbar_title="XGB importance",
+)
+plt.show()
