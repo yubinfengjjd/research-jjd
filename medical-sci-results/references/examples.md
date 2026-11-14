@@ -36,7 +36,7 @@
 
 ## 充分展开但不讨论化（规则第 3、5 节）
 
-- 可按证据关系组织（非逐段必填模板）：先报告主结果，再给出最有信息量的对比，补充例外或异质性，最后说明该模式对本节研究问题的含义。例如：“Performance was maintained in the three-class cohorts, whereas Cohort X showed a selective decline in class Y (Fig. 5A). The error direction was concentrated in Y-to-Normal assignments rather than distributed across all classes (Fig. 5B). This pattern links the aggregate performance difference to a specific class-level failure, while the cohort-level comparison remains descriptive.” 含义句增加解释时保留；若只重复前两句，则删除。
+- 可按证据关系组织（非逐段必填模板）：先报告主结果，再给出最有信息量的对比，补充例外或异质性，最后说明该模式对本节研究问题的含义。例如：“Performance was maintained in the three-class cohorts, whereas Cohort X showed a selective decline in class Y (Fig. 5A). The error direction was concentrated in Y-to-Normal assignments rather than distributed across all classes (Fig. 5B). The excess errors were concentrated in the same class that accounted for the aggregate performance difference.” 含义句增加解释时保留；若只重复前两句，则删除。
 - 简短稿与详细稿对比（虚构数据）：
   - 简短（约 50 词，信息不足）：“Coverage reached the 90% target in six of seven cohorts; Cohort X was the exception (0.78) (Fig. 8A). Class Y received multiple labels more often (Fig. 8B).”
   - 详细（约 140 词，每句都有新信息）：“Marginal coverage reached the 90% target in six of seven cohorts, with point estimates of 0.91–0.98 (Fig. 8A). Cohort X was the only exception (0.78; 95% CI, 0.76–0.81), and its interval excluded the target. The shortfall occurred in the cohort with the largest classification loss, so the prediction sets missed the true class most often where top-1 errors were also most frequent (Fig. 5A; Fig. 8A). Set size differed by true class: in the internal cohort, singleton sets covered 99% of class Z scans but only 55% of class Y scans (Fig. 8B). Class Y showed the same pattern in the other cohorts (56%–66%), indicating that the cost of coverage was concentrated in the class with the greatest diagnostic overlap rather than spread evenly across classes (Fig. 8B).”
@@ -45,8 +45,8 @@
 ## 限定并入结果句，不写免责尾句（规则第 5 节）
 
 - 避免（结果后再追一句免责）：“Coverage was 0.781 in Cohort X (Fig. 8A). Empirical coverage did not establish device-level guarantees (Fig. 8A).”
-- 采用：“Marginal coverage reached the 90% target in every cohort except Cohort X (0.781; 95% CI, 0.757–0.806) (Fig. 8A).” 设备层面的限定如果大纲要求，在本节只写一次，可放在含义句中。
-- 避免（图注式说明搬进正文）：“The pooled matrix represented repeated predictions of the same scans across seeds rather than independent observations.”——这是图注内容，正文删除。
+- 采用：“Marginal coverage reached the 90% target in every cohort except Cohort X (0.781; 95% CI, 0.757–0.806) (Fig. 8A).” 设备层面的必要范围在能支配相应论断的位置保留；同一分析的重复表述可合并，分析切换或独立阅读单元重新核对。
+- 避免（图注式说明搬进正文）：“The pooled matrix represented repeated predictions of the same scans across seeds rather than independent observations.”——若正文已交代重复预测与分析单位，可合并重复说明；否则保留足以避免把预测次数当作独立样本的范围，不能只因图注已有就删除。
 
 ## 长句拆分（journal-style 第 3 节）
 
@@ -99,7 +99,7 @@
   “……（结果句）……illustrating the sensitivity of performance summaries to the evaluation unit.”
   “……（结果句）……separating average displacement from the observed frequency of incorrect decisions.”
   “……（结果句）……highlighting the distinction between aggregate inclusion and inclusion within each diagnosis.”
-- 采用：每两段最多一段保留阐释尾句，其余段落以结果句结束；同一节内不用同一句式（“illustrating …”“separating …”“highlighting …”）承接尾句。
+- 采用：按信息增量判断尾句：删除后不丢独立信息的复述可删；确实回答研究问题且有证据的含义保留。不设每几段一次的比例；反复句式只作复核线索。
 
 ## 跨图关联与特别发现（规则第 5 节）
 
@@ -118,7 +118,7 @@
 ## 含义句的分寸（规则第 5 节）
 
 - 避免（讨论化、外推）：“These findings indicate that the model is ready for clinical deployment across devices.”
-- 采用（限于本节问题）：“The interpretable structure therefore did not come at a measurable cost in internal performance.”
+- 描述性点估计接近不证明“无代价”、等效或非劣。采用：“The observed difference was small, and its confidence interval included both directions.” 只有预设相应检验、界值且结果支持时，才按该分析范围报告等效或非劣，不能借用其他终点的界值。
 
 ## 中文对照：直译与重组（规则第 6 节）
 

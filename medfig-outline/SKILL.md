@@ -7,6 +7,10 @@ description: Use when a medical research figure set is finished and the user wan
 
 输入是已经定稿的整套图表（规格、`source.json`、表格、图注草稿、图脚本）；输出是一份写作大纲（`写作大纲.docx` + 同内容 `写作大纲.md`）和按小节分好的文件夹。大纲只写 Methods 和 Results，不写 Introduction / Discussion，也不写正文成稿。
 
+## 跨章节定位衔接
+
+起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。只补实际缺失的定位与证据关系，不复制新规则或以固定句式制造主张。
+
 ## 硬门槛（HARD GATE）
 
 - 图表未定稿（还在改图、未交付）时不出大纲，回 medfig-render / medfig-orchestrate。

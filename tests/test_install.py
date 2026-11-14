@@ -299,3 +299,18 @@ def test_target_overlapping_source_refused(src, tmp_path, where):
 def test_cli_refuses_repo_root_target(tmp_path):
     with pytest.raises(SystemExit, match="overlaps"):
         install.main(["--dry-run", "--target", str(ROOT), "--backup-root", str(tmp_path / "b")])
+
+
+@pytest.mark.parametrize("selected", ["medfig-outline", "medical-sci-methods", "medical-sci-results",
+                                     "medical-sci-legends", "medical-sci-introduction", "medical-sci-discussion",
+                                     "medical-sci-abstract", "medical-sci-finalize"])
+def test_selected_writing_skill_distributes_shared_positioning(src, roots, tmp_path, selected):
+    inst = make(src, roots, tmp_path, skills=(selected,))
+    assert inst.install() == 0
+    for target in roots:
+        assert (target / "medpaper-pipeline/references/positioning.md").is_file()
+        assert install.verify(src / "medpaper-pipeline", target / "medpaper-pipeline") == []
+    assert inst.uninstall() == 0
+    for target in roots:
+        assert not (target / selected).exists()
+        assert (target / "medpaper-pipeline/references/positioning.md").is_file()

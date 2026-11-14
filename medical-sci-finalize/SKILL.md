@@ -7,6 +7,10 @@ description: Use when a complete medical SCI manuscript needs final Word assembl
 
 流水线第 11 步，一个技能两个阶段：组装主稿与补充材料 Word；随后对全部英文作证据保留的结构润色，同步对应中文和已有双语稿，再重新组装。不用于单个章节写作、研究计划、补做分析或重绘图表。
 
+## 跨章节定位衔接
+
+起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。只补实际缺失的定位与证据关系，不复制新规则或以固定句式制造主张。
+
 ## 必需依赖：anti-defensive-writing
 
 **REQUIRED SUB-SKILL：必须使用 `anti-defensive-writing`。** 每次使用本技能时，先读取同一技能根目录下的 [anti-defensive-writing/SKILL.md](../anti-defensive-writing/SKILL.md)，再读取本技能的医学适配与结构审查规则；两者均读完后，在医学证据边界内应用依赖。独立技能缺失、链接失效或不可读时，报告缺失路径并停止本技能；不得仅靠本技能内的静态摘录继续，也不得宣称已经使用依赖。安装须在独立维护任务中完成，稿件流程保持离线。

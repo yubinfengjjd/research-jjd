@@ -110,7 +110,7 @@ def _group(key):
     return None
 
 
-def _section(text, offset):
+def _section(text, offset, aliases=None):
     stack = []
     for match in re.finditer(r'^([ \t]*#{1,6})[ \t]+([^\r\n]+)', text, re.M):
         if match.start() > offset:
@@ -118,7 +118,7 @@ def _section(text, offset):
         level = match[1].count('#')
         while stack and stack[-1][0] >= level:
             stack.pop()
-        stack.append((level, match[2].strip()))
+        stack.append((level, (aliases or {}).get(match.start(), match[2].strip())))
     return tuple(stack)
 
 
@@ -179,7 +179,7 @@ def _ownership(source, candidate, scope):
                      'Ambiguous/unmapped scientific scope ownership; split or preserve affected unit: '+axis)
 
 
-def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, scopes):
+def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, scopes, headings=()):
     left, right, seen = [], [], set()
     for record in _list(values, 'fact context', True):
         _object(record, ('source', 'candidate', 'scope'), 'fact context')
@@ -194,7 +194,8 @@ def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, 
         owned_before, owned_after = _named_scopes(a['text']), _named_scopes(b['text'])
         _require(owned_before == owned_after and all(len(labels) == 1 for labels in owned_before.values()),
                  'Ambiguous/changed owner labels in fact context; preserve or split affected unit')
-        _require(_tokens(a['text']) <= _tokens(b['text']), 'Fact context lost numeric/citation/qualifier evidence')
+        _require(_tokens(_body_content([a], headings, 'source')) <=
+                 _tokens(_body_content([b], headings, 'candidate')), 'Fact context lost numeric/citation/qualifier evidence')
         seen.update(indices)
         left.append(a)
         right.append(b)
@@ -211,17 +212,122 @@ def _content(spans):
     return '\n'.join(x['text'] for x in spans)
 
 
-def _scope(source, candidate, old, new):
-    def scopes(spans, texts):
+def _body_content(spans, headings, side):
+    """Exclude only independently audited exact heading slots, never prose tokens."""
+    result = []
+    for value in spans:
+        cursor = value['start']
+        parts = []
+        for heading in sorted((h[side] for h in headings if h[side]['file'] == value['file']), key=lambda h: h['start']):
+            a, b = max(value['start'], heading['start']), min(value['end'], heading['end'])
+            if b > a:
+                parts.append(value['text'][cursor-value['start']:a-value['start']])
+                cursor = b
+        parts.append(value['text'][cursor-value['start']:])
+        result.append(' '.join(parts))
+    return '\n'.join(result)
+
+
+def _scope(source, candidate, old, new, aliases=None):
+    def scopes(spans, texts, aliases=None):
         result = set()
         for x in spans:
-            result.add((x['file'], _section(texts[x['file']], x['start'])))
-            result.add((x['file'], _section(texts[x['file']], x['end']-1)))
+            names = (aliases or {}).get(x['file'])
+            result.add((x['file'], _section(texts[x['file']], x['start'], names)))
+            result.add((x['file'], _section(texts[x['file']], x['end']-1, names)))
             for match in re.finditer(r'^#{1,6}\s+', texts[x['file']][x['start']:x['end']], re.M):
-                result.add((x['file'], _section(texts[x['file']], x['start']+match.start())))
+                result.add((x['file'], _section(texts[x['file']], x['start']+match.start(), names)))
         return result
-    a, b = scopes(source, old), scopes(candidate, new)
+    a, b = scopes(source, old), scopes(candidate, new, aliases)
     _require(len(a) == len(b) == 1 and a == b, 'Claim may not cross files/sections or move scope')
+
+
+def _heading_slots(text):
+    """Complete ATX lines and their immediately adjacent bold bilingual subtitle."""
+    headings, slots = [], {}
+    for index, match in enumerate(re.finditer(r'^#{1,6}[^\r\n]*', text, re.M), 1):
+        level = len(match[0])-len(match[0].lstrip('#'))
+        headings.append((match, level))
+        slots[(match.start(), match.end())] = (index, 'heading', level)
+        following = re.match(r'\r?\n(\*\*[^\r\n]+\*\*)[ \t]*(?=\r?$)', text[match.end():], re.M)
+        if following:
+            slots[(match.end()+following.start(1), match.end()+following.end(1))] = (index, 'subtitle', level)
+    return headings, slots
+
+
+def _heading_edits(review, old, new, managed, remember, identity):
+    """Fail-closed additive schema: one-to-one title slots; body safeguards remain separate."""
+    pairs, aliases, covered = [], {}, set()
+    layouts = {}
+    for key in managed:
+        a, sa = _heading_slots(old[key])
+        b, sb = _heading_slots(new[key])
+        _require(len(a) == len(b) and [level for _, level in a] == [level for _, level in b],
+                 key+': section heading count/levels changed')
+        layouts[key] = (a, b, sa, sb)
+
+    def title_pair(source, candidate, key, primary=False):
+        a = _span(source, old, 'heading source')
+        b = _span(candidate, new, 'heading candidate')
+        _require(a['file'] == b['file'] == key, 'Heading pair must stay in the same corresponding file')
+        left, right, sa, sb = layouts[key]
+        x, y = sa.get((a['start'], a['end'])), sb.get((b['start'], b['end']))
+        _require(x is not None and x == y and (not primary or x[1] == 'heading'),
+                 'Heading edit must map complete same-ordinal/same-level title slots')
+        slot = (key, x)
+        _require(slot not in covered, 'Duplicate heading slot mapping')
+        covered.add(slot)
+        before, after = _tokens(a['text']), _tokens(b['text'])
+        _require({t for t in before if t[0] != 6} == {t for t in after if t[0] != 6}
+                 and {t for t in before if t[0] == 6} <= {t for t in after if t[0] == 6},
+                 'Heading numeric/citation/unit/negative/CI evidence changed')
+        _require(_named_scopes(a['text']) == _named_scopes(b['text']), 'Heading scientific owner labels changed')
+        if x[1] == 'heading':
+            # Only candidate title labels are normalized; position, hierarchy and prose remain intact.
+            aliases.setdefault(key, {})[b['start']] = re.sub(r'^#{1,6}[ \t]*', '', a['text']).strip()
+        pairs.append(dict(source=a, candidate=b))
+        return x
+
+    for item in _list(review.get('heading_edits', []), 'heading_edits'):
+        _object(item, ('id', 'section_id', 'source', 'candidate', 'reviewed_by', 'rationale', 'translations'), 'heading edit')
+        remember(item['id'])
+        identity(item['reviewed_by'], 'scientific')
+        _string(item['rationale'], 'heading rationale')
+        key = _key(item['source']['file'])
+        _require(key in managed and key.endswith('_EN.md'), 'Primary heading edit must name inventoried EN file')
+        slot = title_pair(item['source'], item['candidate'], key, True)
+        _require(item['section_id'] == key+'#heading-'+str(slot[0]), 'Heading stable section_id mismatch')
+        _require(item['source']['text'] != item['candidate']['text'], 'Primary heading edit must change title wording')
+        group = _group(key)
+        required = {lang: group+suffix for lang, suffix in [('ZH', '_ZH.md'), ('EN_ZH', '_EN_ZH.md')] if group+suffix in managed}
+        seen = set()
+        for record in _list(item['translations'], 'heading translations'):
+            _object(record, ('language', 'source', 'candidate', 'reviewed_by', 'rationale'), 'heading translation')
+            lang = record['language']
+            _require(type(lang) is str and lang in required and lang not in seen, 'Unexpected/duplicate heading translation')
+            seen.add(lang)
+            identity(record['reviewed_by'], 'bilingual')
+            _string(record['rationale'], 'heading bilingual rationale')
+            left, right = _list(record['source'], 'heading translation source', True), _list(record['candidate'], 'heading translation candidate', True)
+            _require(len(left) == len(right), 'Heading translation mapping count changed')
+            mapped = [title_pair(a, b, required[lang]) for a, b in zip(left, right)]
+            _require(any(x[1] == 'heading' for x in mapped), 'Heading translation requires corresponding heading slot')
+            if lang == 'EN_ZH':
+                _require(any(a['text'] == item['source']['text'] and b['text'] == item['candidate']['text'] for a, b in zip(left, right)),
+                         'Combined heading must cover its English title')
+                # Every adjacent bilingual subtitle of the mapped heading is reviewed, even if retained.
+                sa, sb = layouts[required[lang]][2:]
+                for x in mapped:
+                    if x[1] == 'heading':
+                        subtitles = {(required[lang], y) for y in sa.values() if y[0] == x[0] and y[1] == 'subtitle'}
+                        _require(subtitles <= covered and {y for y in sa.values() if y[0] == x[0]} ==
+                                 {y for y in sb.values() if y[0] == x[0]}, 'Combined bilingual subtitle coverage/structure missing')
+        _require(seen == required.keys(), 'Heading edit missing bilingual/combined coverage')
+    for key, (left, right, sa, sb) in layouts.items():
+        for index, ((a, _), (b, _)) in enumerate(zip(left, right), 1):
+            _require(a[0] == b[0] or (key, (index, 'heading', left[index-1][1])) in covered,
+                     key+': section headings changed/reordered without heading_edits')
+    return pairs, aliases
 
 
 def _covered(text, start, end, spans, key):
@@ -319,7 +425,7 @@ def _compare(before, after, review_path, changes):
     new = {k: b[k].decode('utf-8') for k in managed}
     review = _json(review_path)
     _object(review, ('schema_version', 'reviewers', 'inventory', 'claims', 'unknowns', 'narrative'),
-            'review', ('author_limits',))
+            'review', ('author_limits', 'heading_edits'))
     _require(type(review['schema_version']) is int and review['schema_version'] == 1, 'Unsupported review schema_version')
     reviewers = _object(review['reviewers'], ('editor', 'scientific', 'bilingual'), 'reviewers')
     for name in reviewers.values():
@@ -332,9 +438,6 @@ def _compare(before, after, review_path, changes):
         for field, data in [('source_sha256', a[key]), ('candidate_sha256', b[key])]:
             _require(type(record[field]) is str and HASH.fullmatch(record[field]) and record[field] == _sha(data),
                      key+': stale or malformed '+field)
-    for key in managed:
-        _require(re.findall(r'^#{1,6}[^\r\n]*', old[key], re.M) == re.findall(r'^#{1,6}[^\r\n]*', new[key], re.M),
-                 key+': section headings changed/reordered')
     source_coverage, candidate_coverage = [], []
     warnings, identifiers = [BOUNDARY], set()
     def identity(value, role):
@@ -343,17 +446,22 @@ def _compare(before, after, review_path, changes):
         _string(value, 'record id')
         _require(value not in identifiers, 'Duplicate record id: '+value)
         identifiers.add(value)
+    headings, aliases = _heading_edits(review, old, new, managed, remember, identity)
+    source_coverage.extend(x['source'] for x in headings)
+    candidate_coverage.extend(x['candidate'] for x in headings)
+    def evidence(spans, side):
+        return _tokens(_body_content(spans, headings, side))
     for claim in _list(review['claims'], 'claims'):
         _object(claim, ('id', 'reviewed_by', 'source', 'candidate', 'scope', 'facts', 'provenance', 'translations'), 'claim')
         remember(claim['id'])
         identity(claim['reviewed_by'], 'scientific')
         source, candidate = _spans(claim['source'], old, 'claim source'), _spans(claim['candidate'], new, 'claim candidate')
         _require(all(x['file'].endswith('_EN.md') for x in source+candidate), 'Primary claims must map English source')
-        _scope(source, candidate, old, new)
+        _scope(source, candidate, old, new, aliases)
         scope_pairs = _pairs(claim['scope'], old, new, source, candidate, 'scope', scoped=True)
         _ownership(source, candidate, scope_pairs)
         provenance = _pairs(claim['provenance'], old, new, source, candidate, 'provenance')
-        _require(_tokens(_content(source)) == _tokens(_content(candidate)), 'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
+        _require(evidence(source, 'source') == evidence(candidate, 'candidate'), 'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
         facts = {}
         fact_source = [x['source'] for x in scope_pairs+provenance]
         fact_candidate = [x['candidate'] for x in scope_pairs+provenance]
@@ -365,12 +473,12 @@ def _compare(before, after, review_path, changes):
             left, right = _spans(fact['source'], old, 'fact source'), _spans(fact['candidate'], new, 'fact candidate')
             _require(all(_inside(x, source) for x in left) and all(_inside(x, candidate) for x in right), 'Fact outside claim')
             _require({x['text'] for x in left} == {x['text'] for x in right}, 'Unique fact anchor changed')
-            _contexts(fact['context'], old, new, source, candidate, left, right, scope_pairs)
+            _contexts(fact['context'], old, new, source, candidate, left, right, scope_pairs, headings)
             facts[fact['id']] = (left, right)
             fact_source.extend(left)
             fact_candidate.extend(right)
-        _require(_tokens(_content(source)) <= _tokens(_content(fact_source)) and
-                 _tokens(_content(candidate)) <= _tokens(_content(fact_candidate)), 'Salient evidence missing from explicit fact map')
+        _require(evidence(source, 'source') <= evidence(fact_source, 'source') and
+                 evidence(candidate, 'candidate') <= evidence(fact_candidate, 'candidate'), 'Salient evidence missing from explicit fact map')
         key = source[0]['file']
         group = _group(key)
         required = {lang: group+suffix for lang, suffix in [('ZH', '_ZH.md'), ('EN_ZH', '_EN_ZH.md')] if group+suffix in managed}
@@ -387,9 +495,9 @@ def _compare(before, after, review_path, changes):
             left = _spans(translation['source'], old, 'translation source')
             right = _spans(translation['candidate'], new, 'translation candidate')
             _require(all(x['file'] == required[lang] for x in left+right), 'Translation must cover corresponding existing manuscript')
-            _scope(left, right, old, new)
+            _scope(left, right, old, new, aliases)
             translated_scope = _pairs(translation['scope'], old, new, left, right, 'translation scope')
-            _require(_tokens(_content(left)) == _tokens(_content(right)), 'Translation numeric/citation/unit/negative evidence changed')
+            _require(evidence(left, 'source') == evidence(right, 'candidate'), 'Translation numeric/citation/unit/negative evidence changed')
             linked = set()
             linked_source = [x['source'] for x in translated_scope]
             linked_candidate = [x['candidate'] for x in translated_scope]
@@ -400,7 +508,7 @@ def _compare(before, after, review_path, changes):
                 ls, rs = _spans(link['source'], old, 'translated fact source'), _spans(link['candidate'], new, 'translated fact candidate')
                 _require(all(_inside(x, left) for x in ls) and all(_inside(x, right) for x in rs), 'Translated fact outside claim')
                 _require({x['text'] for x in ls} == {x['text'] for x in rs}, 'Translated fact anchor changed')
-                _contexts(link['context'], old, new, left, right, ls, rs, translated_scope)
+                _contexts(link['context'], old, new, left, right, ls, rs, translated_scope, headings)
                 # Numbers/citation identifiers/operators are language-independent anchors.
                 invariant = {t for t in _tokens(_content(facts[link['fact']][0])) if t[0] in (0, 2, 5)}
                 _require(invariant <= _tokens(_content(ls)) and invariant <= _tokens(_content(rs)), 'Translated numeric/citation fact mismatch')
@@ -408,8 +516,8 @@ def _compare(before, after, review_path, changes):
                 linked_candidate.extend(rs)
             _require(linked == facts.keys(), 'Translation missing fact coverage')
             # Combined files also contain English text, so check its entire evidence set.
-            _require(_tokens(_content(left)) <= _tokens(_content(linked_source)) and
-                     _tokens(_content(right)) <= _tokens(_content(linked_candidate)), 'Translation salient evidence missing from fact map')
+            _require(evidence(left, 'source') <= evidence(linked_source, 'source') and
+                     evidence(right, 'candidate') <= evidence(linked_candidate, 'candidate'), 'Translation salient evidence missing from fact map')
             source_coverage.extend(left)
             candidate_coverage.extend(right)
         _require(seen == required.keys(), 'Affected claim missing bilingual/combined coverage')
@@ -421,7 +529,7 @@ def _compare(before, after, review_path, changes):
         _string(unknown['reason'], 'unknown reason')
         left, right = _span(unknown['source'], old, 'unknown source'), _span(unknown['candidate'], new, 'unknown candidate')
         _require(left['text'] == right['text'], 'Unknown passage must retain exact original text')
-        _scope([left], [right], old, new)
+        _scope([left], [right], old, new, aliases)
         source_coverage.append(left)
         candidate_coverage.append(right)
     narrative = _object(review['narrative'], ('reviewed_by', 'source', 'candidate', 'summary', 'issues'), 'narrative')

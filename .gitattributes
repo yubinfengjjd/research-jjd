@@ -1,2 +1,5 @@
 # Preserve the imported skill's source bytes, fixtures and existing evidence.
 sci-figure-replica/** -text
+
+# Preserve the pinned upstream dependency SHA across Windows checkouts.
+anti-defensive-writing/SKILL.md -text

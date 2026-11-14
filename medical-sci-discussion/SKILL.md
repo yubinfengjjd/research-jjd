@@ -7,6 +7,10 @@ description: Use when drafting or revising the Discussion of a medical SCI manus
 
 依据已完成的 Results、图注、Methods 和 Introduction，撰写或修订英文 Discussion，附中文对照和中文核查说明。Discussion 回到 Introduction 提出的问题，按研究问题选择核心发现深入讨论、与最接近的已有研究对比，写明本研究补充了什么，诚实陈述局限并给出可操作的未来方向；不复述 Results，不超越证据。
 
+## 跨章节定位衔接
+
+起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。只补实际缺失的定位与证据关系，不复制新规则或以固定句式制造主张。
+
 ## 证据保留的修订契约
 
 默认允许同节合并、去重、重排，保留来源、分析范围、数字/CI 归属、必要限定、不利发现与引用支持关系；不改数据、统计逻辑或研究问题。篇幅由作者/期刊与证据决定，无通用最低词数；历史篇幅/句数只作参考，沿用项目引用软配额，不为填数扩写。

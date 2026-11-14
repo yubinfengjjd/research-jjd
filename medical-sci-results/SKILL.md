@@ -1,11 +1,15 @@
 ---
 name: medical-sci-results
-description: "Use when drafting, continuing or revising the Results section of a medical SCI manuscript from figures, figure legends, tables, source data and an author-confirmed outline, such as 医学结果部分写作、Results 中英对照、按图写结果、根据 figure 和 figure legend 写结果描述、续写下一节结果、修改已有 Results 稿. Produces bilingual (English with paragraph-level Chinese) Results with bilingual subheadings, figure citations after each claim and a 核查说明 when triggered. Do not use for Methods (use medical-sci-methods), Discussion, figure legends, outline building or figure work."
+description: "Use when drafting, continuing or revising the Results section of a medical SCI manuscript from figures, figure legends, tables, source data and an author-confirmed outline, such as 医学结果部分写作、Results 中英对照、按图写结果、根据 figure 和 figure legend 写结果描述、续写下一节结果、修改已有 Results 稿. Produces bilingual (English with paragraph-level Chinese) Results with bilingual subheadings, figure citations with an unambiguous evidence span and a 核查说明 when triggered. Do not use for Methods (use medical-sci-methods), Discussion, figure legends, outline building or figure work."
 ---
 
 # 医学 SCI Results 写作
 
 依据成图、图例、表格、源数据和作者确认的大纲，撰写或修订正式英文 Results，附逐段中文对照和中英双语小标题。正文只陈述图表支持的结果，突出核心发现，不复述方法、不描述绘图、不过度解读。
+
+## 跨章节定位衔接
+
+起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。只补实际缺失的定位与证据关系，不复制新规则或以固定句式制造主张。
 
 ## 证据保留的修订契约
 

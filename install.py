@@ -33,7 +33,13 @@ SKILLS = ("medfig-suite", "medfig-plan", "medfig-render", "medfig-orchestrate", 
           "medical-sci-discussion", "medical-sci-abstract", "medical-sci-finalize", "medical-sci-references", "medical-sci-submission",
           "medpaper-pipeline", "medical-research-plan", "medimg-experiment", "socratic-project-manager",
           "anti-defensive-writing", "sci-figure-replica")
-SKILL_DEPENDENCIES = {"medical-sci-finalize": ("anti-defensive-writing",)}
+SKILL_DEPENDENCIES = {
+    name: ("medpaper-pipeline",) for name in
+    ("medfig-outline", "medical-sci-methods", "medical-sci-results",
+     "medical-sci-legends", "medical-sci-introduction", "medical-sci-discussion",
+     "medical-sci-abstract")
+}
+SKILL_DEPENDENCIES["medical-sci-finalize"] = ("anti-defensive-writing", "medpaper-pipeline")
 STAMP = ".medfig_install.json"
 
 EXCLUDED_DIR_NAMES = {"__pycache__", ".pytest_cache", ".git"}
