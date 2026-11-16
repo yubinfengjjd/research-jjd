@@ -18,18 +18,22 @@ import tempfile
 BOUNDARY = ('Exact spans, token checks and recorded review do not prove arbitrary language '
             'equivalence, scientific truth, translation accuracy or author acceptance.')
 HASH = re.compile(r'[0-9a-f]{64}')
-NUMBER = r'(?<![A-Za-z0-9_.])[+−-]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)(?:[eE][+−-]?\d+)?'
+NUMBER = r'(?<![A-Za-z0-9_.])(?<![A-Za-z]-)[+−-]?(?:\d+(?:,\d{3})*(?:\.\d+)?|\.\d+)(?:[eE][+−-]?\d+)?'
 UNIT = r'(?:µm/px|μm/px|mmHg|mmol/L|mol/L|mg/dL|g/L|kg|mg|µg|μg|ng|pg|mL|ml|µL|μL|dL|mm|cm|µm|μm|nm|px|pixels?|scans?|eyes|subjects?|patients?|cohorts?|clusters?|seeds?|runs?|epochs?|seconds?|ms|Hz|GB|MB|%)'
-TOKENS = [re.compile(NUMBER), re.compile(NUMBER+r'\s*'+UNIT+r'(?!\w)'),
-          re.compile(r'\b(?:PMID|DOI|arXiv|URL):\s*[^\s)\];,]+', re.I),
-          re.compile(r'\b(?:Fig(?:ure)?s?\.?|Tables?)\s+S?\d+[a-z]?(?:[–-][a-z])?', re.I),
-          re.compile(r'(?<!\w)'+UNIT+r'(?!\w)|%'),
+STANDALONE_UNIT = r'(?:µm/px|μm/px|mmHg|mmol/L|mol/L|mg/dL|g/L|kg|mg|µg|μg|ng|pg|mL|ml|µL|μL|dL|mm|cm|µm|μm|nm|px|pixels?|seconds?|ms|Hz|GB|MB|%)'
+TOKENS = [re.compile(NUMBER), re.compile(NUMBER+r'\s*(?:µm/像素|μm/像素|'+UNIT+r'(?![A-Za-z0-9_])|像素)'),
+          re.compile(r'\b(?:PMID|DOI|arXiv|URL):\s*[^\s)\];,）】，；：！？、“”‘’《》「」『』]+', re.I),
+          re.compile(r'(?:\b(?:Supplementary\s+)?(Fig(?:ure)?s?\.?|Tables?)\s+|(?<![A-Za-z0-9_])((?:补充|附)?[图表])\s*)(S?\d+)'
+                     r'([a-z](?:[–-][a-z])?(?:(?:\s*[,、]\s*(?:and\s+)?|\s*[与和及]\s*)(?:S?\d+[a-z](?:[–-][a-z])?|[a-z](?:[–-][a-z])?)|\s+and\s+(?:S?\d+[a-z](?:[–-][a-z])?|[b-z](?:[–-][a-z])?))*)?(?![A-Za-z])', re.I),
+          re.compile(r'(?<!\w)(?:µm/像素|μm/像素|'+STANDALONE_UNIT+r'(?![A-Za-z0-9_]))|(?<![\u4e00-\u9fffA-Za-z_])像素|%'),
           re.compile(r'<=|>=|≤|≥|<|>|≠|(?<![A-Za-z])=(?!=)'),
-          re.compile(r'\b(?:not|no|never|without|failed|inconclusive|unresolved|unestablished|'
+          re.compile(r'\b(?:not estimable|not executed|cross(?:ing|ed|es)? zero|confidence intervals?|'
+                     r'not established|cannot establish|(?:did|do|does) not establish|no established|'
+                     r'without (?:a |any )?(?:prespecified )?inferential(?: threshold| ranking| test| comparison)?|non[- ]inferential|'
+                     r'not|no|never|without|failed|inconclusive|unresolved|unestablished|'
                      r'exploratory|descriptive|retrospective|paired|subset|single[- ]run|'
-                     r'single[- ]seed|one[- ]sided|two[- ]sided|cluster[- ]bootstrap|'
-                     r'not estimable|not executed|cross(?:ing|ed|es)? zero|confidence intervals?|CI)\b', re.I),
-          re.compile(r'\$\$[\s\S]*?\$\$|(?<!\$)\$(?!\$)[^$\n]+\$|`[^`\n]+`|https?://[^\s)]+'),
+                     r'single(?:[- ]evaluated)?[- ]seed|point[- ]estimates?|one[- ]sided|two[- ]sided|cluster[- ]bootstrap|CI)\b|点估计', re.I),
+          re.compile(r'\$\$[\s\S]*?\$\$|(?<!\$)\$(?!\$)[^$\n]+\$|`[^`\n]+`|https?://[^\s)）】，；：！？、“”‘’《》「」『』]+'),
           re.compile(r'(?:\d+(?:\.\d+)?%\s*)?\b(?:CI|confidence intervals?)\s*[:=]?\s*'
                      r'[\[(]?\s*'+NUMBER+r'\s*(?:,|\bto\b|[–—])\s*'+NUMBER+r'\s*[\])]?', re.I)]
 
@@ -141,6 +145,10 @@ def _inside(inner, outer):
     return any(inner['file'] == x['file'] and x['start'] <= inner['start'] < inner['end'] <= x['end'] for x in outer)
 
 
+def _canonical_scope_anchor(text):
+    return re.sub(r'(?i)\b(seed|run)[-\s]+(\d+)\b', lambda m: m[1].casefold()+' '+m[2], text)
+
+
 def _pairs(values, old, new, source, candidate, label, nonempty=True, scoped=False):
     pairs = _list(values, label, nonempty)
     axes = set()
@@ -153,30 +161,87 @@ def _pairs(values, old, new, source, candidate, label, nonempty=True, scoped=Fal
             axes.add(axis)
         a, b = _span(pair['source'], old, label), _span(pair['candidate'], new, label)
         _require(_inside(a, source) and _inside(b, candidate), label+': anchor outside claim')
-        _require(a['text'] == b['text'], label+': immutable anchor changed')
+        same = _canonical_scope_anchor(a['text']) == _canonical_scope_anchor(b['text']) if scoped else a['text'] == b['text']
+        _require(same, label+': immutable anchor changed')
     return pairs
+
+
+def _owner_occurrences(text):
+    """Return ordered (start, end, axis, canonical_label) owner hits."""
+    hits = []
+    pattern = (r'(?<![\w\-‐‑‒–—−])((?i:cohort|group|population|subset|endpoint|outcome|seed|run))'
+               r'(?:[ \t]+([A-Z][A-Za-z0-9_-]*|\d+)|[-‐‑‒–—−](\d+))(?![A-Za-z0-9_])'
+               r'|(队列|亚组|组|终点|种子|运行)[ \t]*([A-Z][A-Za-z0-9_-]*|\d+)(?![A-Za-z0-9_])')
+    for match in re.finditer(pattern, text):
+        if match[1]:
+            raw_axis = match[1].casefold()
+            raw_id = match[2] if match[2] is not None else match[3]
+            if raw_axis in ('seed', 'run') and not re.fullmatch(r'[A-Z]\d*|\d+', raw_id):
+                continue
+            axis = {'group': 'population', 'outcome': 'endpoint', 'seed': 'run'}.get(raw_axis, raw_axis)
+            canon = raw_axis + ' ' + raw_id.casefold()
+        else:
+            axis_cn, raw_id = match[4], match[5]
+            if axis_cn in ('种子', '运行') and not re.fullmatch(r'[A-Z]\d*|\d+', raw_id):
+                continue
+            axis = {'队列': 'cohort', '亚组': 'subset', '组': 'population', '终点': 'endpoint', '种子': 'run', '运行': 'run'}[axis_cn]
+            canon_prefix = {'队列': 'cohort', '亚组': 'subset', '组': 'group', '终点': 'endpoint', '种子': 'seed', '运行': 'run'}[axis_cn]
+            canon = canon_prefix + ' ' + raw_id.casefold()
+        hits.append((match.start(), match.end(), axis, canon))
+    return hits
 
 
 def _named_scopes(text):
     """Conservative explicit owner-label detection, not general semantic inference."""
     result = {}
-    pattern = r'(?<![\w\-‐‑‒–—−])((?i:cohort|group|population|subset|endpoint|outcome|seed|run))\s+([A-Z][A-Za-z0-9_-]*|\d+)(?![A-Za-z0-9_])'
-    for match in re.finditer(pattern, text):
-        axis = {'group': 'population', 'outcome': 'endpoint', 'seed': 'run'}.get(match[1].casefold(), match[1].casefold())
-        result.setdefault(axis, set()).add(match[0].casefold())
-    for match in re.finditer(r'(队列|亚组|组|终点|种子|运行)\s*([A-Z][A-Za-z0-9_-]*|\d+)(?![A-Za-z0-9_])', text):
-        axis = {'队列': 'cohort', '亚组': 'subset', '组': 'population', '终点': 'endpoint', '种子': 'run', '运行': 'run'}[match[1]]
-        result.setdefault(axis, set()).add(match[0].casefold())
+    for _, _, axis, canon in _owner_occurrences(text):
+        result.setdefault(axis, set()).add(canon)
     return result
+
+
+def _multi_owner_segments_preserved(before_text, after_text):
+    """Allow edits inside multi-owner spans iff owner order and per-segment evidence hold."""
+    hb = _owner_occurrences(before_text)
+    ha = _owner_occurrences(after_text)
+    if [(ax, lbl) for _, _, ax, lbl in hb] != [(ax, lbl) for _, _, ax, lbl in ha] or not hb:
+        return False
+    def segs(txt, hits):
+        bounds = [0] + [pos for s, e, _, _ in hits for pos in (s, e)] + [len(txt)]
+        return [txt[bounds[2 * i]:bounds[2 * i + 1]] for i in range(len(hits) + 1)]
+    b_segs = segs(before_text, hb)
+    a_segs = segs(after_text, ha)
+    b_tok_list = [_tokens(s) for s in b_segs]
+    a_tok_list = [_tokens(s) for s in a_segs]
+    for bt, at in zip(b_tok_list, a_tok_list):
+        if not _evidence_equal({t for t in bt if t[0] != 3}, {t for t in at if t[0] != 3}):
+            return False
+    b_cits = [{t for t in bt if t[0] == 3} for bt in b_tok_list]
+    a_cits = [{t for t in at if t[0] == 3} for at in a_tok_list]
+    all_b, all_a = set().union(*b_cits), set().union(*a_cits)
+    if all_b != all_a:
+        return False
+    for i, (bc, ac) in enumerate(zip(b_cits, a_cits)):
+        if any(added not in all_b for added in (ac - bc)):
+            return False
+        for removed in (bc - ac):
+            if not any(removed in b_cits[j] for j in range(len(b_cits)) if j != i):
+                return False
+    return True
 
 
 def _ownership(source, candidate, scope):
     declared = {x['axis']: x for x in scope}
+    src_txt, dst_txt = _content(source), _content(candidate)
+    multi_safe = _named_scopes(src_txt) == _named_scopes(dst_txt) and _multi_owner_segments_preserved(src_txt, dst_txt)
     for spans, side in [(source, 'source'), (candidate, 'candidate')]:
         for axis, labels in _named_scopes(_content(spans)).items():
-            _require(len(labels) == 1 and axis in declared and
-                     labels <= _named_scopes(declared[axis][side]['text']).get(axis, set()),
-                     'Ambiguous/unmapped scientific scope ownership; split or preserve affected unit: '+axis)
+            decl_labels = _named_scopes(declared[axis][side]['text']).get(axis, set()) if axis in declared else set()
+            if len(labels) == 1:
+                _require(axis in declared and labels <= decl_labels,
+                         'Ambiguous/unmapped scientific scope ownership; split or preserve affected unit: '+axis)
+            else:
+                _require(multi_safe and axis in declared and decl_labels <= labels,
+                         'Ambiguous/unmapped scientific scope ownership; split or preserve affected unit: '+axis)
 
 
 def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, scopes, headings=()):
@@ -189,13 +254,19 @@ def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, 
         _require(all(type(i) is int and 0 <= i < len(scopes) for i in indices) and len(set(indices)) == len(indices),
                  'Invalid context scope references')
         for i in indices:
-            _require(scopes[i]['source']['text'] in a['text'] and scopes[i]['candidate']['text'] in b['text'],
+            sc_s, sc_d = scopes[i]['source']['text'], scopes[i]['candidate']['text']
+            direct = sc_s in a['text'] and sc_d in b['text']
+            _require(direct or (_canonical_scope_anchor(sc_s) in _canonical_scope_anchor(a['text']) and
+                     _canonical_scope_anchor(sc_d) in _canonical_scope_anchor(b['text'])),
                      'Fact context does not retain owning scientific scope')
         owned_before, owned_after = _named_scopes(a['text']), _named_scopes(b['text'])
-        _require(owned_before == owned_after and all(len(labels) == 1 for labels in owned_before.values()),
+        single_ok = all(len(labels) == 1 for labels in owned_before.values())
+        multi_ok = any(len(labels) > 1 for labels in owned_before.values()) and _multi_owner_segments_preserved(a['text'], b['text'])
+        _require(owned_before == owned_after and (single_ok or multi_ok),
                  'Ambiguous/changed owner labels in fact context; preserve or split affected unit')
-        _require(_tokens(_body_content([a], headings, 'source')) <=
-                 _tokens(_body_content([b], headings, 'candidate')), 'Fact context lost numeric/citation/qualifier evidence')
+        _require(_evidence_equal(_tokens(_body_content([a], headings, 'source')),
+                                 _tokens(_body_content([b], headings, 'candidate'))),
+                 'Fact context lost numeric/citation/qualifier evidence')
         seen.update(indices)
         left.append(a)
         right.append(b)
@@ -205,7 +276,63 @@ def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, 
 
 
 def _tokens(text):
-    return {(i, re.sub(r'\s+', ' ', m[0]).casefold()) for i, pattern in enumerate(TOKENS) for m in pattern.finditer(text)}
+    text = re.sub(r'(?i)(?<![/\w.-])(seed|run)-(\d+)\b', r'\1 \2', text)
+    result = set()
+    masked = [(m.start(), m.end()) for idx in (2, 3) for m in TOKENS[idx].finditer(text)]
+    for i, pattern in enumerate(TOKENS):
+        for match in pattern.finditer(text):
+            if i in (0, 1) and any(a <= match.start() and match.end() <= b for a, b in masked):
+                continue
+            if i == 3:
+                raw_kind = (match[1] or match[2]).casefold()
+                kind = 'table' if ('table' in raw_kind or '表' in raw_kind) else 'fig'
+                num = match[3].casefold()
+                tail = match[4]
+                if not tail:
+                    result.add((3, f'{kind} {num}'))
+                else:
+                    for part in re.finditer(r'(?:(s?\d+)([a-z])|([a-z])[–-]([a-z])|([a-z]))', tail.casefold()):
+                        if part[1]:
+                            result.add((3, f'{kind} {part[1]}{part[2]}'))
+                        elif part[3]:
+                            lo, hi = ord(part[3]), ord(part[4])
+                            if lo <= hi <= lo + 10:
+                                for code in range(lo, hi + 1):
+                                    result.add((3, f'{kind} {num}{chr(code)}'))
+                            else:
+                                result.add((3, f'{kind} {num}{part[3]}–{part[4]}'))
+                        else:
+                            result.add((3, f'{kind} {num}{part[5]}'))
+            elif i == 6:
+                val = re.sub(r'\s+', ' ', match[0]).casefold()
+                if val in ('not established', 'cannot establish', 'did not establish', 'do not establish',
+                           'does not establish', 'no established') or 'inferential' in val:
+                    result.add((6, 'neg'))
+                    result.add((6, 'unestablished'))
+                    continue
+                if val in ('not', 'no', 'without'):
+                    val = 'neg'
+                elif re.fullmatch(r'single(?:[- ]evaluated)?[- ]seed', val):
+                    val = 'single-seed'
+                elif re.fullmatch(r'point[- ]estimates?|点估计', val):
+                    val = 'point-estimate'
+                result.add((6, val))
+            else:
+                tok_text = re.sub(r'\s+', ' ', match[0]).casefold()
+                if i in (1, 4):
+                    tok_text = tok_text.replace('μ', 'µ').replace('/像素', '/px')
+                    tok_text = re.sub(r'(\d)\s*像素', r'\1 px', tok_text)
+                    tok_text = tok_text.replace('像素', 'px')
+                result.add((i, tok_text))
+    return result
+
+
+def _evidence_equal(before, after):
+    before_q = {t for t in before if t[0] == 6}
+    after_q = {t for t in after if t[0] == 6}
+    if (6, 'unestablished') in after_q:
+        before_q = before_q - {(6, 'descriptive'), (6, 'unresolved')}
+    return ({t for t in before if t[0] != 6} == {t for t in after if t[0] != 6} and before_q <= after_q)
 
 
 def _content(spans):
@@ -278,8 +405,7 @@ def _heading_edits(review, old, new, managed, remember, identity):
         _require(slot not in covered, 'Duplicate heading slot mapping')
         covered.add(slot)
         before, after = _tokens(a['text']), _tokens(b['text'])
-        _require({t for t in before if t[0] != 6} == {t for t in after if t[0] != 6}
-                 and {t for t in before if t[0] == 6} <= {t for t in after if t[0] == 6},
+        _require(_evidence_equal(before, after),
                  'Heading numeric/citation/unit/negative/CI evidence changed')
         _require(_named_scopes(a['text']) == _named_scopes(b['text']), 'Heading scientific owner labels changed')
         if x[1] == 'heading':
@@ -289,7 +415,8 @@ def _heading_edits(review, old, new, managed, remember, identity):
         return x
 
     for item in _list(review.get('heading_edits', []), 'heading_edits'):
-        _object(item, ('id', 'section_id', 'source', 'candidate', 'reviewed_by', 'rationale', 'translations'), 'heading edit')
+        _object(item, ('id', 'section_id', 'source', 'candidate', 'reviewed_by', 'rationale', 'translations'),
+                'heading edit', ('bilingual_sync_only',))
         remember(item['id'])
         identity(item['reviewed_by'], 'scientific')
         _string(item['rationale'], 'heading rationale')
@@ -297,11 +424,18 @@ def _heading_edits(review, old, new, managed, remember, identity):
         _require(key in managed and key.endswith('_EN.md'), 'Primary heading edit must name inventoried EN file')
         slot = title_pair(item['source'], item['candidate'], key, True)
         _require(item['section_id'] == key+'#heading-'+str(slot[0]), 'Heading stable section_id mismatch')
-        _require(item['source']['text'] != item['candidate']['text'], 'Primary heading edit must change title wording')
+        sync_only = item.get('bilingual_sync_only', False)
+        _require(type(sync_only) is bool, 'bilingual_sync_only must be boolean')
+        if sync_only:
+            _require(item['source']['text'] == item['candidate']['text'],
+                     'bilingual_sync_only heading edit must keep EN title identical')
+        else:
+            _require(item['source']['text'] != item['candidate']['text'], 'Primary heading edit must change title wording')
         group = _group(key)
         required = {lang: group+suffix for lang, suffix in [('ZH', '_ZH.md'), ('EN_ZH', '_EN_ZH.md')] if group+suffix in managed}
         seen = set()
-        for record in _list(item['translations'], 'heading translations'):
+        translation_changed = False
+        for record in _list(item['translations'], 'heading translations', sync_only):
             _object(record, ('language', 'source', 'candidate', 'reviewed_by', 'rationale'), 'heading translation')
             lang = record['language']
             _require(type(lang) is str and lang in required and lang not in seen, 'Unexpected/duplicate heading translation')
@@ -311,6 +445,7 @@ def _heading_edits(review, old, new, managed, remember, identity):
             left, right = _list(record['source'], 'heading translation source', True), _list(record['candidate'], 'heading translation candidate', True)
             _require(len(left) == len(right), 'Heading translation mapping count changed')
             mapped = [title_pair(a, b, required[lang]) for a, b in zip(left, right)]
+            translation_changed = translation_changed or any(a['text'] != b['text'] for a, b in zip(left, right))
             _require(any(x[1] == 'heading' for x in mapped), 'Heading translation requires corresponding heading slot')
             if lang == 'EN_ZH':
                 _require(any(a['text'] == item['source']['text'] and b['text'] == item['candidate']['text'] for a, b in zip(left, right)),
@@ -323,6 +458,8 @@ def _heading_edits(review, old, new, managed, remember, identity):
                         _require(subtitles <= covered and {y for y in sa.values() if y[0] == x[0]} ==
                                  {y for y in sb.values() if y[0] == x[0]}, 'Combined bilingual subtitle coverage/structure missing')
         _require(seen == required.keys(), 'Heading edit missing bilingual/combined coverage')
+        if sync_only:
+            _require(translation_changed, 'bilingual_sync_only heading edit must change at least one translation title')
     for key, (left, right, sa, sb) in layouts.items():
         for index, ((a, _), (b, _)) in enumerate(zip(left, right), 1):
             _require(a[0] == b[0] or (key, (index, 'heading', left[index-1][1])) in covered,
@@ -414,18 +551,47 @@ def _limits(review, before, new):
                  'Author word limit violated: '+key+' ('+str(count)+')')
 
 
+def _canonical_translated_anchor(text):
+    value = re.sub(r'\s+', ' ', text.strip()).casefold().replace('μ', 'µ')
+    value = re.sub(r'(?:补充|附)图\s*', 'supplementary fig ', value)
+    value = re.sub(r'\bsupplementary\s+fig(?:ure)?s?\.?\s*', 'supplementary fig ', value)
+    value = re.sub(r'图\s*', 'fig ', value)
+    value = re.sub(r'\bfig(?:ure)?s?\.?\s*', 'fig ', value)
+    value = re.sub(r'(?:补充|附)表\s*', 'supplementary table ', value)
+    value = re.sub(r'\bsupplementary\s+tables?\s*', 'supplementary table ', value)
+    value = re.sub(r'表\s*', 'table ', value)
+    value = re.sub(r'\btables?\s*', 'table ', value)
+    value = re.sub(r'(?:种子|seed)[-\s]*(\d+)', r'seed \1', value)
+    value = re.sub(r'(?:运行|run)[-\s]*(\d+)', r'run \1', value)
+    value = re.sub(r'\s*像素', ' px', value)
+    return re.sub(r'\s+', ' ', value).strip()
+
+
 def _compare(before, after, review_path, changes):
     a, b = _tree(before), _tree(after)
     _require(a.keys() == b.keys(), 'Manuscript file inventory changed')
     english = {k for k in a if k.endswith('_EN.md')}
     _require(english, 'No *_EN.md files found')
     managed = {k for k in a if _group(k) in {_group(x) for x in english}}
-    _require(all(a[k] == b[k] for k in a.keys()-managed), 'Unrelated author files changed')
-    old = {k: a[k].decode('utf-8') for k in managed}
-    new = {k: b[k].decode('utf-8') for k in managed}
     review = _json(review_path)
     _object(review, ('schema_version', 'reviewers', 'inventory', 'claims', 'unknowns', 'narrative'),
-            'review', ('author_limits', 'heading_edits'))
+            'review', ('author_limits', 'heading_edits', 'append_only_author_files'))
+    append_only = set()
+    if 'append_only_author_files' in review:
+        entries = _list(review['append_only_author_files'], 'append_only_author_files', True)
+        for item in entries:
+            key = _key(item)
+            _require(key not in append_only, 'Duplicate append_only_author_files entry: '+key)
+            _require(key in a and key not in managed and
+                     (Path(key).name == '作者决定.md' or Path(key).name.endswith('_作者决定.md')),
+                     'Only existing author decision files may be append-only: '+key)
+            _require(b[key].startswith(a[key]) and len(b[key]) > len(a[key]) and
+                     b[key][len(a[key]):].decode('utf-8').strip(),
+                     'Author decision file must be strictly append-only and non-empty: '+key)
+            append_only.add(key)
+    _require(all(a[k] == b[k] for k in a.keys()-managed-append_only), 'Unrelated author files changed')
+    old = {k: a[k].decode('utf-8') for k in managed}
+    new = {k: b[k].decode('utf-8') for k in managed}
     _require(type(review['schema_version']) is int and review['schema_version'] == 1, 'Unsupported review schema_version')
     reviewers = _object(review['reviewers'], ('editor', 'scientific', 'bilingual'), 'reviewers')
     for name in reviewers.values():
@@ -461,7 +627,9 @@ def _compare(before, after, review_path, changes):
         scope_pairs = _pairs(claim['scope'], old, new, source, candidate, 'scope', scoped=True)
         _ownership(source, candidate, scope_pairs)
         provenance = _pairs(claim['provenance'], old, new, source, candidate, 'provenance')
-        _require(evidence(source, 'source') == evidence(candidate, 'candidate'), 'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
+        _require(_evidence_equal(evidence(source, 'source'), evidence(candidate, 'candidate')),
+                 'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
+        fact_kinds = {}
         facts = {}
         fact_source = [x['source'] for x in scope_pairs+provenance]
         fact_candidate = [x['candidate'] for x in scope_pairs+provenance]
@@ -472,9 +640,20 @@ def _compare(before, after, review_path, changes):
             _require(fact['kind'] in ('result', 'measurement', 'ci', 'unit', 'qualifier', 'citation', 'scope', 'method'), 'Unknown fact kind')
             left, right = _spans(fact['source'], old, 'fact source'), _spans(fact['candidate'], new, 'fact candidate')
             _require(all(_inside(x, source) for x in left) and all(_inside(x, candidate) for x in right), 'Fact outside claim')
-            _require({x['text'] for x in left} == {x['text'] for x in right}, 'Unique fact anchor changed')
+            if {x['text'].casefold() for x in left} != {x['text'].casefold() for x in right}:
+                if fact['kind'] == 'qualifier':
+                    tl, tr = _tokens(_content(left)), _tokens(_content(right))
+                    _require((tl or tr == {(6, 'single-seed')}) and tr and all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
+                             'Qualifier fact anchor weakened or changed non-qualifier tokens')
+                elif fact['kind'] == 'scope':
+                    _require({_canonical_scope_anchor(x['text']).casefold() for x in left} ==
+                             {_canonical_scope_anchor(x['text']).casefold() for x in right},
+                             'Unique fact anchor changed')
+                else:
+                    _require(False, 'Unique fact anchor changed')
             _contexts(fact['context'], old, new, source, candidate, left, right, scope_pairs, headings)
             facts[fact['id']] = (left, right)
+            fact_kinds[fact['id']] = fact['kind']
             fact_source.extend(left)
             fact_candidate.extend(right)
         _require(evidence(source, 'source') <= evidence(fact_source, 'source') and
@@ -497,7 +676,8 @@ def _compare(before, after, review_path, changes):
             _require(all(x['file'] == required[lang] for x in left+right), 'Translation must cover corresponding existing manuscript')
             _scope(left, right, old, new, aliases)
             translated_scope = _pairs(translation['scope'], old, new, left, right, 'translation scope')
-            _require(evidence(left, 'source') == evidence(right, 'candidate'), 'Translation numeric/citation/unit/negative evidence changed')
+            _require(_evidence_equal(evidence(left, 'source'), evidence(right, 'candidate')),
+                     'Translation numeric/citation/unit/negative evidence changed')
             linked = set()
             linked_source = [x['source'] for x in translated_scope]
             linked_candidate = [x['candidate'] for x in translated_scope]
@@ -507,7 +687,15 @@ def _compare(before, after, review_path, changes):
                 linked.add(link['fact'])
                 ls, rs = _spans(link['source'], old, 'translated fact source'), _spans(link['candidate'], new, 'translated fact candidate')
                 _require(all(_inside(x, left) for x in ls) and all(_inside(x, right) for x in rs), 'Translated fact outside claim')
-                _require({x['text'] for x in ls} == {x['text'] for x in rs}, 'Translated fact anchor changed')
+                if {x['text'].casefold() for x in ls} != {x['text'].casefold() for x in rs}:
+                    tl, tr = _tokens(_content(ls)), _tokens(_content(rs))
+                    if fact_kinds.get(link['fact']) == 'qualifier':
+                        _require(all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
+                                 'Translated qualifier fact weakened or changed non-qualifier tokens')
+                    else:
+                        _require({_canonical_translated_anchor(x['text']) for x in ls} ==
+                                 {_canonical_translated_anchor(x['text']) for x in rs} and tl == tr,
+                                 'Translated fact anchor changed')
                 _contexts(link['context'], old, new, left, right, ls, rs, translated_scope, headings)
                 # Numbers/citation identifiers/operators are language-independent anchors.
                 invariant = {t for t in _tokens(_content(facts[link['fact']][0])) if t[0] in (0, 2, 5)}
@@ -568,6 +756,8 @@ def _compare(before, after, review_path, changes):
                     for start, end, _ in blocks:
                         _require(_covered(text, start, end, coverage, key), key+': changed block lacks narrative issue disposition')
         files[key] = dict(changed=changed, source_sha256=_sha(a[key]), candidate_sha256=_sha(b[key]), errors=[], warnings=[])
+    for key in sorted(append_only):
+        files[key] = dict(changed=True, source_sha256=_sha(a[key]), candidate_sha256=_sha(b[key]), errors=[], warnings=[])
     _limits(review, before, new)
     if changes is not None:
         _manifest(changes, review_path, issue_ids)
@@ -613,8 +803,8 @@ def apply_edit(before, after, review, changes, decisions, root, day):
             return result
         _manifest(decisions, review, result['narrative_decisions'])
         changed = [key for key, value in result['files'].items() if value['changed']]
-        groups = {_group(key) for key in changed}
-        archived = [key for key in result['files'] if _group(key) in groups]
+        groups = {_group(key) for key in changed if _group(key) is not None}
+        archived = [key for key in result['files'] if (_group(key) in groups and _group(key) is not None) or key in changed]
         candidates = {key: (after/key).read_bytes() for key in changed}
         originals = {key: (before/key).read_bytes() for key in archived}
         for key in archived:

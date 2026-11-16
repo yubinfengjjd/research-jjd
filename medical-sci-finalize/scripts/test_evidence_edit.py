@@ -461,6 +461,168 @@ class StructuralTests(unittest.TestCase):
         self.assertTrue(edit.apply_edit(self.before, self.after, self.review_path, self.changes,
                                        self.decisions, self.before.parent, '2026-11-05')['errors'])
 
+    def test_bare_count_nouns_panel_ranges_seed_hyphen_and_neg_clarification(self):
+        self.assertEqual(edit._tokens('across cohorts'), edit._tokens('across the groups'))
+        self.assertNotEqual(edit._tokens('12 scans'), edit._tokens('13 scans'))
+        self.assertEqual(edit._tokens('Fig. 4c, Fig. 4d, and Fig. 4e'), edit._tokens('Fig. 4c–e'))
+        self.assertNotEqual(edit._tokens('Fig. 4c, Fig. 4d, and Fig. 4e'), edit._tokens('Fig. 4c–f'))
+        self.assertEqual(edit._tokens('Fig. 4a and a regression'), edit._tokens('Fig. 4a'))
+        self.assertEqual(edit._named_scopes('Estimated in seed-0.'), {'run': {'seed 0'}})
+        self.assertEqual(edit._named_scopes('Estimated in seed 0.'), {'run': {'seed 0'}})
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('Showed without consistent advantage in descriptive scans.'),
+            edit._tokens('Did not show consistent advantage in descriptive scans; exploratory check.')))
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('Showed no benefit in descriptive scans.'),
+            edit._tokens('Showed benefit in descriptive scans.')))
+        self.assertEqual(edit._tokens('（PMID: 38959721）本研究如图 6A 和补充图 S8C、D 与表 1 所示（DOI: 10.1000/xyz）。'),
+                         edit._tokens('(PMID: 38959721) shown in Fig. 6A and Supplementary Fig. S8C, D and Table 1 (DOI: 10.1000/xyz).'))
+        self.assertEqual(edit._tokens('In stage-1 evaluation, coverage ran on Fig. 8C.'),
+                         {(3, 'fig 8c')})
+        self.assertEqual(edit._tokens('Evaluated in seed-0.'), edit._tokens('Evaluated in seed 0.'))
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('### 3.7.2 Error capture varies, while utility analyses remain descriptive'),
+            edit._tokens('### 3.7.2 Error ordering reverses; utility is not established')))
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('Retained as descriptive estimates.'),
+            edit._tokens('Reported without a prespecified inferential threshold.')))
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('Utility analyses remain descriptive.'),
+            edit._tokens('Utility analyses showed gain.')))
+        self.assertEqual(edit._named_scopes('differs by cohort\n\nRepresentation-stage comparison'), {})
+        self.assertEqual(edit._named_scopes('seed Jensen–Shannon disagreement'), {})
+        self.assertEqual(edit._tokens('0.5 像素与 3.87 µm/像素'), edit._tokens('0.5 px and 3.87 µm/px'))
+        self.assertEqual(edit._canonical_translated_anchor('Fig. 6A'),
+                         edit._canonical_translated_anchor('图 6A'))
+        self.assertEqual(edit._canonical_translated_anchor('Supplementary Table S4'),
+                         edit._canonical_translated_anchor('附表 S4'))
+        self.assertNotEqual(edit._canonical_translated_anchor('Fig. 6A'),
+                            edit._canonical_translated_anchor('图 6B'))
+
+    def test_append_only_author_decision_file(self):
+        (self.before/'作者决定.md').write_text('# 裁决\n- 旧记录\n', encoding='utf-8')
+        (self.after/'作者决定.md').write_text('# 裁决\n- 旧记录\n- 新记录\n', encoding='utf-8')
+        self.assertTrue(self.compare()['errors'])
+        self.review['append_only_author_files'] = ['作者决定.md']
+        self.save()
+        self.assertEqual(self.compare()['errors'], [])
+        for path in [self.changes, self.decisions]:
+            path.write_text(json.dumps({'schema_version': 1, 'review_sha256': digest(self.review_path),
+                                       'decisions': ['N1']}), encoding='utf-8')
+        applied = edit.apply_edit(self.before, self.after, self.review_path, self.changes,
+                                  self.decisions, self.before.parent, '2026-11-05')
+        self.assertEqual(applied['errors'], [])
+        self.assertIn('作者决定.md', applied['applied'])
+        self.assertIn('作者决定.md', applied['archived'])
+        (self.after/'作者决定.md').write_text('# 被篡改\n', encoding='utf-8')
+        self.assertTrue(self.compare()['errors'])
+
+    def test_translated_fig_seed_and_px_localization_passes_when_exact_tokens_preserved(self):
+        old_en = '# Results\n\nIn seed-0, accuracy differed (Fig. 6A; 0.5 px).\n'
+        old_zh = '# 结果\n\n在 seed-0 中存在差异（Fig. 6A；0.5 px）。\n'
+        new_zh = '# 结果\n\n在种子0中存在差异（图 6A；0.5 像素）。\n'
+        before, after = self.root/'tr_before', self.root/'tr_after'
+        before.mkdir()
+        after.mkdir()
+        en_key, zh_key = 'Results_EN.md', 'Results_ZH.md'
+        (before/en_key).write_bytes(old_en.encode())
+        (after/en_key).write_bytes(old_en.encode())
+        (before/zh_key).write_bytes(old_zh.encode())
+        (after/zh_key).write_bytes(new_zh.encode())
+        claim = dict(
+            id='T1', reviewed_by='Author',
+            source=[span(en_key, old_en, 'In seed-0, accuracy differed (Fig. 6A; 0.5 px).')],
+            candidate=[span(en_key, old_en, 'In seed-0, accuracy differed (Fig. 6A; 0.5 px).')],
+            scope=[dict(axis='run', source=span(en_key, old_en, 'seed-0'), candidate=span(en_key, old_en, 'seed-0'))],
+            provenance=[dict(source=span(en_key, old_en, 'Fig. 6A'), candidate=span(en_key, old_en, 'Fig. 6A'))],
+            facts=[
+                dict(id='f1', kind='unit', source=[span(en_key, old_en, '0.5 px')], candidate=[span(en_key, old_en, '0.5 px')],
+                     context=[dict(source=span(en_key, old_en, 'In seed-0, accuracy differed (Fig. 6A; 0.5 px).'),
+                                   candidate=span(en_key, old_en, 'In seed-0, accuracy differed (Fig. 6A; 0.5 px).'), scope=[0])]),
+            ],
+            translations=[dict(
+                language='ZH',
+                source=[span(zh_key, old_zh, '在 seed-0 中存在差异（Fig. 6A；0.5 px）。')],
+                candidate=[span(zh_key, new_zh, '在种子0中存在差异（图 6A；0.5 像素）。')],
+                scope=[dict(source=span(zh_key, old_zh, '存在差异'), candidate=span(zh_key, new_zh, '存在差异'))],
+                facts=[dict(
+                    fact='f1',
+                    source=[span(zh_key, old_zh, 'seed-0'), span(zh_key, old_zh, 'Fig. 6A'), span(zh_key, old_zh, '0.5 px')],
+                    candidate=[span(zh_key, new_zh, '种子0'), span(zh_key, new_zh, '图 6A'), span(zh_key, new_zh, '0.5 像素')],
+                    context=[dict(source=span(zh_key, old_zh, '在 seed-0 中存在差异（Fig. 6A；0.5 px）。'),
+                                  candidate=span(zh_key, new_zh, '在种子0中存在差异（图 6A；0.5 像素）。'), scope=[0])],
+                )],
+                reviewed_by='Author',
+                rationale='Localized seed-0, Fig. 6A, and px into Chinese while preserving exact tokens.',
+            )],
+        )
+        review = dict(
+            schema_version=1, reviewers=self.review['reviewers'],
+            inventory={
+                en_key: dict(source_sha256=digest(before/en_key), candidate_sha256=digest(after/en_key)),
+                zh_key: dict(source_sha256=digest(before/zh_key), candidate_sha256=digest(after/zh_key)),
+            },
+            claims=[claim], unknowns=[],
+            narrative=dict(reviewed_by='Author', source=[span(en_key, old_en)], candidate=[span(en_key, old_en)],
+                           summary='Reviewed localized Chinese terms.', issues=[]),
+        )
+        self.review_path.write_text(json.dumps(review, ensure_ascii=False), encoding='utf-8')
+        self.assertEqual(edit.compare_paths(before, after, self.review_path)['errors'], [])
+        # Changing the figure number inside the localized translation must still fail.
+        (after/zh_key).write_bytes(new_zh.replace('图 6A', '图 6B').encode())
+        review['inventory'][zh_key]['candidate_sha256'] = digest(after/zh_key)
+        claim['translations'][0]['candidate'] = [span(zh_key, new_zh.replace('图 6A', '图 6B'), '在种子0中存在差异（图 6B；0.5 像素）。')]
+        claim['translations'][0]['facts'][0]['candidate'][1] = span(zh_key, new_zh.replace('图 6A', '图 6B'), '图 6B')
+        claim['translations'][0]['facts'][0]['context'][0]['candidate'] = span(zh_key, new_zh.replace('图 6A', '图 6B'), '在种子0中存在差异（图 6B；0.5 像素）。')
+        self.review_path.write_text(json.dumps(review, ensure_ascii=False), encoding='utf-8')
+        self.assertTrue(edit.compare_paths(before, after, self.review_path)['errors'])
+
+    def test_qualifier_relaxations_unresolved_and_single_evaluated_seed(self):
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('Localization advantage remained unresolved; Single-seed coverage was 75%.'),
+            edit._tokens('Localization advantage was not established; in the single evaluated seed, coverage was 75%.'),
+        ))
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('Localization advantage remained unresolved.'),
+            edit._tokens('Localization advantage was observed.'),
+        ))
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('Single-seed coverage was 75%.'),
+            edit._tokens('Coverage was 75%.'),
+        ))
+
+    def test_multi_owner_segments_preserved_and_swap_rejected(self):
+        self.assertTrue(edit._multi_owner_segments_preserved(
+            '在种子 0 为 0.9670，种子 1 为 0.9615，种子 2 为 0.9584。',
+            '在种子0为 0.9670，种子1为 0.9615，种子2为 0.9584。',
+        ))
+        self.assertTrue(edit._multi_owner_segments_preserved(
+            '在 seed 0 中高 +0.007（图 4C）。在 seed 1 和 seed 2 中略负（图 4C）。',
+            '在种子0中高 +0.007；在种子1和种子2中略负（图 4C）。',
+        ))
+        self.assertFalse(edit._multi_owner_segments_preserved(
+            'In cohort A, a single-run estimate was 0.8. In cohort B, estimate was 0.9.',
+            'In cohort A, a single-run estimate was 0.9. In cohort B, estimate was 0.8.',
+        ))
+        self.assertFalse(edit._multi_owner_segments_preserved(
+            'In seed 0, score was 0.8 (Fig. 1A). In seed 1, score was 0.7 (Fig. 1B).',
+            'In seed 0, score was 0.8 (Fig. 1B). In seed 1, score was 0.7 (Fig. 1A).',
+        ))
+
+    def test_point_estimate_qualifier_cannot_be_dropped_even_with_unestablished(self):
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('Coverage point estimates exceeded 0.900; localization advantage remained unresolved.'),
+            edit._tokens('Coverage exceeded 0.900; localization advantage was not established.'),
+        ))
+        self.assertFalse(edit._evidence_equal(
+            edit._tokens('覆盖率点估计在五个队列组中超过 0.900。'),
+            edit._tokens('覆盖率在五个队列组中超过 0.900。'),
+        ))
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('Coverage point estimates exceeded 0.900.'),
+            edit._tokens('点估计在阈值之上，即 point-estimate coverage exceeded 0.900.'),
+        ))
+
 
 if __name__ == '__main__':
     unittest.main()

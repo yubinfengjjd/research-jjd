@@ -7,7 +7,7 @@ import argparse
 import json
 import re
 from pathlib import Path
-from style_check import analyze_style
+from style_check import analyze_style, prose_semicolons
 
 DEFAULT_HEADINGS = ('Background', 'Methods', 'Results', 'Conclusions')
 
@@ -53,6 +53,13 @@ def analyze(text, limit=250, headings=DEFAULT_HEADINGS):
     style = analyze_style(style_text, 'abstract')
     errors.extend(f['rule']+': '+f['msg'] for f in style['findings'] if f['level'] == 'ERROR')
     warnings = [f['rule']+': '+f['msg'] for f in style['findings'] if f['level'] == 'WARN']
+    if body_count == limit:
+        warnings.append(f'word-limit-margin: Body word count {body_count} equals limit {limit} (0-word margin)')
+    if sentence_count > 6:
+        warnings.append(f'results-sentences: Results sentence count estimate is {sentence_count} (recommended 4-6)')
+    results_semis = prose_semicolons(result_body) if result_body else 0
+    if results_semis >= 1:
+        warnings.append(f'results-semicolons: Results uses {results_semis} prose semicolon(s); prefer crisp separate sentences')
     return {'style': style, 'warnings': warnings, 'words_body': body_count, 'words_with_headings': body_count + heading_count,
             'word_limit': limit, 'section_words': {name: len(body.split()) for name, body in sections.items()},
             'results_sentences_estimate': sentence_count, 'errors': errors,

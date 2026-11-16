@@ -28,6 +28,8 @@ COMMON = [
     (W, "british-spelling", r"\b(?:tumour|oedema|haemorrhage|modelling|centre|colour|analys(?:e|ed|ing)|randomised|"
      r"normalised|behaviour|labelled|optimise[sd]?|generalis\w+)\b", 0, "非美式拼写（专有名称、引用题名除外）"),
     (W, "engineering-term", r"\b(?:audit\w*|ledger|firewall|frozen endpoint|seed-0)\b", 0, "工程或内部词汇"),
+    (W, "meta-jargon", r"\b(?:structured method|method carrier|evaluation vehicle|evaluation framework|interpretability carrier)\b", 0,
+     "空洞过程元标签，改用具体模型或直接发现"),
 ]
 
 PROFILES = {
@@ -36,6 +38,8 @@ PROFILES = {
          "摘要结论强度超越证据"),
         (E, "abstract-reference", r"(?:PMID|DOI|URL|arXiv)\s*:|\b(?:Fig\.|Figure|Table)\s*S?\d|\[citation needed\]", 0,
          "摘要默认不带引用、图表号或引用占位"),
+        (W, "generic-validation-closer", r"\brequiring (?:further |prospective )?validation\b|\b(?:safe|clinical)\s+(?:deployment|use)\s+requires\s+(?:further|prospective)\b", 0,
+         "空泛验证收尾，改为具体适用条件或直接发现边界"),
     ]),
     "methods": dict(words=(None, 3000, W), rules=[]),
     "legends": dict(words=None, legend_words=150, rules=[
@@ -50,6 +54,8 @@ PROFILES = {
         # 风格上限：规则写得较死，实际交付稿可能因体量自然超出，按警告报告，由作者定夺
         (W, "therefore-family", r"\b(?:therefore|thus|consequently)\b", 6, "therefore/thus/consequently 全文 ≤6"),
         (W, "rather-than", r"\brather than\b", 6, "rather than 全文 ≤6"),
+        (W, "descriptive-repeat", r"\bdescriptive(?:ly)?\b", 4,
+         "descriptive/descriptively 出现过多，优先以具体样本与检验边界替代重复贴标签"),
         (W, "coexisted", r"\bcoexist(?:ed|s)?\b", 3, "coexisted 同一词 ≤3"),
         (W, "accompanied", r"\baccompanied\b", 3, "accompanied 同一词 ≤3"),
         (W, "separating", r"\bseparating\b", 3, "separating 同一词 ≤3"),
@@ -78,6 +84,10 @@ PROFILES = {
          r"\bpreclude[sd]?\b", 5, "否定式限定全文 ≤5"),
         (E, "empty-future", r"\bfurther (?:studies|research|work) (?:is|are) (?:needed|warranted|required)\b", 0,
          "空泛的未来方向"),
+        (W, "generic-validation-closer", r"\brequiring (?:further |prospective )?validation\b|\b(?:safe|clinical)\s+(?:deployment|use)\s+requires\s+(?:further|prospective)\b", 0,
+         "空泛验证收尾，改为具体适用条件或已交代局限后的直接结论"),
+        (W, "defensive-hedging-cluster", r"\b(?:unresolved|unestablished|remain(?:s|ed|ing)?\s+(?:descriptive|empirical|unresolved|unclear|cohort-dependent)|(?:do|does|did)\s+not\s+establish)\b", 3,
+         "Discussion 重复使用 unresolved / not establish / remain* 防御性套话，请直陈已发现边界与可操作局限"),
         (E, "section-mention", r"\b(?:the|our) (?:Introduction|Methods|Results)\b|\bin the (?:Methods|Results) section\b", 0,
          "正文提及其他章节"),
         (E, "we-found-opener", r"(?:^|(?<=[.!?]\s))(?:We found|Our (?:results|findings))\b", 4,
@@ -89,7 +99,7 @@ CITE_IN_PARENS = re.compile(r"[(（][^()（）]*?(?:PMID|DOI|URL|arXiv)\s*:[^()�
 FIG_REF = re.compile(r"[(（][^()（）]*?(?:Fig\.|Figure|Table|Supplementary|图\s*\d|表\s*\d|补充图)[^()（）]*[)）]")
 PMID = re.compile(r"PMID:\s*(\d+)")
 BAD_PMID = re.compile(r"PMID:\s*(?!\d{6,9}\b)\S+|PMID\s+\d|PMID：")
-NUM = re.compile(r"(?<![\w.])[−-]?\d+(?:,\d{3})*(?:\.\d+)?%?")
+NUM = re.compile(r"(?<![A-Za-z0-9_.])[−-]?\d+(?:,\d{3})*(?:\.\d+)?%?")
 PANEL = re.compile(r"\b(?:Fig\.|Figure|Supplementary Fig\.)\s*S?\d+([A-Ha-h])\b")
 
 
@@ -173,6 +183,24 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
     # Use raw Markdown so headings/boundaries and source locations remain available.
     style_text = abstract_body(raw) if section == "abstract" else raw
     out.extend(analyze_style(style_text, section)["findings"])
+    # heading checks (strip_md omits headings for word counts, so inspect headings explicitly)
+    heading_lines = [
+        re.sub(r"^#{1,6}\s+", "", line.lstrip()).strip()
+        for line in style_text.replace("\r\n", "\n").split("\n")
+        if line.lstrip().startswith("#")
+    ]
+    heading_rules = [r for r in COMMON + prof["rules"] if r[1] in ("overclaim", "hype", "meta-jargon", "engineering-term")]
+    if heading_lines:
+        headings_joined = "\n".join(heading_lines)
+        for level, rule, pat, _, msg in heading_rules:
+            hits = list(re.finditer(pat, headings_joined, re.I))
+            if hits:
+                add(level, rule, f"标题含{msg}（{len(hits)} 处）", headings_joined[max(0, hits[0].start() - 20):hits[0].end() + 40])
+        if section == "results":
+            vague_pat = re.compile(r"\b(?:holds?\s+(?:across|in)\s+most|descriptive(?:ly)?|varies across cohorts and declines)\b", re.I)
+            for hline in heading_lines:
+                if vague_pat.search(hline):
+                    add(W, "heading-defensive-vague", "小节标题含模糊多数或被动防御标签，改写为精准边界陈述", hline)
     # phrase rules
     for level, rule, pat, mx, msg in COMMON + prof["rules"]:
         if rule in {'sentence-opener', 'negative-gap', 'scope-disclaimer', 'agrees-with',
@@ -185,6 +213,56 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
         if len(hits) > mx:
             ctx = "; ".join(claims[max(0, h.start() - 30):h.end() + 30].replace("\n", " ") for h in hits[:3])
             add(level, rule, f"{msg}（{len(hits)} 处）", ctx)
+    # paragraph density & repetition diagnostics
+    paras = [p.strip() for p in re.split(r"\n\s*\n", body.replace("\r\n", "\n")) if p.strip()]
+    if section == "results":
+        cite_target = re.compile(r"\b((?:Supplementary\s+)?(?:Fig(?:ure)?\.?|Tables?)\s*S?\d+[A-Za-z]?)\b", re.I)
+        cite_root = re.compile(r"\b((?:Supplementary\s+)?(?:Fig(?:ure)?\.?|Tables?)\s*S?\d+)[A-Za-z]?\b", re.I)
+        for p in paras:
+            targets = Counter(
+                re.sub(r"\s+", " ", m.group(1).casefold()).replace("figure", "fig").replace("fig.", "fig").replace("tables", "table")
+                for m in cite_target.finditer(p)
+            )
+            roots = Counter(
+                re.sub(r"\s+", " ", m.group(1).casefold()).replace("figure", "fig").replace("fig.", "fig").replace("tables", "table")
+                for m in cite_root.finditer(p)
+            )
+            repeated = [(k, v) for k, v in targets.items() if v >= 3]
+            if repeated:
+                summary = ", ".join(f"{k} ({v}次)" for k, v in repeated[:3])
+                add(W, "citation-repeat", f"单段同一图表引用 ≥3 次：{summary}（连续同源句优先合并至单元/句末括号）", p)
+            else:
+                root_repeated = [(k, v) for k, v in roots.items() if v >= 4]
+                if root_repeated:
+                    summary = ", ".join(f"{k} ({v}次)" for k, v in root_repeated[:3])
+                    add(W, "citation-repeat", f"单段同一主图表引用 ≥4 次：{summary}（合并连续同源或子图 panel 引用）", p)
+        bp_hits = list(re.finditer(
+            r"\b(?:complete|full)\s+[\w-]+\s+data\s+(?:are\s+|were\s+)?(?:supplied|provided|reported)\s+as\s+supplementary\s+data\b|"
+            r"\bsupplied\s+as\s+supplementary\s+data\b|\bprediction-set\s+supplementary\s+data\b",
+            body, re.I,
+        ))
+        if len(bp_hits) >= 3:
+            add(W, "boilerplate-repeat", f"补充数据模板套话重复 {len(bp_hits)} 次，合并至统一表格/总述处", bp_hits[0].group(0))
+        else:
+            prose_clean = CITE_IN_PARENS.sub(" ", FIG_REF.sub(" ", body.lower()))
+            words_seq = re.findall(r"[a-z]{3,}(?:-[a-z]{2,})*", prose_clean)
+            metric_skip = ("confidence interval", "balanced accuracy", "receiver operating", "precision recall",
+                           "calibration error", "decision curve", "concept bottleneck", "confusion matrix")
+            ngrams = Counter(" ".join(words_seq[i:i + 7]) for i in range(max(0, len(words_seq) - 6)))
+            dup_ngrams = [(g, c) for g, c in ngrams.items() if c >= 3 and not any(m in g for m in metric_skip)]
+            if dup_ngrams:
+                add(W, "boilerplate-repeat", f"长套话短语重复 ≥3 次：\"{dup_ngrams[0][0]}\"（{dup_ngrams[0][1]} 次）", dup_ngrams[0][0])
+        subsumed = list(re.finditer(r"\(([^()]*\b(?:Supplementary\s+)?(?:Fig\.|Figure)\s*(S?\d+)\s*;[^()]*\b(?:Supplementary\s+)?(?:Fig\.|Figure)\s*\2[A-Za-z])", body, re.I))
+        if subsumed:
+            add(W, "citation-redundant-parent", f"同一括号同时列出总图与该图子 panel（{len(subsumed)} 处，改为更精确的子 panel 引用）", subsumed[0].group(0))
+        adj_repeat = list(re.finditer(r"(\((?:Supplementary\s+)?(?:Fig\.|Figure|Table)\s*S?\d+[A-Za-z]?(?:[–-][A-Za-z])?\))\.\s+[^.\n]+\1\.", body, re.I))
+        if adj_repeat:
+            add(W, "citation-adjacent-repeat", f"相邻两句末尾重复挂载同一图表引用（{len(adj_repeat)} 处，合并至单元/句末共享括号）", adj_repeat[0].group(0))
+    if section in ("introduction", "results", "discussion"):
+        for p in paras:
+            n_sents, n_words = len(sentences(p)), words_of(p)
+            if n_sents > 8 or n_words > 200:
+                add(W, "paragraph-dense", f"单段过密（{n_sents} 句 / {n_words} 词；建议拆分为单一论证单元 ≤8 句且 ≤200 词）", p)
     # citations
     for m in BAD_PMID.finditer(claims):
         add(E, "pmid-format", "PMID 格式应为 (PMID: 12345678)", claims[max(0, m.start() - 20):m.end() + 20])
@@ -202,7 +280,8 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
         add(W, "panel-case", f"图 panel 字母大小写混用：{dict(cases)}（应与 Results / 图面一致）")
     # EN/ZH parity
     if zh_path:
-        zh = strip_md(Path(zh_path).read_text(encoding="utf-8-sig"))
+        zh_raw = Path(zh_path).read_text(encoding="utf-8-sig")
+        zh = strip_md(zh_raw)
         a, b = Counter(pmids), Counter(PMID.findall(zh))
         if a != b:
             add(E, "zh-pmid", f"中英 PMID 不一致：仅英文 {sorted((a - b).elements())}，仅中文 {sorted((b - a).elements())}")
@@ -215,6 +294,58 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
             add(W, "en-number", f"中文有、英文无的数字：{sorted((nz - ne).elements())[:12]}")
         if re.search(r"\((?:PMID|DOI)", zh):
             add(E, "zh-paren", "中文稿引用应用全角括号（PMID: …）")
+        zh_clean = re.sub(r"`[^`\n]+`", " ", CITE_IN_PARENS.sub("", zh_raw))
+        seed_hits = list(re.finditer(r"\bseed\b", zh_clean, re.I))
+        if seed_hits:
+            h0 = seed_hits[0]
+            add(W, "zh-unlocalized-seed", f"中文稿保留未本地化英文词 seed（{len(seed_hits)} 处，应写为“种子”）",
+                zh_clean[max(0, h0.start() - 20):h0.end() + 20])
+        figtable_hits = list(re.finditer(r"\b(?:Supplementary\s+)?(?:Fig(?:ure)?\.?|Tables?)\s*S?\d+[A-Za-z]?\b", zh_clean))
+        if figtable_hits:
+            h0 = figtable_hits[0]
+            add(W, "zh-unlocalized-figtable", f"中文稿保留英文图表编号（{len(figtable_hits)} 处，应写为“图/表/附图/附表”）",
+                zh_clean[max(0, h0.start() - 20):h0.end() + 20])
+        zh_body_raw = "\n".join(
+            l for l in zh_raw.replace("\r\n", "\n").split("\n") if not l.lstrip().startswith(("#", "|"))
+        )
+        zh_period_scan = re.sub(r"。(?:\*\*|__)[ \t]*", "。", zh_body_raw)
+        period_spaces = list(re.finditer(r"。[ \t]+(?=\S)", zh_period_scan))
+        if period_spaces:
+            h0 = period_spaces[0]
+            add(W, "zh-space-after-period", f"中文句号后有多余空格（{len(period_spaces)} 处）",
+                zh_period_scan[max(0, h0.start() - 15):h0.end() + 25])
+        seed_spaces = list(re.finditer(r"(?<!\*\*)(?<!__)(?<!\([a-h]\))(?<!\([A-H]\))(?<!（[a-h]）)(?<!（[A-H]）) 种子|种子 ", zh_clean))
+        if seed_spaces:
+            h0 = seed_spaces[0]
+            add(W, "zh-seed-space", f"“种子”前后有多余英文空格（{len(seed_spaces)} 处）",
+                zh_clean[max(0, h0.start() - 15):h0.end() + 20])
+        punct_spaces = list(re.finditer(r"[ \t]+[。，；：、）】]", zh_clean))
+        if punct_spaces:
+            h0 = punct_spaces[0]
+            add(W, "zh-space-before-punct", f"中文标点前有多余空格（{len(punct_spaces)} 处）",
+                zh_clean[max(0, h0.start() - 15):h0.end() + 20])
+        bold_artifacts = list(re.finditer(r"\*{4}|\*\*\([a-h](?:[–-][a-h])?\)", zh_clean))
+        if bold_artifacts:
+            h0 = bold_artifacts[0]
+            add(W, "zh-bold-artifact", f"中文粗体格式残留（**** 或 ** 与 (a) 之间缺少空格，{len(bold_artifacts)} 处）",
+                zh_clean[max(0, h0.start() - 15):h0.end() + 20])
+        zh_no_math = re.sub(r"\\\(.*?\\\)|\$[^$\n]+\$", "_MATH_", zh_clean)
+        zh_no_math_body = "\n".join(
+            l for l in zh_no_math.replace("\r\n", "\n").split("\n") if not l.lstrip().startswith(("#", "|"))
+        )
+        cjk_spaces = list(re.finditer(r"(?<=[\u4e00-\u9fff])[ \t]+(?=[\u4e00-\u9fff])", zh_no_math_body))
+        if cjk_spaces:
+            h0 = cjk_spaces[0]
+            add(W, "zh-cjk-space", f"中文词语间存在多余空格（{len(cjk_spaces)} 处）",
+                zh_no_math_body[max(0, h0.start() - 15):h0.end() + 20])
+        unlocalized_en = list(re.finditer(
+            r"(?i:\bexternal\s+oracle\b|\boracle\s*=)|\b(?:Errors\s*/\s*n|min[–-]max|test-tuned|band\s+dropout|class-Mondrian|n\s+(?:target|calibration)|Pointing)\b|(?<![A-Za-z/])(?:px|alpha)(?![A-Za-z])|(?<![A-Za-z])(?:logits?|bootstrap|Count|True|False|energy)(?![A-Za-z])",
+            zh_no_math,
+        ))
+        if unlocalized_en:
+            h0 = unlocalized_en[0]
+            add(W, "zh-unlocalized-english", f"中文稿保留未本地化英文词/表项（{len(unlocalized_en)} 处）",
+                zh_clean[max(0, h0.start() - 15):h0.end() + 20])
     # numbers against Results
     if results_path and section in ("discussion", "introduction", "abstract"):
         extract_numbers = abstract_numbers if section == "abstract" else numbers

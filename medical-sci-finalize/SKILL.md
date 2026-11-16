@@ -15,7 +15,7 @@ description: Use when a complete medical SCI manuscript needs final Word assembl
 
 **REQUIRED SUB-SKILL：必须使用 `anti-defensive-writing`。** 每次使用本技能时，先读取同一技能根目录下的 [anti-defensive-writing/SKILL.md](../anti-defensive-writing/SKILL.md)，再读取本技能的医学适配与结构审查规则；两者均读完后，在医学证据边界内应用依赖。独立技能缺失、链接失效或不可读时，报告缺失路径并停止本技能；不得仅靠本技能内的静态摘录继续，也不得宣称已经使用依赖。安装须在独立维护任务中完成，稿件流程保持离线。
 
-依赖负责去防御性写作的叙事与语言审查；[polish-rules.md](references/polish-rules.md) 的证据保留和医学适配规则同时适用。冲突时保留数据、已定评价口径、不利结果、必要不确定性和结论相关局限，不执行上游规则中会隐藏证据、改变评价维度或将不利结果改称合理权衡的部分。允许有证据的结构重组和重复限定合并。
+依赖负责去防御性写作的叙事与语言审查；[polish-rules.md](references/polish-rules.md) 的证据保留与主线锐度规则同时适用。明确采用上游“先亮研究问题与核心发现、主线服务于成立证据、删过程流水账/自贬措辞/反复辩解、结论建立清晰记忆点”的叙事策略；仅在冲突处保留数据、已定评价口径、不利结果、必要不确定性和结论相关局限，禁止隐藏证据、改换评价维度或把失败改称合理权衡。允许同节结构重组、主题句前置、重复限定合并与连续句群共享图号引用。
 
 在 `修改记录.md` 中记录实际读取的依赖路径、版本/提交号（如 `.source.json` 提供）与 `SKILL.md` 的 SHA256，以及实际应用或因医学证据边界未采用的规则。脚本不能代替这一步审查。
 
@@ -41,7 +41,7 @@ description: Use when a complete medical SCI manuscript needs final Word assembl
 
 1. 保存 `04_manuscript` 改前快照与 SHA256，建立保持相对路径的候选树。审阅全部 EN 正文、Abstract/Keywords/Highlights、主附图注及表题表注；结构调整后同步对应 ZH 和已有 EN_ZH。数据、源表、02_figures 和 03_outline 不变。
 2. 通读全文，核对关键事实、限定、CI 归属与补充图注/表注/核查说明。按 [结构审查契约](references/structural-review.md) 建立绑定改前及候选内容的 `review.json`；精确原文用于溯源，不要求限定永远保持独立原句。允许同节合并、去重和重排，分析范围与引用支持关系不变。
-3. 逐个解决实质叙事问题，记录真实修改或具体保留理由。逐块来源/候选位置、事实及双语覆盖记入 `review.json`，可读修改记录另存 Markdown；按结构契约生成绑定 review 哈希和全部叙事问题 ID 的 `changes.json`，不用旧严格模式的逐段列表。未知局部范围保留原文并继续独立编辑，作者动作按共同问题归组；核心矛盾阻断受影响交付。交叉核对审计可按 polish-rules 使用 `crosscheck.json` 与记录呈现脚本，不能用它代替结构审查。
+3. 逐个解决实质叙事问题，记录真实修改或具体保留理由。优先运行 `scripts/scaffold_structural_review.py --before <改前04_manuscript> --after <候选树> --review-json <review.json> --changes <changes.json> --decisions <decisions.json> [--rationale-json <rationale.json>] --verify`，由脚本按真实 UTF-8 字符串偏移与 SHA256 生成 `review.json` / `changes.json` / `decisions.json`（含多归属句切分与 `EN/ZH/EN_ZH` 对齐，数值、引用、限定或归属有误直接报错退回），再结合实际编辑原因补充/核对 `rationale` 与可读修改记录 Markdown；不得临时手写 JSON 偏移拼装脚本或绕过失败检查。未知局部范围保留原文并继续独立编辑，作者动作按共同问题归组；核心矛盾阻断受影响交付。交叉核对审计可按 polish-rules 使用 `crosscheck.json` 与记录呈现脚本，不能用它代替结构审查。
 4. 默认运行 `scripts/check_finalize.py --edit-mode structural --review-json <review.json> --before <改前04_manuscript> --after <候选树> --changes <changes.json> --report <report.json>`。ERROR 修复，WARN 逐条解释。词数变化只触发信息覆盖复核；不以 ±10% 或通用最低词数拒绝结构编辑。作者/期刊明确限制仍须满足或报告真实冲突；项目限额登记在 PROJECT 同级 `writing-limits.json`（小写节名 → `min`/`max`），具体口径见 [pipeline 项目约定](../medpaper-pipeline/references/project-layout.md)。
 5. 按结构契约写入 `decisions.json`，与 `changes.json` 使用相同的 review 哈希及问题 ID 清单格式，与人读的 `作者裁决清单.md` 分开；旧 Markdown decisions 参数仅用于严格兼容模式。核验通过后在同一命令追加 `--apply --project-root <根> --decisions <decisions.json>`，归档每个变化语言组的全部现有 EN/ZH/EN_ZH 原件（含未变同组稿）后覆盖变化文件，失败回滚。记录留在 `_process/Finalize/<日期>_polish_v<N>/`，不跳过归档。
 6. 依次运行 `medpaper-pipeline/scripts/consistency_check.py <项目根>`，然后逐节运行 `manuscript_check.py <methods|legends|results|introduction|discussion> <EN稿> --zh <ZH稿>`，Results 依赖按参数传入。ERROR 修复，WARN 说明；另人工核对已有 EN_ZH 的信息覆盖与摘要证据。检查通过不证明语义等价。

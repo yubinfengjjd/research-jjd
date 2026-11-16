@@ -31,8 +31,8 @@
 - **源稿自带的口径限定不得在压缩中丢失**：单次运行、单种子、单一子集或探索性分析支撑的发现必须保留相应限定（原稿写 "small changes in the single evaluated seed"，摘要不能写成 "small changes"）；运行/子集口径与数字同等优先。
 - **结论相关性优先**：所选发现保留其主要方向、必要数值及适用范围；不以族内一个有利边缘结果替代该族的不利主结果。无需把未选族改为裸枚举以制造覆盖。
 - 无统计检验时不写 statistically significant；无显著差异不等于等效，无改善亚组不写所有亚组均获益；预测指标改进不等于患者结局改善。跨数据集性能不能替代临床验证。
-- 保持源稿精度、负号、小数点、百分号、样本单位和 CI 归属。患者、眼、扫描、图像和临床组不互换。不得把主终点、比较对象或数据划分改成另一个定义。
-- 4–6 是建议句数（或按字数自然分句），不要求 4–6 个独立发现，不得用分号链压缩。可把同一支持发现的不同已报告信息拆句，但不能凑结果；材料不足以形成有内容的结果表述时报告问题，不生成空话。
+- 保持源稿精度、负号、小数点、百分号、样本单位和 CI 归属；缩写改写比较句时保留差值/估计量主体名词（例如保留 `"negative differences with intervals crossing zero"`，严禁误删名词写成数学矛盾的 `"negative intervals crossing zero"`）、跨阈值结论中的 `"point estimates"` / `"点估计"`（若某些队列/分组区间跨越阈值，绝对不能将 `"coverage point estimates exceeded 0.900"` 简化为 `"coverage exceeded 0.900"`），以及对比模型范围词（如 `"same-backbone"` / `"同骨干"`）；中译 `"with X and Y in [Cohorts]"` 时严禁把仅限定 `Y` 的 `[Cohorts]` 前置成 `[队列]的 Y 与 X`（须拆写为 `总体 X 以及 [队列]的 Y`）。患者、眼、扫描、图像和临床组不互换。不得把主终点、比较对象或数据划分改成另一个定义。
+- 4–6 是建议句数（不得用散文分号强塞双指标从句把多条发现压进少数句子——Results 中散文分号须清零，直接拆成清晰独立短句；保持 `results-sentences` 在 4–6 句、英文正文保留 <250 词安全余量而不卡死 250/250）。跨队列汇总**必须先用去重后的独立队列组数作主分母**（如 `five of six independent cohort groups` 而非 `five external cohorts (two overlapping)` 或 `six of seven cohorts`）；结果须完整纳入同类失效队列与**全部低于名义目标的诊断类别/分层失败边界（不得在 Conclusions 提出 diagnosis-specific undercoverage 等概括却不在 Results 给出类别分层受限的明确证据）**，突出指标下降或对照差异时优先给出核心数值/幅度（如关键类 AP 对比或汇总 AURC），避免用空洞的 `"descriptively lower"` 替代已报告数字或对照，但若该对比确无预设统计检验，须保留 `"descriptively"` / `"描述性"`（或 `"without an inferential comparison"`）而非将其误改为已确立差异。可把同一支持发现的不同已报告信息拆句，但不能凑结果；材料不足以形成有内容的结果表述时报告问题，不生成空话。
 
 ## 4. 贡献、范围与附属内容
 
@@ -40,9 +40,9 @@ Background开篇先从Introduction提炼研究对象或疾病的实际评估/照
 
 贡献句的构成是“本研究提供的具体证据或能力 + 它让读者能够判断或区分什么”，再限定适用条件。框架型研究从Discussion中提取一个有证据支持的用途或区分，不用并列模块名称替代贡献；比较型研究指向主要观察所回答的问题。该句的价值与范围都须由本稿支持，不能转成未经评估的患者获益。
 
-结论通常 1–2 句，回答哪一个空白获得了什么新证据、对谁或哪个环节有用。贡献落实为可核查的比较、验证范围或信息，不用 novel、first、breakthrough、prove、unprecedented；不用没有证据支持的 robust、superior、clinically deployable。观察性研究以 associated with、supports、suggests 等适当表达；随机研究也只写设计和终点支持的因果范围。无需每句堆 may/might/could。
+结论通常 1–2 句，先立清晰记忆点，直接用主动、非循环陈述回答哪一个空白获得了什么具体发现、以及在何种队列或条件下失效，控制在正文 <250 词安全余量内。不用 novel、first、breakthrough、prove、unprecedented；不用没有证据支持的 robust、superior、clinically deployable；严禁使用 `"structured method"`、`"method carrier"`、`"evaluation vehicle"` 等空洞过程元标签，也不用 `"requiring validation..."`、`"Safe/clinical deployment requires prospective..."`、`"remained unresolved"` 这类空泛套话收尾，也不与 Highlights/Summary 做同义复述循环（必要适用范围用具体已测/未测条件写实）。观察性研究以 associated with、supports、suggests 等适当表达；随机研究也只写设计和终点支持的因果范围。无需每句堆 may/might/could。
 
-将影响适用范围的主要限制写成自然的一句或结论内限定，不为摘要重复完整局限清单。外部一个设备的回顾性评价不能升级为多中心前瞻性验证。Highlights 同样从证据表提取，不能借亮点夸大、引入新数字或删去决定性例外。关键词是可检索主题，不是宣传语。
+将影响适用范围的主要限制浓缩为结论内的精确边界限定，不为摘要重复完整局限清单。外部一个设备的回顾性评价不能升级为多中心前瞻性验证。**Highlights 必须随摘要和正文同步重写打磨**：每条用一句完整、尖锐的发现主线陈述核心结果或决定性边界（含关键不利/未达标能力条件，如对未见疾病仅有限拒识或风险捕获有限，不套用元标签、不直接照搬旧稿、也不把 Conclusions 拆句同义复述），同步检查 `Abstract_EN_ZH.md` 中每条中文 Highlight 保留前导 `- ` 列表前缀与英文一一对应；不借亮点夸大、引入新数字或删去决定性例外。关键词是可检索主题，不是宣传语。
 
 ## 5. 核查说明契约
 

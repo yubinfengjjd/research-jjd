@@ -34,7 +34,7 @@ description: "Use when drafting, revising or translating a medical SCI abstract 
 2. **核对项目**：从材料或工作目录向上找 `PROJECT.md`；找到时执行下方项目约定。不得绕过 `未开始`、`进行中`、`需返工` 的前置状态。独立直接调用时五类 `待确认` 稿件可使用，但必须披露；pipeline 正常推进仍要求 5–9 已确认。
 3. **建立证据表**：从 Introduction 提取背景、空白和目的，从 Methods 提取设计、样本单位、比较、划分和主终点，从 Results 与图注核对效应、CI 和重要例外，从 Discussion 提取已支持的贡献与限制。先完成核查说明中的证据表，再动笔。
 4. **处理冲突**：主终点、样本口径或其他摘要关键事实冲突，且没有权威数据或既有裁决能解决时，列出双方原文和出处并停止，不选择更好看的值。项目内登记台账；有权威证据时依一致性防线处理。不得为摘要补造、计算新的结果或擅改上游数字。
-5. **撰写与对照**：按 journal-style 写四段，Results 4–6 句（或按字数自然分句），不得用分号链压缩；主终点优先用已报告效应量与 CI，重要不利结果不能因篇幅而消失。写中文和逐段对照，再从同一证据表写关键词和 Highlights。缺少主终点 CI 时按 writing-rules 第 3 节报告缺口。
+5. **撰写与对照**：按 journal-style 写四段，Results 严格保持 4–6 个清晰句（Results 散文分号 `0` 处；超过即触发 WARN，改写为独立短句），并保留 `<250` 词安全余量而不卡死 250/250；主终点优先用已报告效应量与 CI，重要不利结果与失败子集（including all underperforming classes/cohorts）不能因篇幅而消失，关键单种子结果保留 seed 限定。写中文和逐段对照，再从同一证据表同步重写关键词和 Highlights（不沿用未改写的旧亮点；`Abstract_EN_ZH.md` 中中文 Highlights 每条保留前导 `- ` 列表前缀与英文一一对应）。缺少主终点 CI 时按 writing-rules 第 3 节报告缺口。
 6. **检查**：用 `python -X utf8 scripts/check_abstract.py <Abstract_EN.md>` 检查结构和词数，手动确认 Results 句数。项目内依次运行 medpaper-pipeline 的 `consistency_check.py <项目根>`、`manuscript_check.py abstract <EN稿> --zh <ZH稿> --results <Results_EN.md>`；非项目输出仍运行后者，前者标“不适用：无项目根”，不造口径表。ERROR 修掉，WARN 逐条解释。数字、单位、CI 归属、重要例外、中英文强度均需人工对源，脚本通过不等于科学核验。
 7. **交付**：保存四份文件，报告正文词数、含小标题词数、Results 句数、关键词与 Highlights 条数、未解决事项及检查结果。实际未运行的检查不得写“通过”。
 

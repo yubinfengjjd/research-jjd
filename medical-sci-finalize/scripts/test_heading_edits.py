@@ -133,6 +133,30 @@ class HeadingTests(unittest.TestCase):
         h['source']['text'] = '## no advantage'
         self.assertTrue(self.compare()['errors'])
 
+    def test_bilingual_sync_only_allows_stale_zh_or_subtitle_fix(self):
+        # Keep EN heading unchanged, only update ZH heading & EN_ZH subtitle.
+        self.rewrite('Results_EN.md', self.old['Results_EN.md'])
+        en_zh_new = self.old['Results_EN_ZH.md'].replace('**模型与对照表现相近**', '**模型相对对照未显示一致优势**')
+        self.rewrite('Results_EN_ZH.md', en_zh_new)
+        h = self.review['heading_edits'][0]
+        h['bilingual_sync_only'] = True
+        h['candidate'] = copy.deepcopy(h['source'])
+        h['translations'][1]['source'][0] = span('Results_EN_ZH.md', self.old['Results_EN_ZH.md'], OLD)
+        h['translations'][1]['candidate'] = [
+            span('Results_EN_ZH.md', en_zh_new, OLD),
+            span('Results_EN_ZH.md', en_zh_new, '**模型相对对照未显示一致优势**'),
+        ]
+        self.review['narrative']['candidate'] = [span('Results_EN.md', self.old['Results_EN.md'])]
+        self.review['narrative']['issues'][0]['source'] = [span('Results_EN.md', self.old['Results_EN.md'], OLD)]
+        self.review['narrative']['issues'][0]['candidate'] = [span('Results_EN.md', self.old['Results_EN.md'], OLD)]
+        self.assertEqual(self.compare()['errors'], [])
+        # Fails if no translation changed under bilingual_sync_only.
+        self.rewrite('Results_ZH.md', self.old['Results_ZH.md'])
+        self.rewrite('Results_EN_ZH.md', self.old['Results_EN_ZH.md'])
+        h['translations'][0]['candidate'] = copy.deepcopy(h['translations'][0]['source'])
+        h['translations'][1]['candidate'] = copy.deepcopy(h['translations'][1]['source'])
+        self.assertTrue(self.compare()['errors'])
+
 
 if __name__ == '__main__':
     unittest.main()
