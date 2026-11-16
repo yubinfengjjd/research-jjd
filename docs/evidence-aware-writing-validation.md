@@ -42,3 +42,15 @@ Implementation commit: `527269f9f2ae60c2e912717d140c86e3279d91f1`, published on 
 | Local skill installation | Not repeated or re-verified during this publication closeout |
 
 The eight local warnings comprise one Jupyter path-deprecation warning and seven gallery layout warnings. Test results and publication do not establish scientific validity, translation equivalence, Word/Zotero acceptance or a fresh independent manuscript review. The historical validation results above remain separate from this verified source revision.
+
+## Installation verification closeout (2026-11-17)
+
+The publication closeout re-ran local installation verification after the source tree advanced to `8a1b32e`:
+
+| Check | Observed result |
+|---|---|
+| `D:\anaconda\python.exe -X utf8 install.py --update` | Updated the stale `anti-defensive-writing` and `medical-sci-finalize` trees in both `.claude\skills` and `.codex\skills`; four backups were created under `C:\Users\86186\skill_backups\medfig_20261117_000144` |
+| `D:\anaconda\python.exe -X utf8 install.py --verify` | 23/23 skills `ok` in both target roots |
+| `D:\anaconda\python.exe -X utf8 -m pytest tests/test_install.py -q -p no:cacheprovider` | 31 passed in 465.63 seconds |
+
+This closes the previously recorded local-installation verification gap. It does not change the separate manuscript boundaries: Word/Zotero author acceptance and scientific validation remain distinct.
