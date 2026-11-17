@@ -527,6 +527,122 @@ class ScaffoldStructuralReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             scaffold.build_review_bundle(self.before, self.after)
 
+    def test_contradicted_noninferential_label_drops_only_while_the_test_stays(self):
+        old = 'Analysis A did not establish a localization advantage in this non-inferential comparison (permutation P = 0.124).'
+        kept = 'Analysis A did not establish a localization advantage in this comparison (permutation P = 0.124).'
+        self._write_qualifier_triplet(old, kept, '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。', '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。')
+        self._run_verify()
+        lost = 'Analysis A did not establish a localization advantage in this comparison.'
+        self._write_qualifier_triplet(old, lost, '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。', '分析 A 在该比较中未建立定位优势。')
+        with self.assertRaises(ValueError):
+            scaffold.build_review_bundle(self.before, self.after)
+        swapped = 'Analysis A used no inferential testing for localization (permutation P = 0.124).'
+        self._write_qualifier_triplet(old, swapped, '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。', '分析 A 未做推断检验（permutation P = 0.124）。')
+        with self.assertRaises(ValueError):
+            scaffold.build_review_bundle(self.before, self.after)
+
+    def test_same_heading_chain_keeps_one_declaration_for_later_repeats(self):
+        old = (
+            '# Results\n\n'
+            'In the single evaluated seed, Analysis A had MAE 0.72 px.\n\n'
+            'In the single evaluated seed, Analysis A had RMSE 0.74 px.\n\n'
+            'In the single evaluated seed, Analysis A had bias 0.01 px.\n'
+        )
+        new = (
+            '# Results\n\n'
+            'In the single evaluated seed, Analysis A had MAE 0.72 px.\n\n'
+            'Analysis A had RMSE 0.74 px.\n\n'
+            'Analysis A had bias 0.01 px.\n'
+        )
+        (self.before/'Results_EN.md').write_bytes(old.encode())
+        (self.after/'Results_EN.md').write_bytes(new.encode())
+        self._run_verify()
+
+    def test_seed_chain_stops_at_a_different_owner(self):
+        old = (
+            '# Results\n\n'
+            'In the single evaluated seed, Analysis A had MAE 0.72 px.\n\n'
+            'In the single evaluated seed, Analysis B had MAE 0.70 px.\n\n'
+            'In the single evaluated seed, Analysis A had RMSE 0.74 px.\n'
+        )
+        new = (
+            '# Results\n\n'
+            'In the single evaluated seed, Analysis A had MAE 0.72 px.\n\n'
+            'Analysis B had MAE 0.70 px.\n\n'
+            'Analysis A had RMSE 0.74 px.\n'
+        )
+        (self.before/'Results_EN.md').write_bytes(old.encode())
+        (self.after/'Results_EN.md').write_bytes(new.encode())
+        with self.assertRaises(ValueError):
+            scaffold.build_review_bundle(self.before, self.after)
+
+    def test_supplementary_prefix_keeps_the_same_figure_or_table_citation(self):
+        self.assertEqual(
+            edit._canonical_translated_anchor('Fig. S8'),
+            edit._canonical_translated_anchor('Supplementary Fig. S8'),
+        )
+        self.assertEqual(
+            edit._canonical_translated_anchor('Table S8'),
+            edit._canonical_translated_anchor('Supplementary Table S8'),
+        )
+        self.assertEqual(
+            edit._canonical_translated_anchor('Fig. 2'),
+            edit._canonical_translated_anchor('Supplementary Fig. 2'),
+        )
+        self.assertEqual(
+            edit._canonical_translated_anchor('Table 3'),
+            edit._canonical_translated_anchor('Supplementary Table 3'),
+        )
+        en = 'The vocabulary is listed in Table S8. Localization used the map (Fig. S8).'
+        new = en.replace('Table S8', 'Supplementary Table S8').replace('(Fig. S8)', '(Supplementary Fig. S8)')
+        zh = '词表列于表 S8。定位使用该图（图 S8）。'
+        new_zh = zh.replace('表 S8', '补充表 S8').replace('图 S8', '补充图 S8')
+        self._write_qualifier_triplet(en, new, zh, new_zh)
+        self._run_verify()
+
+    def test_spacing_a_named_seed_keeps_an_unmatched_chinese_single_seed(self):
+        en = (
+            'In seed 0, Analysis A differed by +0.007 (95% CI, 0.002-0.015). '
+            'These seed-specific positive results supported comparable BACC.'
+        )
+        old_zh = (
+            '在种子0中，分析 A 相差 +0.007（95% CI，0.002–0.015）。'
+            '这些单种子正向差异支持相近的 BACC。'
+        )
+        new_zh = old_zh.replace('种子0', '种子 0')
+        self._write_qualifier_triplet(en, en, old_zh, new_zh)
+        self._run_verify()
+
+    def test_repeated_chinese_seed_opener_is_not_bound_to_interval_tokens(self):
+        old_en = (
+            '(a) In the single evaluated seed, Analysis A predicted boundaries. '
+            '(b) Evaluated in the single evaluated seed, Analysis A had lower error. '
+            '(d) In the single evaluated seed, paired boundary error was +0.017 px (95% CI, -0.019 to 0.058 px).'
+        )
+        new_en = old_en.replace('(b) Evaluated in the single evaluated seed, ', '(b) ')
+        old_zh = (
+            '(a) 在唯一接受评价的种子中，分析 A 预测边界。'
+            '(b) 在唯一接受评价的种子中评估，分析 A 误差更低。'
+            '(d) 在唯一接受评价的种子中，配对边界误差为 +0.017 px（95% CI，-0.019 至 0.058 px）。'
+        )
+        new_zh = old_zh.replace('(b) 在唯一接受评价的种子中评估，', '(b) ')
+        self._write_qualifier_triplet(old_en, new_en, old_zh, new_zh)
+        self._run_verify()
+
+    def test_repeated_seed_inside_one_paragraph_is_not_bound_to_another_qualifier(self):
+        old_en = (
+            'In the single evaluated seed, Analysis A showed a paired boundary error of 0.70 px. '
+            'Evaluated in the single evaluated seed, Analysis A showed a paired boundary error of 0.80 px.'
+        )
+        new_en = (
+            'In the single evaluated seed, Analysis A showed a paired boundary error of 0.70 px. '
+            'Analysis A showed a paired boundary error of 0.80 px.'
+        )
+        old_zh = '在单个评估种子中，分析 A 显示 paired 边界误差 0.70 px。在单个评估种子中，分析 A 显示 paired 边界误差 0.80 px。'
+        new_zh = '在单个评估种子中，分析 A 显示 paired 边界误差 0.70 px。分析 A 显示 paired 边界误差 0.80 px。'
+        self._write_qualifier_triplet(old_en, new_en, old_zh, new_zh)
+        self._run_verify()
+
     def test_same_heading_unchanged_declaration_is_included_but_draft(self):
         key = 'Results_EN.md'
         old = '# Results\n\nIn the single evaluated seed, Analysis A achieved 0.72.\n\nIn the single evaluated seed, Analysis A reached 0.74.\n'
@@ -553,6 +669,127 @@ class ScaffoldStructuralReviewTests(unittest.TestCase):
             (self.before/'Results_EN.md').write_bytes(('# Results\n\n'+old+'\n').encode())
             (self.after/'Results_EN.md').write_bytes(('# Results\n\n'+new+'\n').encode())
             self._run_verify()
+
+    def _write_qualifier_triplet(self, old_en, new_en, old_zh, new_zh):
+        for folder, en, zh in [(self.before, old_en, old_zh), (self.after, new_en, new_zh)]:
+            for lang, body in [('EN', en), ('ZH', zh), ('EN_ZH', en+'\n\n'+zh)]:
+                (folder/('Results_'+lang+'.md')).write_bytes(('# Results\n\n'+body+'\n').encode('utf-8'))
+
+    def test_do_not_prespecified_inferential_phrase_matches_without_form(self):
+        without_threshold = 'Analysis A reported 0.40 without a prespecified inferential threshold.'
+        do_not_threshold = 'Analysis A reported 0.40 and did not use a prespecified inferential threshold.'
+        no_testing = 'Analysis A reported 0.40 with no inferential testing.'
+        self.assertTrue(edit._evidence_equal(edit._tokens(without_threshold), edit._tokens(do_not_threshold)))
+        self.assertFalse(edit._evidence_equal(edit._tokens(without_threshold), edit._tokens(no_testing)))
+        self.assertFalse(edit._evidence_equal(edit._tokens('Analysis A reported 0.40.'), edit._tokens('Analysis A reported not 0.40.')))
+        old_zh = '分析 A 报告 0.40，无预设推断阈值。'
+        new_zh = '分析 A 报告 0.40，且未使用预设推断阈值。'
+        self._write_qualifier_triplet(without_threshold, do_not_threshold, old_zh, new_zh)
+        self._run_verify()
+
+    def test_multiple_negation_surfaces_collapse_without_exhausting_fact_anchors(self):
+        old_en = ('Analysis A did not extend the descriptive comparison, without providing '
+                  'a direct substitute for diagnosis-specific validation here.')
+        new_en = ('Analysis A did not extend the descriptive comparison and do not provide '
+                  'a direct substitute for diagnosis-specific validation here.')
+        old_zh = '分析 A 未超出描述性比较，也未直接替代诊断特异性验证。'
+        new_zh = '分析 A 仍限于描述性比较，且不能直接替代诊断特异性验证。'
+        self._write_qualifier_triplet(old_en, new_en, old_zh, new_zh)
+        draft, _, _ = scaffold.build_review_bundle(self.before, self.after)
+        self.assertEqual(draft['review_status']['state'], 'draft')
+        self.assertTrue(all(x.startswith('DRAFT') for x in draft['reviewers'].values()))
+        claim = draft['claims'][0]
+        negative = next(f for f in claim['facts'] if {s['text'] for s in f['source']} == {'not', 'without'})
+        self.assertEqual([s['text'] for s in negative['candidate']], ['not', 'not'])
+        combined = next(t for t in claim['translations'] if t['language'] == 'EN_ZH')
+        linked = next(f for f in combined['facts'] if f['fact'] == negative['id'])
+        self.assertEqual([s['text'] for s in linked['source']], ['not', 'without'])
+        self.assertEqual([s['text'] for s in linked['candidate']], ['not', 'not'])
+        self._run_verify()
+
+    def test_native_chinese_qualifier_synonyms_are_all_mapped_with_context(self):
+        old_en = 'Analysis A reported single-seed calibration and single evaluated seed discrimination.'
+        new_en = 'Analysis A reported single-seed calibration and single-seed discrimination.'
+        old_zh = '分析 A 报告单随机种子校准及单个评估种子判别。'
+        new_zh = '分析 A 报告单随机种子校准及单随机种子判别。'
+        self._write_qualifier_triplet(old_en, new_en, old_zh, new_zh)
+        review_path, _, _, _ = self._run_verify()
+        claim = json.loads(review_path.read_text(encoding='utf-8'))['claims'][0]
+        seed = next(f for f in claim['facts'] if f['kind'] == 'qualifier')
+        self.assertEqual([s['text'] for s in seed['source']], ['single-seed', 'single evaluated seed'])
+        self.assertEqual([s['text'] for s in seed['candidate']], ['single-seed', 'single-seed'])
+        for translation in claim['translations']:
+            linked = next(f for f in translation['facts'] if f['fact'] == seed['id'])
+            zh_source = [s['text'] for s in linked['source'] if '种子' in s['text']]
+            zh_candidate = [s['text'] for s in linked['candidate'] if '种子' in s['text']]
+            self.assertEqual(zh_source, ['单随机种子', '单个评估种子'])
+            self.assertEqual(zh_candidate, ['单随机种子', '单随机种子'])
+            for side in ('source', 'candidate'):
+                self.assertTrue(all(edit._inside(s, [c[side] for c in linked['context']]) for s in linked[side]))
+
+    def test_canonical_pairing_rejects_distinct_added_or_deleted_states_in_each_language(self):
+        old_en = 'Analysis A reported curves with no inferential testing.'
+        old_zh = '分析 A 报告曲线，未进行推断检验（no inferential testing）。'
+        for language in ('EN', 'ZH', 'EN_ZH'):
+            for replacement in ('no inferential ranking', 'no inferential testing and descriptive', ''):
+                with self.subTest(language=language, replacement=replacement):
+                    self._write_qualifier_triplet(old_en, old_en, old_zh, old_zh)
+                    path = self.after/('Results_'+language+'.md')
+                    path.write_bytes(path.read_bytes().replace(b'no inferential testing', replacement.encode()))
+                    with self.assertRaisesRegex(ValueError, '[Ee]vidence mismatch'):
+                        scaffold.build_review_bundle(self.before, self.after)
+
+    def test_one_evaluated_run_spellings_share_one_state(self):
+        state = {(6, 'single-run')}
+        for phrase in (
+            'single evaluated seed', 'one evaluated seed', 'single run', 'single-run',
+            'single evaluated run', 'one evaluated run', 'single evaluated reader',
+            'one evaluated fold', '单种子', '单次运行', '单个评估读者',
+        ):
+            self.assertEqual(edit._tokens(phrase), state, phrase)
+        self.assertNotIn((6, 'single-run'), edit._tokens('single fold change'))
+        self.assertNotIn((6, 'single-run'), edit._tokens('a single dose'))
+
+    def test_repeated_reader_opener_uses_the_same_run_scope(self):
+        old = (
+            '# Results\n\n'
+            'In the single evaluated reader, Analysis A had sensitivity 0.91.\n\n'
+            'In the single evaluated reader, Analysis A had specificity 0.88.\n'
+        )
+        new = old.replace(
+            'In the single evaluated reader, Analysis A had specificity',
+            'Analysis A had specificity',
+        )
+        (self.before/'Results_EN.md').write_bytes(old.encode())
+        (self.after/'Results_EN.md').write_bytes(new.encode())
+        draft, _, _ = scaffold.build_review_bundle(self.before, self.after)
+        self.assertIn('0.91', draft['claims'][0]['candidate'][0]['text'])
+        self._run_verify()
+
+    def test_sole_evaluated_seed_chinese_particle_is_a_bounded_alias(self):
+        en = 'Analysis A reported single evaluated seed calibration.'
+        old_zh = '分析 A 报告唯一接受评价种子中的校准结果。'
+        new_zh = '分析 A 在唯一接受评价的种子中报告校准结果。'
+        self._write_qualifier_triplet(en, en, old_zh, new_zh)
+        self._run_verify()
+        for phrase in ('唯一接受评价种子', '唯一接受评价的种子'):
+            self.assertEqual(edit._tokens(phrase), {(6, 'single-run')})
+            self.assertFalse(edit._evidence_equal(edit._tokens(phrase), edit._tokens('两个接受评价的种子')))
+
+    def test_sole_evaluated_seed_chinese_alias_cannot_govern_multiple_seeds(self):
+        for language in ('ZH', 'EN_ZH'):
+            for phrase in ('唯一接受评价种子', '唯一接受评价的种子'):
+                with self.subTest(language=language, phrase=phrase):
+                    rationale = self._cross_scope(bilingual=True)
+                    request = next(r for r in rationale['scope_declaration_requests'] if r['id'] == 'D_'+language)
+                    old = request['declaration']['text']
+                    changed = old.replace('单个评估种子', phrase).replace('seed 0', 'seed 0 和 seed 1')
+                    request['declaration']['text'] = changed
+                    for folder in (self.before, self.after):
+                        path = folder/('Methods_'+language+'.md')
+                        path.write_bytes(path.read_bytes().replace(old.encode(), changed.encode()))
+                    with self.assertRaisesRegex(AssertionError, 'multiple/ranged seed'):
+                        self._run_verify(rationale)
 
     def test_finalized_gate_rejects_new_negation_and_opposite_qualifier_states(self):
         key = 'Results_EN.md'

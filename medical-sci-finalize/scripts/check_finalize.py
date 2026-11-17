@@ -22,7 +22,8 @@ from docx.text.paragraph import Paragraph
 import build_manuscript as build
 
 NUMBER = re.compile(r'(?<![\d.])(?:[+−-]?\d{1,3}(?:,\d{3})+(?:\.\d+)?|[+−-]?(?:\d+\.\d*|\.\d+|\d+))(?:[eE][+−-]?\d+)?')
-QUALIFIERS = [r'\bsingle[- ]run\b', r'\bsingle evaluated seed\b', r'\bsingle[- ]seed\b',
+QUALIFIERS = [r'\bsingle[- ]run\b', r'\bsingle[- ]seed\b',
+              r'\b(?:single|one) evaluated (?:seed|run|split|fold|reader|rater)\b',
               r'\bone (?:run|seed)\b', r'\bseed[- ]0\b', r'\bsubset\b', r'\bexploratory\b',
               r'\bdescriptive(?:ly)?\b', r'\bretrospective\b', r'\bnot conclusive\b',
               r'\binconclusive\b', r'\bcross(?:ing|ed|es)? zero\b', r'\bnot estimable\b',

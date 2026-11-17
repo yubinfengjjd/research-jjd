@@ -30,10 +30,12 @@ TOKENS = [re.compile(NUMBER), re.compile(NUMBER+r'\s*(?:µm/像素|μm/像素|'+
           re.compile(r'<=|>=|≤|≥|<|>|≠|(?<![A-Za-z])=(?!=)'),
           re.compile(r'\b(?:not estimable|not executed|cross(?:ing|ed|es)? zero|confidence intervals?|'
                      r'not established|cannot establish|(?:did|do|does) not establish|no established|'
-                     r'(?:without|no) (?:a |an |any )?(?:prespecified )?inferential (?:threshold|ranking|tests?|testing|comparisons?)|non[- ]inferential|'
+                     r'(?:(?:did|do|does) not (?:(?:use|have|report|perform|apply|conduct|include|present|provide|make|show|give|employ|adopt|set|define|impose|require) ){0,3}(?:a |an |any )?(?:prespecified )?inferential (?:threshold|ranking|tests?|testing|comparisons?)|(?:without|no) (?:a |an |any )?(?:prespecified )?inferential (?:threshold|ranking|tests?|testing|comparisons?))|non[- ]inferential|'
                      r'not|no|never|without|failed|inconclusive|unresolved|unestablished|'
-                     r'exploratory|descriptive|retrospective|paired|subset|single[- ]run|'
-                     r'(?:single(?:[- ]evaluated)?|one[- ]evaluated)[- ]seed|point[- ]estimates?|one[- ]sided|two[- ]sided|cluster[- ]bootstrap|CI)\b|点估计|单随机种子|单个(?:已)?评估种子|单次评估种子|单种子|一个评估种子|唯一接受评价的种子', re.I),
+                     r'exploratory|descriptive|retrospective|paired|subset|'
+                     r'(?:single(?:[- ]evaluated)?|one[- ]evaluated)[- ](?:seed|run)|'
+                     r'(?:single[- ]evaluated|one[- ]evaluated)[- ](?:split|fold|reader|rater)|'
+                     r'point[- ]estimates?|one[- ]sided|two[- ]sided|cluster[- ]bootstrap|CI)\b|点估计|单随机种子|单个(?:已)?评估种子|单次评估种子|单种子|一个评估种子|唯一接受评价的?种子|单次评估运行|单次运行|一次评估运行|单个评估折|单次评估折|单个评估读者|一名评估读者|单个评估阅片者', re.I),
           re.compile(r'\$\$[\s\S]*?\$\$|(?<!\$)\$(?!\$)[^$\n]+\$|`[^`\n]+`|https?://[^\s)）】，；：！？、“”‘’《》「」『』]+'),
           re.compile(r'(?:\d+(?:\.\d+)?%\s*)?\b(?:CI|confidence intervals?)\s*[:=]?\s*'
                      r'[\[(]?\s*'+NUMBER+r'\s*(?:,|\bto\b|[–—])\s*'+NUMBER+r'\s*[\])]?', re.I),
@@ -266,8 +268,10 @@ def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, 
         multi_ok = any(len(labels) > 1 for labels in owned_before.values()) and _multi_owner_segments_preserved(a['text'], b['text'])
         _require(owned_before == owned_after and (single_ok or multi_ok),
                  'Ambiguous/changed owner labels in fact context; preserve or split affected unit')
-        _require(_evidence_equal(_tokens(_body_content(_without_removed([a], removed), headings, 'source')),
-                                 _tokens(_body_content([b], headings, 'candidate'))),
+        ctx_src = _tokens(_body_content(_without_removed([a], removed), headings, 'source'))
+        ctx_dst = _tokens(_body_content([b], headings, 'candidate'))
+        ctx_src = _ignore_contradicted_noninferential(ctx_src, ctx_dst, a['text'], b['text'])
+        _require(_evidence_equal(ctx_src, ctx_dst),
                  'Fact context lost numeric/citation/qualifier evidence')
         seen.update(indices)
         left.append(a)
@@ -315,7 +319,7 @@ def _tokens(text):
                 if val in ('non-inferential', 'non inferential'):
                     result.add_qualifier('non-inferential')
                     continue
-                if re.match(r'(?:without|no) ', val) and 'inferential' in val:
+                if re.match(r'(?:without|no|(?:did|do|does) not)\b', val) and 'inferential' in val:
                     prefix = 'no-prespecified-' if 'prespecified' in val else 'no-'
                     noun = ('testing' if re.search(r'\b(?:tests?|testing)$', val) else
                             'comparison' if re.search(r'\bcomparisons?$', val) else
@@ -325,8 +329,8 @@ def _tokens(text):
                     continue
                 if val in ('not', 'no', 'without'):
                     val = 'neg'
-                elif re.fullmatch(r'(?:single(?:[- ]evaluated)?|one[- ]evaluated)[- ]seed|单随机种子|单个(?:已)?评估种子|单次评估种子|单种子|一个评估种子|唯一接受评价的种子', val):
-                    val = 'single-seed'
+                elif re.fullmatch(r'(?:single(?:[- ]evaluated)?|one[- ]evaluated)[- ](?:seed|run)|(?:single[- ]evaluated|one[- ]evaluated)[- ](?:split|fold|reader|rater)|单随机种子|单个(?:已)?评估种子|单次评估种子|单种子|一个评估种子|唯一接受评价的?种子|单次评估运行|单次运行|一次评估运行|单个评估折|单次评估折|单个评估读者|一名评估读者|单个评估阅片者', val, re.I):
+                    val = 'single-run'
                 elif re.fullmatch(r'point[- ]estimates?|点估计', val):
                     val = 'point-estimate'
                 result.add_qualifier(val)
@@ -362,6 +366,21 @@ def _evidence_equal(before, after):
     return ({t for t in before if t[0] != 6} == {t for t in after if t[0] != 6} and before_q == after_q)
 
 
+_REPORTED_TEST = re.compile(r'\b(?:permutation|sign-flip|P\s*[=<>≤≥])', re.I)
+
+
+def _ignore_contradicted_noninferential(before, after, source_text, candidate_text):
+    """Drop a non-inferential label only when the same span still reports the test."""
+    if (6, 'non-inferential') not in set(before) or (6, 'non-inferential') in set(after):
+        return before
+    if not _REPORTED_TEST.search(source_text) or not _REPORTED_TEST.search(candidate_text):
+        return before
+    added = {t for t in after if t[0] == 6} - {t for t in before if t[0] == 6}
+    if added:
+        return before
+    return {t for t in before if t != (6, 'non-inferential')}
+
+
 def _content(spans):
     return '\n'.join(x['text'] for x in spans)
 
@@ -381,7 +400,7 @@ def _without_removed(spans, removed):
 
 
 def _scope_declarations(review, old, new, managed, remember, identity):
-    """Bounded reviewed single-seed inheritance, never general prose inference.
+    """Bounded reviewed single-run inheritance, never general prose inference.
 
     Legacy records have no declarations and keep their original local semantics.
     Every allowance is an exact source qualifier -> unchanged declaration mapping.
@@ -407,9 +426,9 @@ def _scope_declarations(review, old, new, managed, remember, identity):
         _require(len(declared_runs) <= 1 and not re.search(
             r'\b(?:seeds|runs)\b|\b(?:seed|run)[ -]+\d+\s*(?:[,/–—-]|and\b|to\b)|种子\s*\d+\s*[、,，–—-]', ds['text'], re.I),
             'Declaration may not cover multiple/ranged seed or run identities')
-        _require((6, 'single-seed') in declaration_tokens or (len(declared_runs) == 1 and re.search(
+        _require((6, 'single-run') in declaration_tokens or (len(declared_runs) == 1 and re.search(
             r'\b(?:used?|using|evaluat\w*|performed|executed|trained|model|generated|computed|derived|calculated|estimated|fitted|with)\b|使用|采用|评估|评价|执行|模型|计算|构建|生成|基于|训练|完成', ds['text'], re.I)),
-                 'Declaration must state a single evaluated seed or exactly one explicit named seed/run')
+                 'Declaration must state one evaluated run or exactly one explicit named run')
         for binding in _list(declaration['bindings'], 'declaration bindings', True):
             _object(binding, ('claim', 'language', 'source', 'candidate', 'removed', 'guards'), 'declaration binding')
             cid, language = binding['claim'], binding['language']
@@ -455,8 +474,8 @@ def _scope_declarations(review, old, new, managed, remember, identity):
                      'Explicit named seed/run declaration needs its exact run guard')
             for slot in removed:
                 marker = (slot['file'], slot['start'], slot['end'])
-                _require(marker not in slots and _inside(slot, source) and _tokens(slot['text']) == {(6, 'single-seed')},
-                         'Only unique exact single-seed qualifier spans may inherit')
+                _require(marker not in slots and _inside(slot, source) and _tokens(slot['text']) == {(6, 'single-run')},
+                         'Only unique exact single-run qualifier spans may inherit')
                 slots.add(marker)
             pair = (cid, language)
             _require(pair not in result, 'Duplicate declaration for governed claim/language')
@@ -720,6 +739,7 @@ def _canonical_translated_anchor(text):
     value = re.sub(r'(?:种子|seed)[-\s]*(\d+)', r'seed \1', value)
     value = re.sub(r'(?:运行|run)[-\s]*(\d+)', r'run \1', value)
     value = re.sub(r'\s*像素', ' px', value)
+    value = re.sub(r'\bsupplementary\s+(?=fig\b|table\b)', '', value)
     return re.sub(r'\s+', ' ', value).strip()
 
 
@@ -790,7 +810,9 @@ def _compare(before, after, review_path, changes):
         scope_pairs = _pairs(claim['scope'], old, new, source, candidate, 'scope', scoped=True)
         _ownership(source, candidate, scope_pairs)
         provenance = _pairs(claim['provenance'], old, new, source, candidate, 'provenance')
-        _require(_evidence_equal(evidence(source, 'source', removed), evidence(candidate, 'candidate')),
+        src_ev, dst_ev = evidence(source, 'source', removed), evidence(candidate, 'candidate')
+        src_ev = _ignore_contradicted_noninferential(src_ev, dst_ev, _content(source), _content(candidate))
+        _require(_evidence_equal(src_ev, dst_ev),
                  'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
         fact_kinds = {}
         facts = {}
@@ -806,7 +828,7 @@ def _compare(before, after, review_path, changes):
             if {x['text'].casefold() for x in left} != {x['text'].casefold() for x in right}:
                 if fact['kind'] == 'qualifier':
                     tl, tr = _tokens(_content(left)), _tokens(_content(right))
-                    _require((tl or tr == {(6, 'single-seed')}) and tr and all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
+                    _require((tl or tr == {(6, 'single-run')}) and tr and all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
                              'Qualifier fact anchor weakened or changed non-qualifier tokens')
                 elif fact['kind'] == 'scope':
                     _require({_canonical_scope_anchor(x['text']).casefold() for x in left} ==
@@ -815,13 +837,18 @@ def _compare(before, after, review_path, changes):
                 elif _tokens(_content(left)) == _tokens(_content(right)) == {(9, 'first')}:
                     pass  # Bounded first/1st equivalence; other numeric evidence stays literal.
                 else:
-                    _require(False, 'Unique fact anchor changed')
+                    _require(_tokens(_content(left)) == _tokens(_content(right)) and
+                             {_canonical_translated_anchor(x['text']) for x in left} ==
+                             {_canonical_translated_anchor(x['text']) for x in right},
+                             'Unique fact anchor changed')
             _contexts(fact['context'], old, new, source, candidate, left, right, scope_pairs, headings, removed)
             facts[fact['id']] = (left, right)
             fact_kinds[fact['id']] = fact['kind']
             fact_source.extend(left)
             fact_candidate.extend(right)
-        _require(evidence(source, 'source', removed) <= evidence(fact_source, 'source', removed) and
+        src_ev = _ignore_contradicted_noninferential(evidence(source, 'source', removed), evidence(candidate, 'candidate'), _content(source), _content(candidate))
+        fact_src_ev = _ignore_contradicted_noninferential(evidence(fact_source, 'source', removed), evidence(fact_candidate, 'candidate'), _content(source), _content(candidate))
+        _require(src_ev <= fact_src_ev and
                  evidence(candidate, 'candidate') <= evidence(fact_candidate, 'candidate'), 'Salient evidence missing from explicit fact map')
         key = source[0]['file']
         group = _group(key)
@@ -842,7 +869,9 @@ def _compare(before, after, review_path, changes):
             _require(all(x['file'] == required[lang] for x in left+right), 'Translation must cover corresponding existing manuscript')
             _scope(left, right, old, new, aliases)
             translated_scope = _pairs(translation['scope'], old, new, left, right, 'translation scope')
-            _require(_evidence_equal(evidence(left, 'source', translated_removed), evidence(right, 'candidate')),
+            tr_src, tr_dst = evidence(left, 'source', translated_removed), evidence(right, 'candidate')
+            tr_src = _ignore_contradicted_noninferential(tr_src, tr_dst, _content(left), _content(right))
+            _require(_evidence_equal(tr_src, tr_dst),
                      'Translation numeric/citation/unit/negative evidence changed')
             linked = set()
             linked_source = [x['source'] for x in translated_scope]
@@ -871,7 +900,9 @@ def _compare(before, after, review_path, changes):
                 linked_candidate.extend(rs)
             _require(linked == facts.keys(), 'Translation missing fact coverage')
             # Combined files also contain English text, so check its entire evidence set.
-            _require(evidence(left, 'source', translated_removed) <= evidence(linked_source, 'source', translated_removed) and
+            tr_all = _ignore_contradicted_noninferential(evidence(left, 'source', translated_removed), evidence(right, 'candidate'), _content(left), _content(right))
+            linked_all = _ignore_contradicted_noninferential(evidence(linked_source, 'source', translated_removed), evidence(linked_candidate, 'candidate'), _content(left), _content(right))
+            _require(tr_all <= linked_all and
                      evidence(right, 'candidate') <= evidence(linked_candidate, 'candidate'), 'Translation salient evidence missing from fact map')
             source_coverage.extend(left)
             candidate_coverage.extend(right)

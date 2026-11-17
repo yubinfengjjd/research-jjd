@@ -8,18 +8,17 @@
 
 ## 运行
 
-在开发根 PowerShell 执行：
+在技能目录的 PowerShell 执行：
 
 ```powershell
 $py = 'C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe'
-& $py -m pytest staged\sci-figure-replica\tests -q
-& $py -X utf8 staged\sci-figure-replica\examples\post01-fig4\replica.py
+& $py -X utf8 examples\post01-fig4\replica.py
 ```
 
-`--out <路径>` 可指定测试输出；拒绝向 samples 与配置中的真实画廊写入。
+`--out <路径>` 可指定输出；拒绝向 samples 与配置中的真实画廊写入。
 `prepare_inputs.py` 是显式、可重复的输入准备脚本（固定种子 20261020）；
 绘图脚本只读取 CSV，不会重新抽样、训练模型或执行原帖代码。
-测试输出目录及完整实测 stdout、stderr、退出码见开发根 `codex/T3-validation.json`。
+输出日志和 QA 记录应保存在任务自己的工作目录中。
 
 ## 结构与复用
 

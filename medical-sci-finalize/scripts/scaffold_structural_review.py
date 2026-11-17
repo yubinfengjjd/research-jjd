@@ -91,8 +91,8 @@ def _bind_inheritance(declarations, cid, source, candidate, translations):
                     binding['claim'] = cid
                     edit._require((cid, language) not in inherited, 'Duplicate inherited scope binding')
                     removed = binding['removed']
-                    edit._require(all(edit._inside(x, left) and edit._tokens(x['text']) == {(6, 'single-seed')} for x in removed),
-                                  'Only exact source single-seed qualifier slots may inherit')
+                    edit._require(all(edit._inside(x, left) and edit._tokens(x['text']) == {(6, 'single-run')} for x in removed),
+                                  'Only exact source single-run qualifier slots may inherit')
                     inherited[(cid, language)] = removed
     return inherited
 
@@ -837,6 +837,7 @@ def _build_claim_record(
     removed = inherited.get((cid, 'EN'), ())
     b_tok = edit._tokens(edit._content(edit._without_removed(en_src_spans, removed)))
     a_tok = edit._tokens(dst_join)
+    b_tok = edit._ignore_contradicted_noninferential(b_tok, a_tok, src_join, dst_join)
     if not edit._evidence_equal(b_tok, a_tok):
         miss = sorted(b_tok - a_tok)
         add = sorted(a_tok - b_tok)
@@ -986,7 +987,7 @@ def _build_claim_record(
             j for j, (_, (idx, _, _, raw, _)) in enumerate(flat_dst)
             if j not in used_dst and (idx, raw.casefold()) == key_s
         ]
-        if not d_group and idx_s in (1, 4, 9):
+        if not d_group and idx_s in (1, 3, 4, 9):
             d_group = [
                 j for j, (_, (idx, _, _, _, toks_d)) in enumerate(flat_dst)
                 if j not in used_dst and idx == idx_s and toks_s == toks_d
@@ -995,9 +996,11 @@ def _build_claim_record(
             used_src.update(s_group)
             used_dst.update(d_group)
             for j_d in d_group:
-                if flat_dst[j_d][1][3].casefold() != raw_s.casefold() and idx_s != 9:
+                dest_raw, dest_toks = flat_dst[j_d][1][3], flat_dst[j_d][1][4]
+                same_citation = idx_s == 3 and dest_toks == toks_s
+                if dest_raw.casefold() != raw_s.casefold() and idx_s != 9 and not same_citation:
                     raise ValueError(
-                        f'{cid}: non-qualifier token surface changed {raw_s!r} -> {flat_dst[j_d][1][3]!r}'
+                        f'{cid}: non-qualifier token surface changed {raw_s!r} -> {dest_raw!r}'
                     )
             sf_list = [_span(old, flat_src[i][0]['file'], flat_src[i][0]['start'] + flat_src[i][1][1],
                              flat_src[i][0]['start'] + flat_src[i][1][2]) for i in s_group]
@@ -1015,13 +1018,12 @@ def _build_claim_record(
                 'context': ctxs,
             })
 
-    # Exact qualifiers grouped by lowercased text
-    for i_s, (s_sp, (idx_s, st_s, en_s, raw_s, _)) in enumerate(flat_src):
+    # Group qualifiers by the validator's bounded canonical states, including raw synonyms.
+    for i_s, (s_sp, (idx_s, st_s, en_s, raw_s, toks_s)) in enumerate(flat_src):
         if i_s in used_src or idx_s != 6:
             continue
-        q_key = raw_s.casefold()
-        s_group = [i for i, (_, (idx, _, _, raw, _)) in enumerate(flat_src) if i not in used_src and idx == 6 and raw.casefold() == q_key]
-        d_group = [j for j, (_, (idx, _, _, raw, _)) in enumerate(flat_dst) if j not in used_dst and idx == 6 and raw.casefold() == q_key]
+        s_group = [i for i, (_, (idx, _, _, _, toks)) in enumerate(flat_src) if i not in used_src and idx == 6 and toks == toks_s]
+        d_group = [j for j, (_, (idx, _, _, _, toks)) in enumerate(flat_dst) if j not in used_dst and idx == 6 and toks == toks_s]
         if d_group:
             used_src.update(s_group)
             used_dst.update(d_group)
@@ -1042,6 +1044,9 @@ def _build_claim_record(
     # are not invented here and repeated fixed qualifiers are not auto-generated.
     rem_s = [flat_src[i] for i in range(len(flat_src)) if i not in used_src and flat_src[i][1][0] == 6]
     rem_d = [flat_dst[j] for j in range(len(flat_dst)) if j not in used_dst and flat_dst[j][1][0] == 6]
+    dest_ni = any((6, 'non-inferential') in h[4] for _, h in flat_dst if h[0] == 6)
+    if (not dest_ni and edit._REPORTED_TEST.search(src_join) and edit._REPORTED_TEST.search(dst_join)):
+        rem_s = [item for item in rem_s if (6, 'non-inferential') not in item[1][4]]
     if rem_s or rem_d:
         rs = [_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_d]
         rem_d_toks = {t for _, h in rem_d for t in h[4]}
@@ -1075,6 +1080,7 @@ def _build_claim_record(
         td_join = '\n'.join(s['text'] for s in t_dst_spans)
         t_removed = inherited.get((cid, lang), ())
         tb_tok, ta_tok = edit._tokens(edit._content(edit._without_removed(t_src_spans, t_removed))), edit._tokens(td_join)
+        tb_tok = edit._ignore_contradicted_noninferential(tb_tok, ta_tok, ts_join, td_join)
         if not edit._evidence_equal(tb_tok, ta_tok):
             raise ValueError(
                 f'{cid} {lang} translation evidence mismatch: '
@@ -1109,7 +1115,7 @@ def _build_claim_record(
                         (j for j, (_, hd) in enumerate(td_occ)
                          if j not in t_used_d and hd[0] == h[0]
                          and (h[3].casefold() == hd[3].casefold()
-                              or ((cs == edit._canonical_translated_anchor(hd[3]) or h[0] == 9) and h[4] == hd[4]))),
+                              or ((cs == edit._canonical_translated_anchor(hd[3]) or h[0] in (6, 9)) and h[4] == hd[4]))),
                         None,
                     )
                     if jd is not None:
@@ -1164,8 +1170,23 @@ def _build_claim_record(
             all_ef_toks = edit._tokens('\n'.join(x['text'] for x in ef['source']))
             ls, rs = find_tr_match(inv or all_ef_toks, lambda k: True if ef['kind'] != 'qualifier' else k == 6)
             if ef['kind'] == 'qualifier' and not ls:
-                rem_qs = [i for i, (_, h) in enumerate(ts_occ) if i not in t_used_s and h[0] == 6]
-                rem_qd = [j for j, (_, h) in enumerate(td_occ) if j not in t_used_d and h[0] == 6]
+                def qualifier_sets(spans):
+                    found = []
+                    for sp in spans:
+                        states = frozenset(t for t in edit._tokens(sp['text']) if t[0] == 6)
+                        if states:
+                            found.append(states)
+                    return found
+                allowed = qualifier_sets(ef['source']) + qualifier_sets(ef['candidate'])
+
+                def same_fact_state(h):
+                    states = frozenset(t for t in h[4] if t[0] == 6)
+                    return bool(states) and states in allowed
+
+                rem_qs = [i for i, (_, h) in enumerate(ts_occ)
+                          if i not in t_used_s and h[0] == 6 and same_fact_state(h)]
+                rem_qd = [j for j, (_, h) in enumerate(td_occ)
+                          if j not in t_used_d and h[0] == 6 and same_fact_state(h)]
                 if rem_qs and rem_qd:
                     for i in rem_qs:
                         t_used_s.add(i)
@@ -1203,6 +1224,49 @@ def _build_claim_record(
             else:
                 target_f['source'].extend(extra_s)
                 target_f['candidate'].extend(extra_d)
+                for ctx in ctxs:
+                    if ctx not in target_f['context']:
+                        target_f['context'].append(ctx)
+
+        # An unchanged single-run spelling that the English facts do not name,
+        # such as 单种子 or 单次运行 beside a different English wording, still has
+        # to sit in the fact map. Attach equal
+        # leftovers to a non-qualifier fact. Do not attach a one-sided loss, and do
+        # not put them on a different qualifier state.
+        def qualifier_state(hit):
+            return frozenset(t for t in hit[4] if t[0] == 6)
+
+        unused_s = [(i, h) for i, (_, h) in enumerate(ts_occ)
+                    if i not in t_used_s and h[0] == 6 and qualifier_state(h)]
+        unused_d = [(j, h) for j, (_, h) in enumerate(td_occ)
+                    if j not in t_used_d and h[0] == 6 and qualifier_state(h)]
+        taken = set()
+        pairs = []
+        for i, h in unused_s:
+            state = qualifier_state(h)
+            match = next((j for j, hd in unused_d
+                          if j not in taken and qualifier_state(hd) == state
+                          and h[3].casefold() == hd[3].casefold()), None)
+            if match is None:
+                pairs = []
+                break
+            taken.add(match)
+            pairs.append((i, match))
+        if pairs and len(taken) == len(unused_d):
+            qs, qd = [], []
+            for i, j in pairs:
+                t_used_s.add(i)
+                t_used_d.add(j)
+                sp, h = ts_occ[i]
+                qs.append(_span(old, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
+                sp, h = td_occ[j]
+                qd.append(_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
+            target_f = next((tf for tf, ef in zip(tr_facts, facts_out) if ef['kind'] != 'qualifier'), None)
+            if target_f is not None:
+                ctxs, s_used = tr_box_ctx(qs, qd)
+                used_t_scopes.update(s_used)
+                target_f['source'].extend(qs)
+                target_f['candidate'].extend(qd)
                 for ctx in ctxs:
                     if ctx not in target_f['context']:
                         target_f['context'].append(ctx)
@@ -1324,13 +1388,25 @@ def build_review_bundle(
             grouped = []
             for ol, nl, changed in raw_hunks:
                 bt, at = edit._tokens('\n'.join(x[2] for x in ol)), edit._tokens('\n'.join(x[2] for x in nl))
-                if changed and grouped and bt - at == {(6, 'single-seed')} and not (at - bt):
-                    po, pn, pc = grouped[-1]
-                    prev_text = '\n'.join(x[2] for x in po)
-                    if (not pc and [x[2] for x in po] == [x[2] for x in pn]
-                            and (6, 'single-seed') in edit._tokens(prev_text)
-                            and edit._named_scopes(prev_text) == edit._named_scopes('\n'.join(x[2] for x in ol))):
-                        grouped[-1] = (po + ol, pn + nl, True)
+                run_loss = changed and bt - at == {(6, 'single-run')} and not (at - bt)
+                if run_loss and grouped:
+                    current_scopes = edit._named_scopes('\n'.join(x[2] for x in ol))
+                    for i in range(len(grouped) - 1, -1, -1):
+                        po, pn, _pc = grouped[i]
+                        prev_src = '\n'.join(x[2] for x in po)
+                        prev_dst = '\n'.join(x[2] for x in pn)
+                        if edit._named_scopes(prev_src) != current_scopes:
+                            break
+                        prev_bt, prev_at = edit._tokens(prev_src), edit._tokens(prev_dst)
+                        if (6, 'single-run') in prev_at:
+                            grouped[i] = (po + ol, pn + nl, True)
+                            run_loss = False
+                            break
+                        # Keep looking past an earlier same-owner repeat that also only lost the seed.
+                        if prev_bt - prev_at == {(6, 'single-run')} and not (prev_at - prev_bt):
+                            continue
+                        break
+                    if not run_loss:
                         continue
                 grouped.append((ol, nl, changed))
             raw_hunks = grouped

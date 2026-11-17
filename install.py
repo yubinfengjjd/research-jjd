@@ -46,7 +46,7 @@ STAMP = ".medfig_install.json"
 
 EXCLUDED_DIR_NAMES = {"__pycache__", ".pytest_cache", ".git"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
-EXCLUDED_ROOT_DIRS = {"tests", "evals"}
+EXCLUDED_ROOT_DIRS = {"tests", "evals", "validation"}
 EXCLUDED_PATHS = {("legacy_add_table.txt",)}
 # Generated dirs: any `out` / `data` dir below an `examples` dir.
 EXAMPLE_GENERATED = {"out", "data"}
@@ -73,10 +73,16 @@ def is_excluded(rel_parts: tuple[str, ...]) -> bool:
     if not rel_parts:
         return False
     name = rel_parts[-1]
-    # Development tests live in the root tests/ or scripts/test_*.py. A runnable
-    # asset (e.g. assets/synthetic/evaluate_test.py) is part of the runtime, even
-    # when its name contains "test". Preserve source tests; filter only payloads.
-    if len(rel_parts) == 2 and rel_parts[0] == "scripts" and name.startswith("test_") and name.endswith(".py"):
+    # Development tests live in a skill-root tests/, evals/, or validation/
+    # directory, or as scripts/test_*.py and scripts/*_test.py. A runnable asset
+    # (e.g. assets/synthetic/evaluate_test.py) stays in the payload even when its
+    # name contains "test". Nested non-script modules are not filtered by name.
+    if (
+        len(rel_parts) == 2
+        and rel_parts[0] == "scripts"
+        and name.endswith(".py")
+        and (name.startswith("test_") or name.endswith("_test.py"))
+    ):
         return True
     return Path(name).suffix in EXCLUDED_SUFFIXES
 

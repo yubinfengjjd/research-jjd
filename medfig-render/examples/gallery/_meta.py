@@ -10,7 +10,7 @@ Fields (all required, strings in Chinese except ``functions`` / ``source``):
   tags      检索用关键词（英文缩写 + 中文）
   source    来源（开源仓库 + 许可证，或"项目实战提炼"）
 
-Run ``python _meta.py`` to rewrite INDEX.md; ``tests/test_gallery_recipes.py`` fails if INDEX.md is stale.
+Run ``python _meta.py`` to rewrite INDEX.md after a recipe change.
 """
 import ast
 import sys

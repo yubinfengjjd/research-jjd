@@ -1,6 +1,6 @@
 # research-jjd 技能集合
 
-[![tests](https://github.com/yubinfengjjd/research-jjd/actions/workflows/tests.yml/badge.svg)](https://github.com/yubinfengjjd/research-jjd/actions/workflows/tests.yml) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧是七个 medfig 技能和它们依赖的 `scipilot-medimg-figure-skill`；写作侧是九个 `medical-sci-*` 技能和把它们串起来的 `medpaper-pipeline`（含 Zotero 参考文献注入与期刊适配、投稿材料准备）；另有科研开题、受管实验与苏格拉底式项目访谈三个技能。一条命令装到 Claude Code 与 Codex 的技能目录后按触发条件自动使用。
 
@@ -14,7 +14,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 | `medfig-schematic` | 研究设计图 / 网络架构图：写生图模型（ChatGPT 等）的英文提示词，检查提示词、打包每一轮，评估返回的图，逐轮迭代到定稿 |
 | `medfig-illustrator` | 把已有的参考图 1:1 复刻成可编辑矢量；在用户已打开的 Illustrator 文档里原生重画，文字保持真实可编辑、不做轮廓化；带布局闸门、交付校验与画布自动放大 |
 | `scipilot-medimg-figure-skill` | 依赖技能：期刊样式、导出与文件自检脚本（`medfig-render` 调用），以及医学影像 panel（影像 + 掩膜 / 轮廓 / 热力图，JSON 规格驱动）。派生自 [Haojae/scipilot-figure-skill](https://github.com/Haojae/scipilot-figure-skill)（MIT），差异见其 `NOTICE.md` |
-| `sci-figure-replica` | 科研数据图的代表单 panel 复刻、样式去重咨询、对比 QA 与画廊维护；包含脚本、模板、完整示例和测试。与独立 research-wiki 技能衔接，详见其 [README](sci-figure-replica/README.md) |
+| `sci-figure-replica` | 科研数据图的代表单 panel 复刻、样式去重咨询、对比 QA 与画廊维护；包含运行脚本、模板和完整示例。与独立 research-wiki 技能衔接，详见其 [README](sci-figure-replica/README.md) |
 
 ## 路由
 
@@ -52,7 +52,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 ## 前置条件
 
 - Python ≥ 3.11（低于 3.11 需安装 `tomli`，`requirements.txt` 已按版本处理）。
-- Python 依赖：`pip install -r requirements.txt`（版本固定为测试通过的组合）；跑测试另装 `pip install -r requirements-dev.txt`。
+- Python 依赖：`pip install -r requirements.txt`（版本固定的运行依赖）。开发验证环境和测试材料保存在本地开发归档，不随产品仓库发布。
 - `scipilot-medimg-figure-skill` 已包含在本仓库，由 `install.py` 一起安装，不需要另外下载。
 - `anti-defensive-writing` 已包含在本仓库，安装或核验 `medical-sci-finalize` 时自动包含该依赖。每次使用 finalize 须实际加载它；缺失或不可读时停止，不以静态摘录替代。医学稿仍保留不利结果、必要限定与不确定性。
 - 可选：Arial 字体（期刊默认字体；缺失时 matplotlib 回退到 DejaVu Sans 并给出警告）。
@@ -70,7 +70,7 @@ research-jjd 是面向医学 / 临床 AI 论文的全流程技能集：图表侧
 
 自动模式入口见 [实验执行协议](medimg-experiment/references/adaptive-execution.md)；模板空值必须按具体课题确认后填写。合成GPU/自动流程验收只证明其执行协议，不能替代真实患者数据、科学/临床有效性或外部泛化验证。
 
-Claude Code 后端的真实调用、GPU 自动修订闭环和失败保留范围见 [工程验收记录](docs/claude-backend-acceptance-20261020.md)。
+Claude Code 后端的调用边界见 [后端选择](medimg-experiment/references/agent-backends.md)；本仓库不发布本机后端验收记录。
 
 ## 安装 / 更新 / 卸载
 
@@ -85,7 +85,7 @@ python install.py
 
 只更新指定技能可重复使用`--skill`，例如`python install.py --update --skill medical-sci-finalize --skill medpaper-pipeline`；用`--target`明确指定实际加载的技能根（如同时使用`.agents/skills`时），先`--dry-run`再安装/`--verify`。默认目标保持兼容。0.10的结构编辑模式、双语同步和旧记录兼容见[迁移说明](docs/evidence-aware-writing.md)。
 
-`install.py` 只用标准库，只复制清单中的技能目录及所选技能的递归运行依赖，并排除缓存、开发测试与评测目录、`test_*.py`、版本控制目录以及 `examples/**/out`、`examples/**/data` 等生成物。运行所需的 `evaluate_test.py` 示例资产保留。测试、公开验证和历史计划留在源码仓库；它们不因不进入运行包而失去维护价值。默认安装目标为 `~/.claude/skills` 和 `~/.codex/skills`。
+`install.py` 只用标准库，只复制清单中的技能目录及所选技能的递归运行依赖，并排除缓存、技能根下的 `tests/`、`evals/`、`validation/`、直接位于 `scripts/` 的 `test_*.py` 与 `*_test.py`、版本控制目录以及 `examples/**/out`、`examples/**/data` 等生成物。运行所需的 `evaluate_test.py` 示例资产保留；其他目录里文件名含 test 的运行资产也保留。开发测试、验证记录和历史计划保存在本机开发归档，不进入产品仓库或运行包。默认安装目标为 `~/.claude/skills` 和 `~/.codex/skills`。
 
 ```bash
 python install.py --dry-run          # 只打印计划（复制、备份、目标），不改动任何文件
@@ -123,7 +123,7 @@ scipilot_scripts = "~/.codex/skills/scipilot-medimg-figure-skill/scripts"
 
 `FIGKIT_TOML` 可指向项目的 `figkit.toml`；figkit 不含硬编码路径，一律从该配置读取。
 
-## 运行测试
+## 运行诊断
 
 完整手稿修订还可运行只读的跨版本文风诊断：
 
@@ -131,21 +131,7 @@ scipilot_scripts = "~/.codex/skills/scipilot-medimg-figure-skill/scripts"
 python medpaper-pipeline/scripts/lint_manuscript.py candidate/04_manuscript --previous before/04_manuscript --report process/prose-comparison.json
 ```
 
-它列出重复短语、词族密度、句长与图表括号等线索，不以词频增长或密度未下降判定写作失败。源码中的测试、验证记录和历史计划用于维护，不要求写作任务逐份加载；运行安装包和完整源码仓库用途不同。规则与验收边界见[范围声明与文风诊断](docs/writing-scope-validation-20261117.md)。
-
-```bash
-python -m pytest tests -q -p no:cacheprovider                 # 技能格式校验、泄露扫描 + 安装器测试
-python -m pytest medfig-render/tests -q -p no:cacheprovider   # figkit 库、回归与最小示例
-python -m pytest medfig-orchestrate/tests -q -p no:cacheprovider
-python -m pytest medfig-outline/scripts -q -p no:cacheprovider
-python -m pytest medfig-schematic/scripts -q -p no:cacheprovider
-python -m pytest medfig-illustrator/tests -q -p no:cacheprovider       # 布局闸门、画布/文字规则
-python -m pytest scipilot-medimg-figure-skill/tests -q -p no:cacheprovider   # 影像 panel / 样式 / 导出冒烟测试
-```
-
-受管实验控制器使用Windows Job Object，独立回归在Windows执行：进入`medimg-experiment/`后运行`python -B -X utf8 -m unittest discover -s tests -v`。GitHub Actions另有Windows作业；通用pytest不收集这些Windows专用测试及训练入口脚本。真实GPU夹具需要实际CUDA环境，不能用CI的CPU协议测试替代。
-
-测试全部使用合成数据；安装器测试只写入临时目录。`medfig-render` 的部分测试需要先运行 `python install.py`（它们调用已安装的 scipilot 脚本），未安装时这些测试会跳过。
+它列出重复短语、词族密度、句长与图表括号等线索，不以词频增长或密度未下降判定写作失败。诊断结果需要结合科学证据和作者判断，不替代稿件审查。
 
 ## 只呈现主线版本
 

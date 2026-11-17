@@ -11,7 +11,7 @@ import tempfile
 from common import cli_error, load_config
 
 REQUIRED = {'matplotlib': 'matplotlib', 'numpy': 'numpy', 'pandas': 'pandas', 'seaborn': 'seaborn',
-            'scipy': 'scipy', 'Pillow': 'PIL', 'fonttools': 'fontTools', 'pytest': 'pytest'}
+            'scipy': 'scipy', 'Pillow': 'PIL', 'fonttools': 'fontTools'}
 R_REQUIRED = ('ggplot2', 'patchwork', 'scales')
 R_OPTIONAL = ('svglite', 'ggbeeswarm')
 

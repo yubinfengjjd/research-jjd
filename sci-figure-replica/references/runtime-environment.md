@@ -9,11 +9,11 @@
 | 专用 Python | `C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe` |
 | Rscript | `D:\R-4.5.0\bin\Rscript.exe`，读取 `rscript_exe` |
 | 正式画廊 | `config.gallery_root`；写入仍必须显式传 `--gallery` |
-| 测试画廊 | 独立 `test-gallery-t4`，禁止写正式画廊 |
+| 临时画廊 | 独立临时目录，禁止写正式画廊 |
 
 不用 PATH 的 Windows 商店 Python；专用 venv 不复用 `figure-skills` site-packages，不改其他环境。`bootstrap_env.py --config CONFIG [--python-exe PATH] [--check-r] [--rscript-exe PATH]` 检查已有解释器。专用环境不存在时，只有提供 `--base-python` 才能创建；普通环境检查不自动联网安装。缺包列清单、停止报告；未经作者决定不安装。
 
-Python 检查 `matplotlib/numpy/pandas/seaborn/scipy/Pillow/fonttools/pytest` 导入与版本；`scikit-image/openpyxl` 仅在需要时检查。开发根可执行 `<专用python> -m pytest staged/sci-figure-replica/tests -q`。默认测试临时根唯一；显式 basetemp 保持原值，pytest 禁用 cache provider。旧 ACL 受限目录保留，不清理/接管。
+Python 检查 `matplotlib/numpy/pandas/seaborn/scipy/Pillow/fonttools` 导入与版本；`scikit-image/openpyxl` 仅在需要时检查。运行示例时使用独立临时根，旧 ACL 受限目录保留，不清理/接管。
 
 R 检查一次 `installed.packages()` 清单（30s）和独立 cairo 能力探测（10s），不逐包加载 namespace；超时清理进程树，清理被拒绝也记录错误并有界返回。**必需包为 `ggplot2`、`patchwork`、`scales`**；`svglite`、`ggbeeswarm` 可选。`cairo_pdf` 是 R 设备而非待装包，需检查 `capabilities("cairo")`；cairo 不可用时报告 PDF 导出阻塞，不能把缺设备当通过。缺必需包正常非零，不等于检查器挂死。
 
