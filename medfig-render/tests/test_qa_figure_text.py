@@ -99,8 +99,7 @@ def test_caveat_allow_lifts_default_caveats(tmp_path):
 
 @pytest.mark.parametrize("text", [
     "Earlier model", "Historical model", "Wave-1", "Wave 2 rule", "Hypothesis status",
-    "Pre-registered contrast estimate", "Closeout status", "closure analysis", "Repaired head",
-    "post-outcome", "after reconciliation",
+    "Closeout status", "closure analysis", "Repaired head", "after reconciliation",
 ])
 def test_development_history_fails_anywhere(text):
     """Earlier versions and internal plan names never reach a figure (mainline_rules.md)."""
@@ -116,6 +115,8 @@ def test_development_history_clean_wording_passes():
     assert not [o for o in qa.figure_text_audit(fig) if "development history" in o]
     assert qa.dev_history_in_text("Closure of the macular hole") == ["closure"]  # word is caught in text too
     assert qa.dev_history_in_text("Secondary analyses, one block per question") == []
+    assert qa.dev_history_in_text("Pre-registered hypotheses and post-outcome exploratory analyses") == []
+    assert qa.dev_history_in_text("Repaired earlier model")  # internal repair/version history remains detected
 
 
 def test_development_history_allow_for_genuine_method_names(tmp_path):

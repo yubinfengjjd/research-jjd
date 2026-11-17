@@ -16,6 +16,10 @@ python -X utf8 render_zotero_fields.py check NATIVE.docx CACHED.docx --plan PLAN
 
 INPUT/PLAN及输出候选均留在本轮过程目录。调用项目指定真实Python；Node使用明确可用的运行时。所用样式必须与原生域文档偏好一致；当前实现支持方括号数字制，遇其他样式应明确报不支持，不能手写编号仿造CSL输出。元数据仅在本地处理，不发送私稿。
 
+默认`production`模式要求PLAN完整携带`input/processor/style/locale`四项绝对路径与SHA256，以及非空`processor_version`。INPUT的`source_sha256`、items及citations必须与原生域源文件完全相符。检查时使用PATH中的Node和这些本地资源重跑`make_csl_plan.cjs`，逐项比较实际CSL输出，不能仅凭手写计划中有哈希便认定完成。资源缺失、变化、重放失败或输出不一致均阻断；不自动下载处理器、样式或运行时。
+
+保留显式`--validation-mode synthetic`或`legacy`（Python API同名关键字参数）用于合成回归和历史计划结构复核；这两种模式允许无资源计划，但即使结构无误，`delivery_ready`和`csl_provenance_verified`也始终为false。不能用该模式作为交付降级通道。生产CSL缓存验收与`word_refresh_tested`独立，后者仍只反映实际Word插件Refresh证据。
+
 ## 可见交付关口
 
 - 原生引用域及文献表域保留，全部citationID、citationItems、URI、真实整数ID与元数据不变，只更新formattedCitation/plainCitation及可见缓存。
@@ -31,4 +35,4 @@ INPUT/PLAN及输出候选均留在本轮过程目录。调用项目指定真实P
 
 当作者反馈“仍是原标识”“只出现部分文献”，优先留存文件及哈希，对比可见文字、字段缓存、唯一item/URI与原清单；未拿到刷新后的实际文件时，不能把某种插件故障当成已确认根因。禁止Computer Use时使用文件/API，不把界面点击作为必需条件。
 
-回归至少覆盖：未渲染中间稿不能当完成稿；多来源却仅少数书目；错误编号；错误书目/题名；正文篡改；字段锁定；计划过期。`tests/test_rendered_references.py`含53来源却只保留4条书目的反例；这是合成工程回归，不是某篇私稿或Word Refresh实测。
+回归至少覆盖：未渲染中间稿不能当完成稿；多来源却仅少数书目；错误编号；错误书目/题名；正文篡改；字段锁定；计划过期；四类CSL资源缺失/变化；重放输出不匹配；合成/历史结构PASS不能获得交付状态。`tests/test_rendered_references.py`含53来源却只保留4条书目的反例；这是合成工程回归，不是某篇私稿或Word Refresh实测。

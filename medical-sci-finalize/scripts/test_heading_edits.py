@@ -9,9 +9,9 @@ import evidence_edit as edit
 from test_evidence_edit import digest, span
 
 
-OLD = '## 3.3 The model performs on par with comparators'
-NEW = '## 3.3 The model shows no consistent advantage over comparators'
-ZH_OLD = '## 3.3 模型与对照表现相近'
+OLD = '## 3.3 The model shows no consistent advantage over comparators'
+NEW = '## 3.3 The model has no consistent advantage over comparators'
+ZH_OLD = '## 3.3 模型相对对照未显示稳定优势'
 ZH_NEW = '## 3.3 模型相对对照未显示一致优势'
 
 
@@ -70,6 +70,17 @@ class HeadingTests(unittest.TestCase):
     def test_undeclared_titles_stay_locked(self):
         del self.review['heading_edits']
         self.assertTrue(self.compare()['errors'])
+
+    def test_heading_negation_addition_is_not_stylistic_calibration(self):
+        key = 'Results_EN.md'
+        positive = OLD.replace('no consistent advantage', 'a consistent advantage')
+        text = self.old[key].replace(OLD, positive)
+        (self.before/key).write_bytes(text.encode('utf-8'))
+        self.review['inventory'][key]['source_sha256'] = digest(self.before/key)
+        self.review['heading_edits'][0]['source'] = span(key, text, positive)
+        self.review['narrative']['source'] = [span(key, text)]
+        self.review['narrative']['issues'][0]['source'] = [span(key, text, positive)]
+        self.assertIn('Heading numeric/citation/unit/negative/CI evidence changed', str(self.compare()['errors']))
 
     def test_stale_inventory_and_exact_spans_rejected(self):
         self.review['inventory']['Results_EN.md']['source_sha256'] = '0'*64

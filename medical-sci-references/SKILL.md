@@ -9,6 +9,8 @@ description: "Use when a medical manuscript is ready for submission and needs Zo
 
 **最终交付必须已显示编号及完整书目。** 原生域存在、Word可打开或旧I1–I9通过，只能证明中间阶段，不能把仍显示PMID/DOI/URL占位、空书目或缺少条目的文件作为完成稿。使用[可见引用交付](references/rendered-delivery.md)在本地按真实CSL样式生成缓存并验证；保留原生Zotero字段。实际Zotero Refresh与作者验收另记，离线CSL渲染不能冒称Refresh成功。
 
+生产缓存检查必须绑定实际输入、处理器、样式和locale的绝对路径与哈希，并在本地Node重放CSL输出。仅有编号/题名相符或无资源的旧计划不构成可交付证明；显式synthetic/legacy模式仅供结构复核，始终不授予`delivery_ready`。不为通过检查安装依赖或更换作者选定样式。
+
 ## 开始前
 
 完整读 [运行与连接](references/zotero-setup.md)、[收集规则](references/collect-rules.md)、[字段格式](references/field-format.md)、[核对规则](references/verification-rules.md)。[原始需求](references/original-request.md) 保存范围和作者动作。
@@ -19,7 +21,7 @@ Word 验收的时间点：作者在 **apply 之后的新版主稿**上打开、Z
 
 运行 Python 脚本用 `D:\Anaconda\python.exe -X utf8`；缺少时定位真实解释器，不用 Windows 商店空壳。依赖 Python 3.10+、lxml、python-docx；离线测试另需 Pillow。所有临时文件放显式 `_tmp/`；设 `PYTHONDONTWRITEBYTECODE=1`、TEMP/TMP 指向可写 `_tmp/`。
 
-Zotero 由作者保持运行。**不得自行启动、重启、关闭或改设置。** 连接失败总计试3次、间隔5秒；仍失败记录并继续可离线完成的脚本、夹具、测试、格式说明，连接依赖步骤列待办。不得把连接故障当作整个开发/准备工作的停止条件。实际收集与注入仍须有效库快照。
+Zotero 由作者保持运行。**不得自行启动、重启、关闭或改设置。** 连接失败总计试3次、间隔5秒；仍失败记录并继续可离线完成的抽取、快照核对和格式说明，连接依赖步骤列待办。开发环境还可运行源码仓库中的夹具与回归测试。不得把连接故障当作整个开发/准备工作的停止条件。实际收集与注入仍须有效库快照。
 
 ## 执行
 
@@ -40,4 +42,4 @@ Zotero 由作者保持运行。**不得自行启动、重启、关闭或改设�
 
 交付已显示编号和完整书目的新版本主稿，以及引用清单、Zotero报告/快照、原生域核对报告、CSL输入/计划与可见交付检查报告。报告区分原生字段构造、可见CSL缓存、实际插件Refresh、作者验收四种状态。作者可在Word使用Refresh继续编辑，再核查至少3处引用及完整文献表，最后确认阶段12；不以“请作者Refresh”代替当前交付内容的完整性检查。若作者反馈只识别部分条目，保存原文件并核对字段唯一item/URI、实际书目条数和缓存，不据计数PASS否定反馈。不能代签科学或期刊验收。重新finalize后阶段12置需返工。
 
-离线回归：`scripts/test_references.py --work-dir <T> --report <可写路径>/test-results.json`。自测不等于无上下文行为盲测；作者另开全新会话验证技能发现、执行和边界。
+开发离线回归：在源码仓库的 `medical-sci-references/` 下运行 `scripts/test_references.py --work-dir <T> --report <可写路径>/test-results.json`；开发测试不随运行时技能安装。自测不等于无上下文行为盲测；作者另开全新会话验证技能发现、执行和边界。

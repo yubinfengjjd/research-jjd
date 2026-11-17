@@ -7,7 +7,7 @@ Usage:
 Checks the countable rules written in each skill's writing-rules / journal-style: word count,
 sentence length, banned words, template-phrase frequency, citation format, verified citation soft quotas, EN/ZH
 PMID and number parity, numbers against Results, figure-panel letter case.
-ERROR = rule violation to fix; WARN = judgment call, record the decision in the 核查说明.
+ERROR = explicit limits, citation/format or evidence consistency failure; WARN/INFO = contextual diagnostics, record review in the 核查说明. Bare lexical matches do not establish scientific overclaim.
 Exit code 1 if any ERROR. Argument quality, citation support and factual correctness are not checked.
 """
 import argparse
@@ -18,12 +18,13 @@ from collections import Counter
 from pathlib import Path
 from style_check import analyze_style
 
-E, W = "ERROR", "WARN"
+E, W, I = "ERROR", "WARN", "INFO"
 
-# (level, rule id, regex, max allowed occurrences, message); max 0 = any occurrence is a hit
+# (level, rule id, regex, reporting threshold, message); 0 reports any match.
+# WARN thresholds locate passages for contextual review; they are not word budgets.
 COMMON = [
     (E, "numeric-citation", r"\[\d+(?:\s*[,–-]\s*\d+)*\]", 0, "数字式引用；改为 (PMID: …)"),
-    (E, "hype", r"\b(?:novel|unprecedented|breakthrough|groundbreaking|paradigm-shifting|for the first time)\b", 0,
+    (W, "hype", r"\b(?:novel|unprecedented|breakthrough|groundbreaking|paradigm-shifting|for the first time)\b", 0,
      "宣传性或首次性用语"),
     (W, "british-spelling", r"\b(?:tumour|oedema|haemorrhage|modelling|centre|colour|analys(?:e|ed|ing)|randomised|"
      r"normalised|behaviour|labelled|optimise[sd]?|generalis\w+)\b", 0, "非美式拼写（专有名称、引用题名除外）"),
@@ -34,8 +35,8 @@ COMMON = [
 
 PROFILES = {
     "abstract": dict(words=(None, 250, E), rules=[
-        (E, "overclaim", r"\b(?:prove[sd]?|proven|clearly|undoubtedly|clinically deployable)\b", 0,
-         "摘要结论强度超越证据"),
+        (W, "overclaim", r"\b(?:prove[sd]?|proven|clearly|undoubtedly|clinically deployable)\b", 0,
+         "审读结论强度与实际证据是否相称；词语匹配本身不能证明过度主张"),
         (E, "abstract-reference", r"(?:PMID|DOI|URL|arXiv)\s*:|\b(?:Fig\.|Figure|Table)\s*S?\d|\[citation needed\]", 0,
          "摘要默认不带引用、图表号或引用占位"),
         (W, "generic-validation-closer", r"\brequiring (?:further |prospective )?validation\b|\b(?:safe|clinical)\s+(?:deployment|use)\s+requires\s+(?:further|prospective)\b", 0,
@@ -43,55 +44,51 @@ PROFILES = {
     ]),
     "methods": dict(words=(None, 3000, W), rules=[]),
     "legends": dict(words=None, legend_words=150, rules=[
-        (E, "comparison-word", r"\b(?:superior|outperform\w*|favou?r(?:s|ed)?|advantage)\b", 0,
-         "比较方向词；改为 positive/negative 或写出数值"),
+        (W, "comparison-word", r"\b(?:superior|outperform\w*|favou?r(?:s|ed)?|advantage)\b", 0,
+         "审读比较方向、效应量及不确定性；有据的直接比较可保留"),
         (W, "disclaimer", r"\b(?:do(?:es)? not establish|not significant overall|not clinical)\b", 0, "通用免责句"),
     ]),
     "results": dict(words=(None, 4000, W), rules=[
-        (E, "sentence-opener", r"(?:^|(?<=[.!?]\s))(?:First|Then|Next|Finally|"
+        (W, "sentence-opener", r"(?:^|(?<=[.!?]\s))(?:First|Then|Next|Finally|"
          r"Notably|Interestingly|Importantly)\b", 0, "句首串联或强调词"),
-        (E, "section-number", r"\bSection \d|\d\.\d+ ?节|上一节", 0, "正文出现节号"),
-        # 风格上限：规则写得较死，实际交付稿可能因体量自然超出，按警告报告，由作者定夺
-        (W, "therefore-family", r"\b(?:therefore|thus|consequently)\b", 6, "therefore/thus/consequently 全文 ≤6"),
-        (W, "rather-than", r"\brather than\b", 6, "rather than 全文 ≤6"),
-        (W, "descriptive-repeat", r"\bdescriptive(?:ly)?\b", 4,
-         "descriptive/descriptively 出现过多，优先以具体样本与检验边界替代重复贴标签"),
-        (W, "coexisted", r"\bcoexist(?:ed|s)?\b", 3, "coexisted 同一词 ≤3"),
-        (W, "accompanied", r"\baccompanied\b", 3, "accompanied 同一词 ≤3"),
-        (W, "separating", r"\bseparating\b", 3, "separating 同一词 ≤3"),
+        (W, "section-number", r"\bSection \d|\d\.\d+ ?节|上一节", 0, "正文出现节号"),
+        (W, "therefore-family", r"\b(?:therefore|thus|consequently)\b", 6, "结论连接词重复：审读推论关系与节奏，不按次数删换"),
+        (W, "coexisted", r"\bcoexist(?:ed|s)?\b", 3, "共现表述重复：审读是否准确且有用，不按次数删换"),
+        (W, "accompanied", r"\baccompanied\b", 3, "伴随表述重复：审读实际关系，不按次数删换"),
+        (W, "separating", r"\bseparating\b", 3, "区分表述重复：审读是否具体，不按次数删换"),
     ]),
-    "introduction": dict(words=(None, 1200, E), rules=[
-        (E, "to-our-knowledge", r"\bto our knowledge\b", 1, "“to our knowledge” 全文 ≤1"),
-        (E, "negative-gap", r"\b(?:do|does|did) not (?:establish|show|demonstrate|determine)\b|\bcannot\b|\bneither\b", 2,
-         "否定式空白句 ≤2"),
-        (E, "no-study-has", r"\bno (?:previous |prior )?stud(?:y|ies) ha(?:s|ve)\b", 0, "无法核验的“no study has”"),
-        (E, "scope-disclaimer", r"\bwithout implying\b|\b(?:outside|beyond) (?:the |this )?(?:study's |present )?scope\b", 1,
-         "免责式范围声明全文 ≤1"),
-        (E, "roadmap", r"\b(?:rest|remainder) of this (?:paper|article)\b|\bis organized as follows\b", 0, "路标式结构说明"),
-        (W, "result-verb", r"\bwe (?:show|demonstrate|reveal|confirm|establish)\b", 0, "可能提前披露结果"),
+    "introduction": dict(words=(None, 1200, W), rules=[
+        (W, "to-our-knowledge", r"\bto our knowledge\b", 1, "首次性限定重复：核对检索支持与各处必要性，不设次数配额"),
+        (W, "negative-gap", r"\b(?:do|does|did) not (?:establish|show|demonstrate|determine)\b|\bcannot\b|\bneither\b", 2,
+         "否定式空白句重复：核对具体缺口及支持文献，保留必要的否定"),
+        (W, "no-study-has", r"\bno (?:previous |prior )?stud(?:y|ies) ha(?:s|ve)\b", 0, "核对文献检索能否支持排他性空白主张"),
+        (W, "scope-disclaimer", r"\bwithout implying\b|\b(?:outside|beyond) (?:the |this )?(?:study's |present )?scope\b", 1,
+         "范围限定重复：核对共享声明与必要例外，不能删除真实边界"),
+        (W, "roadmap", r"\b(?:rest|remainder) of this (?:paper|article)\b|\bis organized as follows\b", 0, "路标式结构说明"),
+        (W, "result-verb", r"\bwe (?:show|demonstrate|reveal|confirm|establish)\b", 0, "核对贡献句是否准确且服务于研究问题；有据的主张句可保留"),
     ]),
     "discussion": dict(words=(None, 1500, W), rules=[
-        (E, "overclaim", r"\b(?:prove[sd]?|proven|clearly|undoubtedly)\b", 0, "超越证据的强度词"),
-        (W, "confirm", r"\bconfirm(?:s|ed)? (?:that|our)\b", 0, "confirm 指本研究假设时改为 support/indicate"),
-        (E, "to-our-knowledge", r"\bto our knowledge\b", 1, "“to our knowledge” 全文 ≤1"),
-        (E, "agrees-with", r"\bagree(?:s|d)? with\b", 2, "agrees with ≤2"),
-        (E, "extends", r"\bextend(?:s|ed)?\b", 2, "extends ≤2"),
-        (E, "consistent-with", r"\b(?:is|are|was|were) consistent with\b", 2, "is consistent with ≤2"),
-        (E, "contrasts-with", r"\bcontrast(?:s|ed)? with\b", 2, "contrasts with ≤2"),
-        (E, "would-test", r"\bwould (?:test|distinguish|address|clarify|determine|separate)\b", 3, "检验建议 ≤3"),
-        (E, "negative-boundary", r"\b(?:does|do|did) not (?:imply|establish|identify|mean|indicate|demonstrate|prove|"
+        (W, "overclaim", r"\b(?:prove[sd]?|proven|clearly|undoubtedly)\b", 0, "审读实际证据与结论强度；词语匹配本身不能证明过度主张"),
+        (W, "confirm", r"\bconfirm(?:s|ed)? (?:that|our)\b", 0, "核对研究设计和证据是否支持确认性结论，不机械替换动词"),
+        (W, "to-our-knowledge", r"\bto our knowledge\b", 1, "首次性限定重复：核对检索支持与各处必要性，不设次数配额"),
+        (W, "agrees-with", r"\bagree(?:s|d)? with\b", 2, "文献对照表达重复：审读各处比较的实际作用，不按次数删换"),
+        (W, "extends", r"\bextend(?:s|ed)?\b", 2, "扩展性表达重复：核对具体新增证据，不按次数删换"),
+        (W, "consistent-with", r"\b(?:is|are|was|were) consistent with\b", 2, "一致性表达重复：核对证据关系，不按次数删换"),
+        (W, "contrasts-with", r"\bcontrast(?:s|ed)? with\b", 2, "对照表达重复：核对真实差异及段落作用，不按次数删换"),
+        (W, "would-test", r"\bwould (?:test|distinguish|address|clarify|determine|separate)\b", 3, "检验建议重复：审读是否具体且与未决问题相关，不设次数配额"),
+        (W, "negative-boundary", r"\b(?:does|do|did) not (?:imply|establish|identify|mean|indicate|demonstrate|prove|"
          r"ensure|guarantee|represent)\b|\bcannot be (?:assumed|interpreted|attributed|extended|treated|inferred)\b|"
-         r"\bpreclude[sd]?\b", 5, "否定式限定全文 ≤5"),
-        (E, "empty-future", r"\bfurther (?:studies|research|work) (?:is|are) (?:needed|warranted|required)\b", 0,
+         r"\bpreclude[sd]?\b", 5, "否定式限定重复：审读必要边界与冗余，不能按次数删除不利结果"),
+        (W, "empty-future", r"\bfurther (?:studies|research|work) (?:is|are) (?:needed|warranted|required)\b", 0,
          "空泛的未来方向"),
         (W, "generic-validation-closer", r"\brequiring (?:further |prospective )?validation\b|\b(?:safe|clinical)\s+(?:deployment|use)\s+requires\s+(?:further|prospective)\b", 0,
          "空泛验证收尾，改为具体适用条件或已交代局限后的直接结论"),
         (W, "defensive-hedging-cluster", r"\b(?:unresolved|unestablished|remain(?:s|ed|ing)?\s+(?:descriptive|empirical|unresolved|unclear|cohort-dependent)|(?:do|does|did)\s+not\s+establish)\b", 3,
          "Discussion 重复使用 unresolved / not establish / remain* 防御性套话，请直陈已发现边界与可操作局限"),
-        (E, "section-mention", r"\b(?:the|our) (?:Introduction|Methods|Results)\b|\bin the (?:Methods|Results) section\b", 0,
+        (W, "section-mention", r"\b(?:the|our) (?:Introduction|Methods|Results)\b|\bin the (?:Methods|Results) section\b", 0,
          "正文提及其他章节"),
-        (E, "we-found-opener", r"(?:^|(?<=[.!?]\s))(?:We found|Our (?:results|findings))\b", 4,
-         "以 We found / Our results 开头 ≤4"),
+        (W, "we-found-opener", r"(?:^|(?<=[.!?]\s))(?:We found|Our (?:results|findings))\b", 4,
+         "主张句开头重复：审读节奏与实际发现，有据的直接主张可保留"),
         (W, "citation-needed", r"\[citation needed\]", 0, "引用缺口，须列入核查说明第 1 部分"),
     ]),
 }
@@ -203,10 +200,6 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
                     add(W, "heading-defensive-vague", "小节标题含模糊多数或被动防御标签，改写为精准边界陈述", hline)
     # phrase rules
     for level, rule, pat, mx, msg in COMMON + prof["rules"]:
-        if rule in {'sentence-opener', 'negative-gap', 'scope-disclaimer', 'agrees-with',
-                    'extends', 'consistent-with', 'contrasts-with', 'would-test',
-                    'negative-boundary', 'we-found-opener'}:
-            level = W
         if section == "abstract" and rule == "abstract-reference" and allow_abstract_references:
             continue
         hits = [m for m in re.finditer(pat, claims, re.I if rule not in ("sentence-opener", "we-found-opener") else 0)]
@@ -273,7 +266,13 @@ def check(section, en_path, zh_path=None, results_path=None, abstract_limit=250,
             add(W, finding["rule"], finding["msg"])
     dup = [p for p, c in Counter(pmids).items() if c > 1]
     if dup and section in ("introduction", "discussion"):
-        add(W, "pmid-repeat", f"同一 PMID 重复引用：{', '.join(dup)}（一般只在最相关处引一次）")
+        contexts = []
+        for pmid in dup:
+            uses = [claims[max(0, m.start() - 65):m.end() + 35].replace('\n', ' ')
+                    for m in re.finditer(r'PMID:\s*' + re.escape(pmid) + r'\b', claims)]
+            contexts.append(pmid + ': ' + ' | '.join(uses))
+        add(I, "pmid-repeat", f"同一来源用于多处论断：{', '.join(dup)}；按各处支持关系判断，重复本身不要求删除或换源",
+            '; '.join(contexts))
     # panel letter case
     cases = Counter("upper" if c.isupper() else "lower" for c in PANEL.findall(body))
     if len(cases) > 1:

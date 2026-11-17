@@ -3,7 +3,8 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 const crypto = require('node:crypto');
-const [inputPath, processorPath, stylePath, localePath, outputPath] = process.argv.slice(2);
+const path = require('node:path');
+const [inputPath, processorPath, stylePath, localePath, outputPath] = process.argv.slice(2).map(p => path.resolve(p));
 if (!outputPath) throw new Error('Usage: node make_csl_plan.cjs INPUT PROCESSOR STYLE LOCALE OUTPUT');
 if (fs.existsSync(outputPath)) throw new Error('Output already exists');
 const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
@@ -11,6 +12,9 @@ const data = JSON.parse(fs.readFileSync(inputPath, 'utf8'));
 const context = vm.createContext({console});
 vm.runInContext(fs.readFileSync(processorPath, 'utf8'), context, {timeout: 10000});
 if (!context.CSL || !context.CSL.Engine) throw new Error('Supplied processor exposes no CSL.Engine');
+if (typeof context.CSL.PROCESSOR_VERSION !== 'string' || !context.CSL.PROCESSOR_VERSION.trim()) {
+  throw new Error('Supplied processor exposes no processor version');
+}
 const locale = fs.readFileSync(localePath, 'utf8');
 const engine = new context.CSL.Engine({
   retrieveLocale: () => locale,

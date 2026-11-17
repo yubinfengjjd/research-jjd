@@ -3,7 +3,9 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -48,6 +50,14 @@ def src(tmp_path):
         d = r / "examples" / "minimal" / gen / "sub"
         d.mkdir(parents=True)
         (d / "gen.png").write_bytes(b"png")
+    (r / "tests").mkdir(exist_ok=True)
+    (r / "tests" / "test_runtime.py").write_text("x")
+    (r / "evals").mkdir(exist_ok=True)
+    (r / "evals" / "evals.json").write_text("[]")
+    (r / "lib" / "test_helper.py").write_text("x")
+    (r / "legacy_add_table.txt").write_text("x")
+    (r / "assets").mkdir(exist_ok=True)
+    (r / "assets" / "evaluate_test.py").write_text("x")
     return s
 
 
@@ -189,6 +199,11 @@ def test_excluded_files_absent(src, roots, tmp_path):
     assert not (r / "examples" / "minimal" / "out").exists()
     assert not (r / "examples" / "minimal" / "data").exists()
     assert (r / "examples" / "minimal").is_dir()
+    assert not (r / "tests").exists()
+    assert not (r / "evals").exists()
+    assert (r / "lib" / "test_helper.py").is_file()
+    assert not (r / "legacy_add_table.txt").exists()
+    assert (r / "assets" / "evaluate_test.py").is_file()
 
 
 def test_exclusion_rules():
@@ -199,6 +214,17 @@ def test_exclusion_rules():
     assert not ex(("examples", "minimal", "data"))  # a file literally named data
     assert ex(("a", "__pycache__", "m.py"))
     assert ex(("m.pyc",))
+
+
+def test_excludes_development_assets():
+    ex = install.is_excluded
+    assert ex(("tests", "test_runtime.py"))
+    assert ex(("evals", "evals.json"))
+    assert ex(("scripts", "test_helper.py"))
+    assert ex(("legacy_add_table.txt",))
+    assert not ex(("assets", "evaluate_test.py"))
+    assert not ex(("assets", "test_runtime.py"))
+    assert not ex(("lib", "test_helper.py"))
 
 
 def test_verify_passes_then_fails_on_tamper(src, roots, tmp_path):
@@ -314,3 +340,36 @@ def test_selected_writing_skill_distributes_shared_positioning(src, roots, tmp_p
     for target in roots:
         assert not (target / selected).exists()
         assert (target / "medpaper-pipeline/references/positioning.md").is_file()
+
+
+def test_outline_selective_install_has_transitive_runtime_and_clean_help(src, roots, tmp_path):
+    inst = make(src, roots, tmp_path, skills=('medfig-outline',))
+    assert inst.install() == 0
+    expected = {'medfig-outline', 'medpaper-pipeline', 'medfig-render', 'scipilot-medimg-figure-skill'}
+    assert set(inst.required_skills) == expected
+    target = roots[0]
+    env = dict(os.environ, PYTHONPATH='', PYTHONDONTWRITEBYTECODE='1')
+    for script in ('outline_check.py', 'outline_build.py'):
+        result = subprocess.run([sys.executable, '-B', '-X', 'utf8',
+                                 str(target / 'medfig-outline/scripts' / script), '--help'],
+                                cwd=tmp_path, env=env, capture_output=True, text=True)
+        assert result.returncode == 0, result.stderr
+    assert (target / 'medfig-render/lib/figkit/qa.py').is_file()
+    assert (target / 'other-skill/SKILL.md').read_text() == 'keep me'
+
+
+def test_dependency_cycle_and_unknown_dependency_fail_before_writes(src, roots, tmp_path, monkeypatch):
+    before = snapshot(tmp_path / 'home')
+    monkeypatch.setitem(install.SKILL_DEPENDENCIES, 'medpaper-pipeline', ('medfig-outline',))
+    with pytest.raises(ValueError, match='cycle'):
+        make(src, roots, tmp_path, skills=('medfig-outline',))
+    monkeypatch.setitem(install.SKILL_DEPENDENCIES, 'medpaper-pipeline', ('absent-runtime',))
+    with pytest.raises(ValueError, match='Unknown dependency'):
+        make(src, roots, tmp_path, skills=('medfig-outline',))
+    assert snapshot(tmp_path / 'home') == before
+
+
+def test_runnable_synthetic_evaluation_assets_are_packaged(src, roots, tmp_path):
+    assert make(src, roots, tmp_path, skills=('medimg-experiment',)).install() == 0
+    for folder in ('synthetic', 'gpu_synthetic'):
+        assert (roots[0] / 'medimg-experiment/assets' / folder / 'evaluate_test.py').is_file()

@@ -8,11 +8,11 @@ closing quotes and wrapped paragraphs are handled; uncommon abbreviations and
 unbalanced brackets require human review. Whitespace-delimited tokens count as
 words (including statistical notation), matching the existing whitespace rule.
 Headings, fenced code, Markdown table rows and bold figure/table titles are not
-prose. Structural lists retain word counts and the unconditional 60-word cap.
+prose. Structural lists retain word counts and sentence-length diagnostics. Only explicit author/journal style limits can turn count findings into errors.
 """
 import re
 
-VERSION = '2026-10-17.2'
+VERSION = '2026-11-17.1'
 _OPEN = {'(': ')', '[': ']', '（': '）', '［': '］'}
 _CLOSE = set(_OPEN.values())
 _SEMI = ';；'
@@ -149,12 +149,19 @@ def _sentences(block):
         yield raw.strip(), start+len(raw)-len(raw.lstrip())
 
 
-def analyze_style(text, section='manuscript'):
-    """Return statistics, sentence locations, and ERROR/WARN finding dictionaries.
+def analyze_style(text, section='manuscript', required_limits=None):
+    """Return statistics, sentence locations, and diagnostic finding dictionaries.
 
     Both entry checkers expose this function. Finalize reuses the pipeline copy.
-    Warnings do not change successful exit status; any ERROR must remain nonzero.
+    Counts are diagnostics. Only explicitly supplied author/journal limits
+    (sentence_max_words or prose_semicolons_max) emit ERROR; warnings do not
+    change successful exit status. No inferred minimum sentence length.
     """
+    required_limits = {} if required_limits is None else required_limits
+    if (not isinstance(required_limits, dict) or set(required_limits) - {'sentence_max_words', 'prose_semicolons_max'}
+            or any(type(v) is not int or v < 0 for v in required_limits.values())
+            or required_limits.get('sentence_max_words') == 0):
+        raise ValueError('Invalid explicitly required style limits')
     sents = []
     for block_id, (block, offset, label) in enumerate(_blocks(text, section)):
         for sent, local in _sentences(block):
@@ -176,12 +183,16 @@ def analyze_style(text, section='manuscript'):
                              value=value, threshold=threshold, hint=hint,
                              locations=[{k:s[k] for k in ('section','sentence','first_word','excerpt','line','offset')} for s in locations]))
     for s in sents:
-        if s['prose_semicolons'] >= 2:
-            add('ERROR','semicolon-chain',s['prose_semicolons'],'<2',
-                '拆句，或用并列/从属连词，或改为紧凑并列；核对结构性分号豁免。',[s])
-        if s['words'] > 60:
-            add('ERROR','sentence-hard',s['words'],'≤60 words',
-                '拆分过载句，保留限定与统计归属；用连词衔接。',[s])
+        semicolon_limit = required_limits.get('prose_semicolons_max', 1)
+        if s['prose_semicolons'] > semicolon_limit:
+            add('ERROR' if 'prose_semicolons_max' in required_limits else 'WARN',
+                'semicolon-chain',s['prose_semicolons'],f'≤{semicolon_limit}',
+                '核对分号是否承载清楚的并列关系；计数本身不要求改写，保留统计归属。',[s])
+        word_limit = required_limits.get('sentence_max_words', 60)
+        if s['words'] > word_limit:
+            add('ERROR' if 'sentence_max_words' in required_limits else 'WARN',
+                'sentence-hard',s['words'],f'≤{word_limit} words',
+                '审读是否过载；按逻辑决定保留或拆分，并保留限定与统计归属。',[s])
     n = len(sents)
     long_sents = [s for s in sents if s['words'] > 45]
     mean = sum(s['words'] for s in sents)/n if n else 0
@@ -190,13 +201,13 @@ def analyze_style(text, section='manuscript'):
             '检查这些长句，拆句或改为紧凑并列；不要删掉必要限定。',long_sents)
     if n and not 18 <= mean <= 28:
         add('WARN','sentence-average',mean,'18–28 words/sentence',
-            '检查全节句式：长句适度拆句，短句用连词或从句衔接，避免电报体。',[sents[0]])
+            '平均值仅供定位；自然清楚的长短句均可保留，不为进入区间而连接、加长或拆短句。',[sents[0]])
     runs, run = [], []
     def flush():
         if len(run) >= 3:
             runs.append(list(run))
             add('WARN','sentence-short-run',len(run),'<3 consecutive sentences <8 words',
-                '用连词/从句连接相关短句，或写成紧凑并列，保留主题层次。',run)
+                '审读相邻短句的逻辑与节奏；清楚自然时保留，不按数量机械合句。',run)
         run.clear()
     for s in sents:
         if run and run[-1]['block'] != s['block']:

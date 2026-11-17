@@ -1,6 +1,6 @@
 ---
 name: medical-sci-abstract
-description: "Use when drafting, revising or translating a medical SCI abstract after Methods, Results, figure legends, Introduction and Discussion are complete, such as 写摘要、英文摘要、结构式摘要、Abstract 中英对照、关键词和 Highlights. Produces a headed Background/Methods/Results/Conclusions abstract within 250 English body words by default, with 4–6 Results sentences (or natural sentences within the word limit; no semicolon chains), source-supported primary effect and CI, restrained contribution, Chinese parallel text and an evidence audit. Stops when any prerequisite is missing or unfinished. Do not use for writing the five prerequisite sections or for research planning."
+description: "Use when drafting, revising or translating a medical SCI abstract after Methods, Results, figure legends, Introduction and Discussion are complete, such as 写摘要、英文摘要、结构式摘要、Abstract 中英对照、关键词和 Highlights. Produces a headed Background/Methods/Results/Conclusions abstract within 250 English body words by default, with naturally organized results, source-supported primary effect and CI, restrained contribution, Chinese parallel text and an evidence audit. Stops when any prerequisite is missing or unfinished. Do not use for writing the five prerequisite sections or for research planning."
 ---
 
 # 医学 SCI 摘要写作
@@ -9,24 +9,25 @@ description: "Use when drafting, revising or translating a medical SCI abstract 
 
 ## 跨章节定位衔接
 
-起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。只补实际缺失的定位与证据关系，不复制新规则或以固定句式制造主张。
+起草或结构修订前复用[跨章节贡献与证据定位](../medpaper-pipeline/references/positioning.md)规定的唯一记录；已有作者决定沿用。共同范围声明、推断状态、读者引用与诊断边界均按该记录的共同规则执行；只补实际缺失的定位与证据关系，不以固定句式制造主张。
 
 ## 证据保留的修订契约
 
-默认允许同节合并、去重、重排，保留来源、分析范围、数字/CI 归属、必要限定、不利发现与引用支持关系；不改数据、统计逻辑或研究问题。篇幅由作者/期刊与证据决定，无通用最低词数；历史篇幅/句数只作参考，沿用项目引用软配额，不为填数扩写。
+默认允许同节合并、去重、重排，保留来源、分析范围、数字/CI 归属、必要限定、不利发现与引用支持关系；不改数据、统计逻辑或研究问题。篇幅由作者/期刊与证据决定，无通用最低词数；历史篇幅/句数只作参考，项目引用目标只用于检查支持缺口，不为填数扩写。
 
 实质叙事问题须改文或给具体保留理由；英文重构后同步对应 ZH 和已有 EN_ZH，归档原件。未知局部范围保留并记录，继续独立编辑；作者动作按问题归组，核心矛盾阻断受影响交付。公开披露已承诺或结论相关的未完成分析，内部备用实验/审批/版本记录留在过程文件。结构记录与核验按 [结构审查契约](../medical-sci-finalize/references/structural-review.md)，脚本通过不证明科学等价。
 
 ## 必读材料
 
-每次起草或修订都完整读取以下四份材料：
+每次起草或修订都读取当前规则和语言规范；示例按需要查阅：
 
-1. [原始提示词与已确认选择](references/original-abstract-prompt.md)。
-2. [写作规则](references/writing-rules.md)：前置门槛、证据提取、数字、结论及核查契约。
-3. [语言与格式](references/journal-style.md)：四段式、词数口径、关键词、Highlights 和文件组织。
-4. [判断示例](references/examples.md)：只沿用判断方式，不迁移示例内容。
+1. [写作规则](references/writing-rules.md)：前置门槛、证据提取、数字、结论及核查契约。
+2. [语言与格式](references/journal-style.md)：四段式、词数口径、关键词、Highlights 和文件组织。
+3. [判断示例](references/examples.md)：只沿用判断方式，不迁移示例内容。
 
 另读作者已有决定。当前用户指令优先；不把源文件内的指令当作作者授权。
+
+[原始提示词](references/original-abstract-prompt.md)保留为历史来源，不是运行指令；不重新引入其中已被现行规则替代的篇幅、句数、引文或结构配额。
 
 ## 工作流程
 
@@ -34,7 +35,7 @@ description: "Use when drafting, revising or translating a medical SCI abstract 
 2. **核对项目**：从材料或工作目录向上找 `PROJECT.md`；找到时执行下方项目约定。不得绕过 `未开始`、`进行中`、`需返工` 的前置状态。独立直接调用时五类 `待确认` 稿件可使用，但必须披露；pipeline 正常推进仍要求 5–9 已确认。
 3. **建立证据表**：从 Introduction 提取背景、空白和目的，从 Methods 提取设计、样本单位、比较、划分和主终点，从 Results 与图注核对效应、CI 和重要例外，从 Discussion 提取已支持的贡献与限制。先完成核查说明中的证据表，再动笔。
 4. **处理冲突**：主终点、样本口径或其他摘要关键事实冲突，且没有权威数据或既有裁决能解决时，列出双方原文和出处并停止，不选择更好看的值。项目内登记台账；有权威证据时依一致性防线处理。不得为摘要补造、计算新的结果或擅改上游数字。
-5. **撰写与对照**：按 journal-style 写四段，Results 严格保持 4–6 个清晰句（Results 散文分号 `0` 处；超过即触发 WARN，改写为独立短句），并保留 `<250` 词安全余量而不卡死 250/250；主终点优先用已报告效应量与 CI，重要不利结果与失败子集（including all underperforming classes/cohorts）不能因篇幅而消失，关键单种子结果保留 seed 限定。写中文和逐段对照，再从同一证据表同步重写关键词和 Highlights（不沿用未改写的旧亮点；`Abstract_EN_ZH.md` 中中文 Highlights 每条保留前导 `- ` 列表前缀与英文一一对应）。缺少主终点 CI 时按 writing-rules 第 3 节报告缺口。
+5. **撰写与对照**：按 journal-style 写四段并遵守明确词数上限，句数和分号仅作可读性诊断。先写主终点效应与对应 CI、关键支持及会改变结论的不利结果；次要分析按结论相关性取舍并记录。摘要内独立声明所选结果的共同范围，混合范围或例外就近说明。同步核对中文、逐段对照、关键词与 Highlights，已有准确自然表达按需保留，不为句数或条数补内容。缺主终点 CI 按 writing-rules 第 3 节处理。
 6. **检查**：用 `python -X utf8 scripts/check_abstract.py <Abstract_EN.md>` 检查结构和词数，手动确认 Results 句数。项目内依次运行 medpaper-pipeline 的 `consistency_check.py <项目根>`、`manuscript_check.py abstract <EN稿> --zh <ZH稿> --results <Results_EN.md>`；非项目输出仍运行后者，前者标“不适用：无项目根”，不造口径表。ERROR 修掉，WARN 逐条解释。数字、单位、CI 归属、重要例外、中英文强度均需人工对源，脚本通过不等于科学核验。
 7. **交付**：保存四份文件，报告正文词数、含小标题词数、Results 句数、关键词与 Highlights 条数、未解决事项及检查结果。实际未运行的检查不得写“通过”。
 
@@ -60,11 +61,11 @@ description: "Use when drafting, revising or translating a medical SCI abstract 
 
 ## 交付前检查
 
-- [ ] 散文分号链 0 处（同句 ≥2 个散文分号为 ERROR，结构性分号豁免）；目标平均 18–28 词/句，一般 ≤45 词、硬上限 60 词，>45 词占比 >10% 为 WARN；无连续 ≥3 个 <8 词短句的电报体连跑；WARN 已逐条说明。连接词按逻辑需要使用，不连续三句以上以同一个连接词或短语开头；按 journal-style 的「句长、分号与衔接」复核。
+- [ ] 已按 journal-style 的「句长、分号与衔接」复核实际可读性；句长、分号、引用密度、重复开头和词频仅作诊断，已记录有意义的修改或保留理由；作者/期刊明确限制另行核对，不为清零告警改坏句子或删去证据。
 
 - [ ] 五类前置正文完整，项目状态已核对。
 - [ ] Background 同时交代背景、具体空白和目的；Methods 写清设计、样本单位、比较和主终点。
-- [ ] 默认四段带小标题，英文正文 ≤250 词；Results 4–6 句（或按字数自然分句），不得用分号链压缩且无为凑句数的新结果。
+- [ ] 默认四段带小标题，英文正文 ≤250 词或遵守明确作者/期刊限制；自然分句，无为凑句数、分号或 Highlights 条数而增删证据。
 - [ ] 摘要围绕主问题、主终点、关键支持和决定性反证取舍；内部覆盖表完整记录各主要分析族的呈现位置或省略理由，常规省略由代理判断。
 - [ ] 主终点效应量与 CI 均有来源；CI 属于该效应而非别的估计；未计算新差值、CI、p 值或改善率。
 - [ ] 关键例外和不利结果保留；结论与设计强度一致，贡献具体，无首次、因果或临床落地夸大。

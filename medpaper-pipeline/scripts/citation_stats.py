@@ -8,8 +8,7 @@ import re
 import unicodedata
 from pathlib import Path
 
-DEFAULTS = {'total': 55, 'Introduction': 20, 'Introduction_review': 10,
-            'Discussion': 20, 'Methods': 15}
+DEFAULTS = dict.fromkeys(('total', 'Introduction', 'Introduction_review', 'Discussion', 'Methods'))
 SECTIONS = ('Methods', 'Introduction', 'Discussion', 'Results', 'Abstract', 'Legends')
 LABELS = {'total': r'目标文献总数', 'Introduction': r'Introduction(?!\s*综述层)',
           'Introduction_review': r'Introduction\s*综述层', 'Discussion': r'Discussion',
@@ -92,8 +91,8 @@ def load_targets(root):
     values, sources, notes = dict(DEFAULTS), {}, []
     if not heading:
         msg = '缺 PROJECT.md' if not path.is_file() else '缺“写作目标”小节'
-        return {'values': values, 'sources': {k: 'default' for k in values},
-                'journal': '无/待定', 'notes': [msg + '；使用通用缺省配额']}, []
+        return {'values': values, 'sources': {k: 'unset' for k in values},
+                'journal': '无/待定', 'notes': [msg + '；未设置文献数量目标，仅报告实际引用与核验状态']}, []
     body = text[heading.end():]
     end = re.search(r'^#{1,' + str(len(heading[1])) + r'}\s+', body, re.M)
     if end:
@@ -106,12 +105,12 @@ def load_targets(root):
             values[key] = int(matches[0].removesuffix('篇'))
             sources[key] = 'PROJECT.md'
         else:
-            sources[key] = 'default'
+            sources[key] = 'unset'
             if matches:
                 warnings.append(warning('citation-target-format',
-                    f'{key} 配额格式无效或重复 {matches}；使用缺省 {values[key]}'))
+                    f'{key} 目标格式无效或重复 {matches}；该目标未设置，请核对项目登记'))
             else:
-                notes.append(f'{key} 未登记；使用缺省 {values[key]}')
+                notes.append(f'{key} 未登记；不设数量目标')
     journal = re.search(r'目标期刊\s*[:：|]\s*([^\n|]+)', body)
     return {'values': values, 'sources': sources,
             'journal': journal[1].strip() if journal else '无/待定', 'notes': notes}, warnings
@@ -292,16 +291,16 @@ def collect(root):
                 ', '.join(stat['unverified']), f'04_manuscript/{section}/{section}_核查说明.md'))
         if section in DEFAULTS:
             target = targets['values'][section]
-            stat.update(target=target, gap=max(0, target - stat['quota_actual']))
+            stat.update(target=target, gap=max(0, target - stat['quota_actual']) if target is not None else None)
             if stat['gap']:
                 warnings.append(warning('citation-quota', f"{section} 实际 {stat['quota_actual']} vs 目标 {target}；缺口 {stat['gap']} 篇"))
         if section == 'Results' and stat['citation_locations']:
             warnings.append(warning('citation-results', 'Results 出现引用，违反 Results 禁引约定，须由章节检查修正'))
     review = stats['Introduction']['review_unique_pmids']
     review_target = targets['values']['Introduction_review']
-    if review < review_target:
+    if review_target is not None and review < review_target:
         warnings.append(warning('citation-quota', f'Introduction 综述层 实际 {review} vs 目标 {review_target}；缺口 {review_target-review} 篇'))
-    gap = max(0, targets['values']['total'] - len(total))
+    gap = max(0, targets['values']['total'] - len(total)) if targets['values']['total'] is not None else None
     if gap:
         warnings.append(warning('citation-quota', f"全稿实际 {len(total)} vs 目标 {targets['values']['total']}；缺口 {gap} 篇"))
     return {'targets': targets, 'sections': stats, 'total_unique_verified': len(total),
@@ -323,12 +322,10 @@ def check_section_quota(section, en_path):
     for key, actual in [(section, stat['quota_actual'])] + (
             [('Introduction_review', stat['review_unique_pmids'])] if section == 'Introduction' else []):
         target = targets['values'][key]
-        if actual < target:
+        if target is not None and actual < target:
             warnings.append(warning('citation-quota', f'{key} 实际 {actual} vs 目标 {target}；缺口 {target-actual} 篇'))
     if stat['unverified']:
         warnings.append(warning('citation-unverified', '正文标识缺本节已核验记录：' + ', '.join(stat['unverified'])))
-    if targets['notes']:
-        warnings.append(warning('citation-target-default', '；'.join(targets['notes'])))
     return warnings
 
 
@@ -341,15 +338,17 @@ def format_report(report):
     for section, stat in report['sections'].items():
         lines.append(f"{section}: 引用处数 {stat['citation_locations']}；已核验处数 {stat['verified_locations']}；"
                      f"已核验去重 {stat['unique_verified']}（PMID {stat['unique_verified_pmids']}）；" +
-                     (f"配额实际 {stat['quota_actual']} vs 目标 {stat['target']}；缺口 {stat['gap']}；" if 'target' in stat else '') +
+                     (f"项目目标实际 {stat['quota_actual']} vs 目标 {stat['target']}；缺口 {stat['gap']}；" if stat.get('target') is not None else '') +
                      '降级 DOI/URL/arXiv ' + '/'.join(str(len(stat['degraded'][k])) for k in ('doi', 'url', 'arxiv')))
-    lines.append(f"Introduction 综述层：实际 {report['sections']['Introduction']['review_unique_pmids']} vs "
-                 f"目标 {report['targets']['values']['Introduction_review']}")
+    review_target = report['targets']['values']['Introduction_review']
+    lines.append(f"Introduction 综述层：实际 {report['sections']['Introduction']['review_unique_pmids']}" +
+                 (f" vs 目标 {review_target}" if review_target is not None else '；未设数量目标'))
     intro = report['sections']['Introduction']
     if intro['review_ranges']:
         lines.append(f"综述层计数来源：显式段落范围 {intro['review_ranges']}；范围计数 {intro['review_range_unique_pmids']}；"
                      f"逐行标记 {intro['review_row_marker_unique_pmids']}；采用范围计数")
-    lines.append(f"跨节去重总数 {report['total_unique_verified']} vs 目标 {report['total_target']}；缺口 {report['total_gap']}")
+    lines.append(f"跨节去重总数 {report['total_unique_verified']}" +
+                 (f" vs 目标 {report['total_target']}；缺口 {report['total_gap']}" if report['total_target'] is not None else '；未设数量目标'))
     return '\n'.join(lines)
 
 

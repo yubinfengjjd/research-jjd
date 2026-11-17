@@ -112,13 +112,35 @@ def test_methods_focus_has_no_result_numbers(proj, tmp_path):
     assert not any("Methods 2.1" in i for i in outline_check.check(_write(tmp_path, o), proj))
 
 
-@pytest.mark.parametrize("text", ["与早期版本相比", "pre-registered hypotheses", "Wave-1 model", "closure analysis",
-                                  "预注册假设", "修复后的模型", "validated performance"])
+@pytest.mark.parametrize("text", ["与早期版本相比", "Wave-1 model", "closure analysis",
+                                  "修复后的模型", "validated performance"])
 def test_wording_gates(proj, tmp_path, text):
     o = _outline()
     o["results"][0]["paragraphs"][0]["points"].append(text)
     out = outline_check.check(_write(tmp_path, o), proj)
     assert out, text
+
+
+@pytest.mark.parametrize('text',['pre-registered hypotheses', '预注册假设', 'post-outcome exploratory analyses'])
+def test_scientific_design_is_not_generic_development_history(proj,tmp_path,text):
+    o=_outline()
+    o['methods'][0]['focus'][0]['points'].append(text)
+    assert not [i for i in outline_check.check(_write(tmp_path,o),proj) if 'development history' in i]
+
+
+def test_narrative_count_diagnostics_allow_build_but_project_requirements_block(proj,tmp_path):
+    o=_outline()
+    o.pop('results_fewer_sections_reason')
+    o['results'][0]['paragraphs'][0]['points']=['清楚但只需一条要点']
+    path=_write(tmp_path,o)
+    findings=outline_check.check(path,proj)
+    assert findings and all(i.startswith('WARN: ') for i in findings)
+    assert outline_check.blocking_issues(findings)==[]
+    assert Path(outline_build.build(path,proj,tmp_path/'diagnostic-build')['md']).is_file()
+    o['requirements']={'outline':{'results_min_sections':5,'min_section_points':2}}
+    findings=outline_check.check(_write(tmp_path,o),proj)
+    assert outline_check.blocking_issues(findings)
+    with pytest.raises(RuntimeError):outline_build.build(_write(tmp_path,o),proj,tmp_path/'required-build')
 
 
 def test_internal_code_only_inside_code_note(proj, tmp_path):

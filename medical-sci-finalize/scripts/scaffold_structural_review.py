@@ -45,6 +45,58 @@ def _span(texts: dict[str, str], key: str, start: int, end: int) -> dict:
     return {'file': key, 'start': start, 'end': end, 'text': texts[key][start:end]}
 
 
+def resolve_exact_span(texts: dict[str, str], selector: dict) -> dict:
+    """Official selector helper: unique exact text, or an explicit zero-based occurrence.
+
+    Existing exact offset spans are accepted and validated without re-anchoring.
+    The generated review always stores exact offsets; selectors are input only.
+    """
+    if set(selector) == {'file', 'start', 'end', 'text'}:
+        return edit._span(selector, texts, 'supplied exact span')
+    edit._object(selector, ('file', 'text'), 'exact selector', ('occurrence',))
+    key, needle = selector['file'], edit._string(selector['text'], 'selector text')
+    edit._require(key in texts, 'Selector outside manuscript inventory')
+    hits = [m.start() for m in re.finditer(re.escape(needle), texts[key])]
+    occurrence = selector.get('occurrence')
+    if occurrence is None:
+        edit._require(len(hits) == 1, 'Selector must match uniquely; supply explicit occurrence: '+key+' '+needle[:50])
+        occurrence = 0
+    edit._require(type(occurrence) is int and 0 <= occurrence < len(hits), 'Invalid selector occurrence')
+    return _span(texts, key, hits[occurrence], hits[occurrence] + len(needle))
+
+
+def _materialize_declarations(rationales, old, new):
+    declarations = json.loads(json.dumps(rationales.get('scope_declarations', [])))
+    for request in rationales.get('scope_declaration_requests', []):
+        edit._object(request, ('id', 'reviewed_by', 'rationale', 'declaration', 'bindings'), 'scope declaration request')
+        declaration = {k: request[k] for k in ('id', 'reviewed_by', 'rationale')}
+        declaration.update(source=resolve_exact_span(old, request['declaration']), candidate=resolve_exact_span(new, request['declaration']), bindings=[])
+        for binding in request['bindings']:
+            edit._object(binding, ('language', 'source', 'candidate', 'removed', 'guards'), 'scope binding request', ('claim',))
+            record = dict(binding, claim=binding.get('claim', 'AUTO'))
+            for side, texts in [('source', old), ('candidate', new), ('removed', old)]:
+                record[side] = [resolve_exact_span(texts, x) for x in binding[side]]
+            declaration['bindings'].append(record)
+        declarations.append(declaration)
+    return declarations
+
+
+def _bind_inheritance(declarations, cid, source, candidate, translations):
+    inherited = {}
+    for language, left, right in [('EN', source, candidate)] + [(lang, ls, rs) for lang, ls, rs, _ in translations]:
+        for declaration in declarations:
+            for binding in declaration['bindings']:
+                if binding['language'] == language and binding['source'] == left and binding['candidate'] == right:
+                    edit._require(binding['claim'] in ('AUTO', cid), 'Scope declaration claim id disagrees with exact governed spans')
+                    binding['claim'] = cid
+                    edit._require((cid, language) not in inherited, 'Duplicate inherited scope binding')
+                    removed = binding['removed']
+                    edit._require(all(edit._inside(x, left) and edit._tokens(x['text']) == {(6, 'single-seed')} for x in removed),
+                                  'Only exact source single-seed qualifier slots may inherit')
+                    inherited[(cid, language)] = removed
+    return inherited
+
+
 def _trim_span(texts: dict[str, str], key: str, start: int, end: int) -> tuple[int, int]:
     s = texts[key]
     while start < end and s[start].isspace():
@@ -176,7 +228,7 @@ def _sentence_spans(text: str, base_offset: int, is_zh: bool = False) -> list[tu
 
 def _token_occurrences(text: str) -> list[tuple[int, int, int, str, set]]:
     """Return all non-redundant TOKENS hits in text as (kind_idx, start, end, raw_text, norm_tokens)."""
-    masked = [(m.start(), m.end()) for idx in (2, 3) for m in edit.TOKENS[idx].finditer(text)]
+    masked = [(m.start(), m.end()) for idx in (2, 3, 9) for m in edit.TOKENS[idx].finditer(text)]
     meas_masked = [(m.start(), m.end()) for m in edit.TOKENS[1].finditer(text)]
     hits = []
     for idx, pattern in enumerate(edit.TOKENS):
@@ -776,11 +828,14 @@ def _build_claim_record(
     old: dict[str, str],
     new: dict[str, str],
     reviewers: dict,
+    inherited: dict | None = None,
 ) -> dict:
     """Construct one validated claim with scope, provenance, atomic facts & translations."""
     src_join = '\n'.join(s['text'] for s in en_src_spans)
     dst_join = '\n'.join(s['text'] for s in en_dst_spans)
-    b_tok = edit._tokens(src_join)
+    inherited = inherited or {}
+    removed = inherited.get((cid, 'EN'), ())
+    b_tok = edit._tokens(edit._content(edit._without_removed(en_src_spans, removed)))
     a_tok = edit._tokens(dst_join)
     if not edit._evidence_equal(b_tok, a_tok):
         miss = sorted(b_tok - a_tok)
@@ -832,9 +887,9 @@ def _build_claim_record(
     if named_src != named_dst or (multi_owner and not edit._multi_owner_segments_preserved(src_join, dst_join)):
         raise ValueError(f'{cid}: ambiguous or changed scope owner labels: {named_src} vs {named_dst}')
     owner_pat = re.compile(
-        r'(?<![\w\-‐‑‒–—−])((?i:cohort|group|population|subset|endpoint|outcome|seed|run))'
+        r'(?<![\w\-‐‑‒–—−])((?i:analysis|cohort|group|population|subset|endpoint|outcome|seed|run))'
         r'(?:[ \t]+([A-Z][A-Za-z0-9_-]*|\d+)|[-‐‑‒–—−](\d+))(?![A-Za-z0-9_])'
-        r'|(队列|亚组|组|终点|种子|运行)[ \t]*([A-Z][A-Za-z0-9_-]*|\d+)(?![A-Za-z0-9_])'
+        r'|(分析|队列|亚组|(?<![\u4e00-\u9fff])组|终点|种子|运行)[ \t]*([A-Z][A-Za-z0-9_-]*|\d+)(?![A-Za-z0-9_])'
     )
 
     def collect_owner_hits(spans, texts):
@@ -852,7 +907,7 @@ def _build_claim_record(
                     ri = m[5]
                     if cn in ('种子', '运行') and not re.fullmatch(r'[A-Z]\d*|\d+', ri):
                         continue
-                    axis = {'队列': 'cohort', '亚组': 'subset', '组': 'population',
+                    axis = {'分析': 'analysis', '队列': 'cohort', '亚组': 'subset', '组': 'population',
                             '终点': 'endpoint', '种子': 'run', '运行': 'run'}[cn]
                 hits.setdefault(axis, _span(texts, sp['file'], sp['start'] + m.start(), sp['start'] + m.end()))
         return hits
@@ -869,7 +924,11 @@ def _build_claim_record(
 
     # Provenance must be nonempty; prefer shared fig/table citation span if present
     prov_pair = None
-    src_toks = [(sp, _token_occurrences(sp['text'])) for sp in en_src_spans]
+    def source_occurrences(spans, removed):
+        return [(sp, [h for h in _token_occurrences(sp['text']) if not any(
+            slot['file'] == sp['file'] and slot['start'] <= sp['start'] + h[1] < sp['start'] + h[2] <= slot['end']
+            for slot in removed)]) for sp in spans]
+    src_toks = source_occurrences(en_src_spans, removed)
     dst_toks = [(sp, _token_occurrences(sp['text'])) for sp in en_dst_spans]
     for s_sp, shits in src_toks:
         for d_sp, dhits in dst_toks:
@@ -927,7 +986,7 @@ def _build_claim_record(
             j for j, (_, (idx, _, _, raw, _)) in enumerate(flat_dst)
             if j not in used_dst and (idx, raw.casefold()) == key_s
         ]
-        if not d_group and idx_s in (1, 4):
+        if not d_group and idx_s in (1, 4, 9):
             d_group = [
                 j for j, (_, (idx, _, _, _, toks_d)) in enumerate(flat_dst)
                 if j not in used_dst and idx == idx_s and toks_s == toks_d
@@ -936,7 +995,7 @@ def _build_claim_record(
             used_src.update(s_group)
             used_dst.update(d_group)
             for j_d in d_group:
-                if flat_dst[j_d][1][3].casefold() != raw_s.casefold():
+                if flat_dst[j_d][1][3].casefold() != raw_s.casefold() and idx_s != 9:
                     raise ValueError(
                         f'{cid}: non-qualifier token surface changed {raw_s!r} -> {flat_dst[j_d][1][3]!r}'
                     )
@@ -979,16 +1038,14 @@ def _build_claim_record(
                 'context': ctxs,
             })
 
-    # Remaining relaxed or additive qualifiers (e.g. unresolved -> was not established, or adding single evaluated seed)
+    # Remaining qualifier changes must be explicitly paired; scope declarations
+    # are not invented here and repeated fixed qualifiers are not auto-generated.
     rem_s = [flat_src[i] for i in range(len(flat_src)) if i not in used_src and flat_src[i][1][0] == 6]
     rem_d = [flat_dst[j] for j in range(len(flat_dst)) if j not in used_dst and flat_dst[j][1][0] == 6]
     if rem_s or rem_d:
         rs = [_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_d]
         rem_d_toks = {t for _, h in rem_d for t in h[4]}
-        if not rem_s and rem_d_toks == {(6, 'single-seed')}:
-            tp = make_tokenless_pair(en_src_spans, en_dst_spans)
-            ls = [tp['source']]
-        elif rem_s and rem_d:
+        if rem_s and rem_d:
             ls = [_span(old, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_s]
         else:
             raise ValueError(f'{cid}: unmatched qualifier evidence src={rem_s} dst={rem_d}')
@@ -1016,7 +1073,8 @@ def _build_claim_record(
     for lang, t_src_spans, t_dst_spans, t_rat in trans_entries:
         ts_join = '\n'.join(s['text'] for s in t_src_spans)
         td_join = '\n'.join(s['text'] for s in t_dst_spans)
-        tb_tok, ta_tok = edit._tokens(ts_join), edit._tokens(td_join)
+        t_removed = inherited.get((cid, lang), ())
+        tb_tok, ta_tok = edit._tokens(edit._content(edit._without_removed(t_src_spans, t_removed))), edit._tokens(td_join)
         if not edit._evidence_equal(tb_tok, ta_tok):
             raise ValueError(
                 f'{cid} {lang} translation evidence mismatch: '
@@ -1036,7 +1094,7 @@ def _build_claim_record(
         if not t_scope:
             t_scope = [make_shared_pair(t_src_spans, t_dst_spans)]
         t_shared = t_scope[0]
-        ts_occ = [(sp, h) for sp in t_src_spans for h in _token_occurrences(sp['text'])]
+        ts_occ = [(sp, h) for sp, hits in source_occurrences(t_src_spans, t_removed) for h in hits]
         td_occ = [(sp, h) for sp in t_dst_spans for h in _token_occurrences(sp['text'])]
         t_used_s, t_used_d = set(), set()
 
@@ -1051,7 +1109,7 @@ def _build_claim_record(
                         (j for j, (_, hd) in enumerate(td_occ)
                          if j not in t_used_d and hd[0] == h[0]
                          and (h[3].casefold() == hd[3].casefold()
-                              or (cs == edit._canonical_translated_anchor(hd[3]) and h[4] == hd[4]))),
+                              or ((cs == edit._canonical_translated_anchor(hd[3]) or h[0] == 9) and h[4] == hd[4]))),
                         None,
                     )
                     if jd is not None:
@@ -1108,7 +1166,6 @@ def _build_claim_record(
             if ef['kind'] == 'qualifier' and not ls:
                 rem_qs = [i for i, (_, h) in enumerate(ts_occ) if i not in t_used_s and h[0] == 6]
                 rem_qd = [j for j, (_, h) in enumerate(td_occ) if j not in t_used_d and h[0] == 6]
-                ef_dst_toks = edit._tokens('\n'.join(x['text'] for x in ef['candidate']))
                 if rem_qs and rem_qd:
                     for i in rem_qs:
                         t_used_s.add(i)
@@ -1118,17 +1175,6 @@ def _build_claim_record(
                         t_used_d.add(j)
                         sp, h = td_occ[j]
                         rs.append(_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
-                elif not all_ef_toks and ef_dst_toks == {(6, 'single-seed')}:
-                    add_qd = [j for j in rem_qd if td_occ[j][1][4] == {(6, 'single-seed')}]
-                    tp = make_tokenless_pair(t_src_spans, t_dst_spans)
-                    if add_qd:
-                        ls = [tp['source']]
-                        for j in add_qd:
-                            t_used_d.add(j)
-                            sp, h = td_occ[j]
-                            rs.append(_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
-                    else:
-                        ls, rs = [tp['source']], [tp['candidate']]
             if not ls or not rs:
                 if not inv:
                     ls, rs = [t_shared['source']], [t_shared['candidate']]
@@ -1196,9 +1242,9 @@ def build_review_bundle(
     before_dir: Path,
     after_dir: Path,
     rationales: dict | None = None,
-    editor: str = 'Scientific Editor',
-    scientific: str = 'Scientific Reviewer',
-    bilingual: str = 'Bilingual Reviewer',
+    editor: str = 'DRAFT - reviewer required',
+    scientific: str = 'DRAFT - reviewer required',
+    bilingual: str = 'DRAFT - reviewer required',
 ) -> tuple[dict, dict, dict]:
     """Build (review, changes_manifest, decisions_manifest) dicts for before -> after."""
     rationales = rationales or {}
@@ -1219,6 +1265,11 @@ def build_review_bundle(
 
     old = {k: a_bytes[k].decode('utf-8') for k in managed}
     new = {k: b_bytes[k].decode('utf-8') for k in managed}
+    for key in managed:
+        before_nl, after_nl = set(re.findall(r'\r?\n', old[key])), set(re.findall(r'\r?\n', new[key]))
+        edit._require(not before_nl or not after_nl or before_nl == after_nl,
+                      key+': line endings changed (LF/CRLF); preserve original newline bytes before scaffolding')
+    declarations = _materialize_declarations(rationales, old, new)
 
     inventory = {
         k: {'source_sha256': edit._sha(a_bytes[k]), 'candidate_sha256': edit._sha(b_bytes[k])}
@@ -1267,6 +1318,22 @@ def build_review_bundle(
             ezn_blks = ez_new_sec.get(sec_id, [])
 
             raw_hunks = _align_hunks(eo_blks, en_blks, changed_ranges[en_key][0], changed_ranges[en_key][1])
+            # Draft proposal: include an unchanged preceding declaration in the
+            # same heading rather than silently treating a changed hunk as local.
+            # The resulting claim still needs explicit human inventory review.
+            grouped = []
+            for ol, nl, changed in raw_hunks:
+                bt, at = edit._tokens('\n'.join(x[2] for x in ol)), edit._tokens('\n'.join(x[2] for x in nl))
+                if changed and grouped and bt - at == {(6, 'single-seed')} and not (at - bt):
+                    po, pn, pc = grouped[-1]
+                    prev_text = '\n'.join(x[2] for x in po)
+                    if (not pc and [x[2] for x in po] == [x[2] for x in pn]
+                            and (6, 'single-seed') in edit._tokens(prev_text)
+                            and edit._named_scopes(prev_text) == edit._named_scopes('\n'.join(x[2] for x in ol))):
+                        grouped[-1] = (po + ol, pn + nl, True)
+                        continue
+                grouped.append((ol, nl, changed))
+            raw_hunks = grouped
             idx_map_o = {b[:2]: i for i, b in enumerate(eo_blks)}
             idx_map_n = {b[:2]: i for i, b in enumerate(en_blks)}
             en_hunks = [
@@ -1401,7 +1468,8 @@ def build_review_bundle(
                             _contiguous_or_list(es_nl, new[enzh_key], enzh_key),
                             trat,
                         ))
-                    claims.append(_build_claim_record(cid, en_src_s, en_dst_s, trans_entries, old, new, reviewers))
+                    inherited = _bind_inheritance(declarations, cid, en_src_s, en_dst_s, trans_entries)
+                    claims.append(_build_claim_record(cid, en_src_s, en_dst_s, trans_entries, old, new, reviewers, inherited))
 
         # Cover every changed EN block (including heading-only blocks) under narrative.issues
         en_changed_blocks = edit._changed_blocks(old[en_key], new[en_key])
@@ -1420,11 +1488,11 @@ def build_review_bundle(
                 'kind': custom.get('kind', default_issue.get('kind', 'narrative-clarity')),
                 'source': l_spans,
                 'candidate': r_spans,
-                'decision': custom.get('decision', default_issue.get('decision', 'resolved')),
+                'decision': custom.get('decision', default_issue.get('decision', 'retained')),
                 'central': custom.get('central', default_issue.get('central', True)),
                 'reviewed_by': reviewers['editor'],
                 'reason': custom.get('reason') or default_issue.get('reason') or (
-                    f'Applied evidence-preserving structural polish in {en_key} (hunk {hunk_idx}).'
+                    f'DRAFT: reviewer disposition required for {en_key} (hunk {hunk_idx}).'
                 ),
             })
 
@@ -1433,8 +1501,7 @@ def build_review_bundle(
         'source': [_span(old, k, 0, len(old[k])) for k in english if old[k]],
         'candidate': [_span(new, k, 0, len(new[k])) for k in english if new[k]],
         'summary': rationales.get('narrative_summary') or (
-            'Completed whole-manuscript structural polish preserving numeric, citation, '
-            'unit, qualifier, and scope evidence across EN, ZH, and EN_ZH files.'
+            'DRAFT machine scaffold. Unique verbal facts, scope, narrative and translations require actual review.'
         ),
         'issues': issues,
     }
@@ -1448,6 +1515,25 @@ def build_review_bundle(
         'unknowns': unknowns,
         'narrative': narrative,
     }
+    if declarations:
+        review['scope_declarations'] = declarations
+    inventory_review = rationales.get('inventory_review')
+    review['review_status'] = {'state': 'draft', 'reviewed_by': reviewers['scientific'], 'rationale': '', 'facts': []}
+    if inventory_review is not None:
+        edit._object(inventory_review, ('reviewed_by', 'rationale', 'facts'), 'inventory review')
+        status = dict(inventory_review, state='reviewed', facts=[])
+        for supplied in inventory_review['facts']:
+            fact = dict(supplied)
+            for side, texts in [('source', old), ('candidate', new)]:
+                fact[side] = [resolve_exact_span(texts, x) for x in supplied[side]]
+            if fact.get('claim', 'AUTO') == 'AUTO':
+                matching = [c['id'] for c in claims if all(edit._inside(x, c['source']) for x in fact['source']) and all(edit._inside(x, c['candidate']) for x in fact['candidate'])]
+                edit._require(len(matching) == 1, 'Verbal inventory must identify one exact governed claim')
+                fact['claim'] = matching[0]
+            status['facts'].append(fact)
+        edit._require(bool(rationales.get('narrative_summary')), 'Reviewed scaffold needs supplied narrative rationale')
+        edit._require(all(not i['reason'].startswith('DRAFT') for i in issues), 'Reviewed scaffold needs supplied narrative issue dispositions')
+        review['review_status'] = status
     if 'author_limits' in rationales:
         review['author_limits'] = rationales['author_limits']
 
@@ -1469,9 +1555,9 @@ def write_review_bundle(
     changes_path: Path,
     decisions_path: Path | None = None,
     rationales: dict | None = None,
-    editor: str = 'Scientific Editor',
-    scientific: str = 'Scientific Reviewer',
-    bilingual: str = 'Bilingual Reviewer',
+    editor: str = 'DRAFT - reviewer required',
+    scientific: str = 'DRAFT - reviewer required',
+    bilingual: str = 'DRAFT - reviewer required',
     verify: bool = False,
 ) -> dict:
     """Build and write review.json, changes.json, and optional decisions.json."""
@@ -1515,9 +1601,9 @@ def main() -> int:
     p.add_argument('--changes', required=True, type=Path)
     p.add_argument('--decisions', type=Path)
     p.add_argument('--rationale-json', type=Path)
-    p.add_argument('--editor', default='Scientific Editor')
-    p.add_argument('--scientific', default='Scientific Reviewer')
-    p.add_argument('--bilingual', default='Bilingual Reviewer')
+    p.add_argument('--editor', default='DRAFT - reviewer required')
+    p.add_argument('--scientific', default='DRAFT - reviewer required')
+    p.add_argument('--bilingual', default='DRAFT - reviewer required')
     p.add_argument('--verify', action='store_true')
     args = p.parse_args()
     try:

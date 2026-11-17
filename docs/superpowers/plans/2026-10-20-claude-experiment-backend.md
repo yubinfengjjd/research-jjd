@@ -1,5 +1,7 @@
 # Claude Experiment Backend Implementation Plan
 
+> Historical implementation plan and engineering receipt, archived in place. This is not a current execution request or a writing-stage dependency. Its dated validation applies only to the stated revision and scope.
+
 > **For agentic workers:** Use subagent-driven-development with a fresh implementation worker, independent task review and final acceptance review. Existing user authorization requests implementation and acceptance; execute without re-requesting it.
 
 **Goal:** Add native Claude Code autonomous proposal/review execution without requiring Codex for a Claude-selected study.

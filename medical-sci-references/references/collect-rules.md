@@ -10,6 +10,8 @@
 
 ## 查重与来源
 
+写作阶段核验表的标识列与流水线采用同一表头契约：Unicode NFKC、空白和大小写规范化后，以“标识”或“正文标识”开头、或以“标识”结尾均识别，包括“标识（PMID/DOI/URL/arXiv）”。扩展表头中的题名、期刊、第一作者及年份冲突与普通表头相同地阻断；不能因表头变长便跳过本地元数据比较。
+
 每条先按公开标识拉元数据，将 PMID 解析到 DOI，依次查 DOI → PMID → 题名+年份。DOI 小写、去 DOI URL 前缀及尾部句号逗号。PMID 兼容 extra 中 `PMID: N`、原生 PMID 字段、PubMed URL/libraryCatalog。多个命中停止；题名年兜底列 WARN，收集后由作者确认。
 
 PMID 用 NCBI efetch 结构化作者列表；DOI 用 Crossref works；arXiv 用 Atom API。仅提交 ID 与 API 控制参数，正文从不进入请求。PubMed pages 优先完整 MedlinePgn，否则拼 StartPage–EndPage。Crossref 作者采用 family/given；集体作者采用单字段 name。arXiv 仅提供全名时保存为单字段作者，绝不按空格猜姓/名；因此产生结构化姓名不足 WARN。保留全部作者，不按引文样式截断。

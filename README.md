@@ -85,7 +85,7 @@ python install.py
 
 只更新指定技能可重复使用`--skill`，例如`python install.py --update --skill medical-sci-finalize --skill medpaper-pipeline`；用`--target`明确指定实际加载的技能根（如同时使用`.agents/skills`时），先`--dry-run`再安装/`--verify`。默认目标保持兼容。0.10的结构编辑模式、双语同步和旧记录兼容见[迁移说明](docs/evidence-aware-writing.md)。
 
-`install.py` 只用标准库，只复制清单中的技能目录（七个 medfig、`scipilot-medimg-figure-skill`、`anti-defensive-writing`、九个 `medical-sci-*` 技能、`medpaper-pipeline`，以及 `medical-research-plan`、`medimg-experiment`、`socratic-project-manager`），并排除 `__pycache__`、`*.pyc`、`.pytest_cache`、`.git` 以及 `examples/**/out`、`examples/**/data` 等生成物。默认目标为 `~/.claude/skills` 和 `~/.codex/skills`。
+`install.py` 只用标准库，只复制清单中的技能目录及所选技能的递归运行依赖，并排除缓存、开发测试与评测目录、`test_*.py`、版本控制目录以及 `examples/**/out`、`examples/**/data` 等生成物。运行所需的 `evaluate_test.py` 示例资产保留。测试、公开验证和历史计划留在源码仓库；它们不因不进入运行包而失去维护价值。默认安装目标为 `~/.claude/skills` 和 `~/.codex/skills`。
 
 ```bash
 python install.py --dry-run          # 只打印计划（复制、备份、目标），不改动任何文件
@@ -99,7 +99,7 @@ python install.py --target D:/x/skills --target D:/y/skills   # 覆盖默认目�
 - 备份位置：`~/skill_backups/medfig_<时间戳>/<目标名>/<技能名>`（可用 `--backup-root` 修改），运行时会打印。
 - 复制后逐文件做 SHA-256 校验，并写入 `<目标>/<技能>/.medfig_install.json`（版本 = 源仓库 git 短 SHA，取不到时为 `unknown`；时间戳；文件数；清单哈希）。
 - 任何校验失败时退出码非零。
-- `--skill medical-sci-finalize` 的安装、更新与核验会自动包含 `anti-defensive-writing`；只卸载 finalize 时保留独立依赖。需要卸载依赖时显式选择它。
+- `--skill medical-sci-finalize` 的安装、更新与核验会自动包含运行依赖；`--skill medfig-outline` 同样带入 `medfig-render` 及其依赖。依赖环与未知依赖阻断安装。只卸载所选技能时保留独立依赖，需要卸载依赖时显式选择它。
 - 只处理清单中的技能目录，目标根目录中的其他技能不会被读写。已装过上游或旧版 `scipilot-medimg-figure-skill` 的，安装时会先备份再替换。
 
 ## Codex 用户：设置 FIGKIT_LIB 与 scipilot_scripts
@@ -125,6 +125,14 @@ scipilot_scripts = "~/.codex/skills/scipilot-medimg-figure-skill/scripts"
 
 ## 运行测试
 
+完整手稿修订还可运行只读的跨版本文风诊断：
+
+```bash
+python medpaper-pipeline/scripts/lint_manuscript.py candidate/04_manuscript --previous before/04_manuscript --report process/prose-comparison.json
+```
+
+它列出重复短语、词族密度、句长与图表括号等线索，不以词频增长或密度未下降判定写作失败。源码中的测试、验证记录和历史计划用于维护，不要求写作任务逐份加载；运行安装包和完整源码仓库用途不同。规则与验收边界见[范围声明与文风诊断](docs/writing-scope-validation-20261117.md)。
+
 ```bash
 python -m pytest tests -q -p no:cacheprovider                 # 技能格式校验、泄露扫描 + 安装器测试
 python -m pytest medfig-render/tests -q -p no:cacheprovider   # figkit 库、回归与最小示例
@@ -141,7 +149,7 @@ python -m pytest scipilot-medimg-figure-skill/tests -q -p no:cacheprovider   # �
 
 ## 只呈现主线版本
 
-全部技能共用一条规则：早期版本、修复前模型和开发流程（wave、closure、修复、预注册假设编号等）不进图、表、图注和写作大纲；按内部计划组织的分析改成按科学问题组织。细则见 `medfig-plan/references/mainline_rules.md`，figkit 导出时默认拦截相关措辞。
+图表与大纲按科学问题组织，不以内部开发编号或修复日志代替研究结论。真实的预注册、探索性分析、训练与重新拟合设计须按实际情况保留；不能因清理开发术语而隐去研究设计或不利结果。细则见 `medfig-plan/references/mainline_rules.md`。
 
 ## 经验来源
 

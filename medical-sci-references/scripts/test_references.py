@@ -194,6 +194,14 @@ class Regression(unittest.TestCase):
         folder=self.d/'04_manuscript/Introduction';folder.mkdir(parents=True)
         (folder/'Introduction_核查说明.md').write_text('| 标识 | 题名 | 第一作者 年份 | 期刊 |\n|---|---|---|---|\n| PMID: 1 | Wrong title | Test 2020 | Journal |\n',encoding='utf-8')
         with self.assertRaises(MetadataConflict):verify_local_tables(self.d,{'id':'PMID: 1'},{'data':{'title':'Correct title','date':'2020','publicationTitle':'Journal','creators':[{'lastName':'Test'}]}})
+    def test_extended_writing_stage_identifier_headers_preserve_conflict_detection(self):
+        folder=self.d/'04_manuscript/Introduction';folder.mkdir(parents=True)
+        for header in ('标识（PMID/DOI/URL/arXiv）', '正文标识（PMID/DOI）', '来源标识'):
+            for column,local in (('题名','Wrong title'),('第一作者 年份','Test 2021'),('期刊','Wrong Journal')):
+                with self.subTest(header=header,column=column):
+                    (folder/'Introduction_核查说明.md').write_text('| '+header+' | '+column+' | 核验状态 |\n|---|---|---|\n| PMID: 1 | '+local+' | 已核验 |\n',encoding='utf-8')
+                    with self.assertRaises(MetadataConflict):
+                        verify_local_tables(self.d,{'id':'PMID: 1'},{'data':{'title':'Correct title','date':'2020','publicationTitle':'Journal','creators':[{'lastName':'Test'}]}})
     def test_finalize_candidate_metadata_conflict_stops(self):
         folder=self.d/'_process/Finalize/day';folder.mkdir(parents=True)
         save(folder/'assembly_manifest.json',{'citation_candidates':[{'id':'PMID: 1','fields':{'题名':'Wrong title'}}]})

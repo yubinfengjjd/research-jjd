@@ -40,10 +40,14 @@ SKILL_DEPENDENCIES = {
      "medical-sci-abstract")
 }
 SKILL_DEPENDENCIES["medical-sci-finalize"] = ("anti-defensive-writing", "medpaper-pipeline")
+SKILL_DEPENDENCIES["medfig-outline"] = ("medpaper-pipeline", "medfig-render")
+SKILL_DEPENDENCIES["medfig-render"] = ("scipilot-medimg-figure-skill",)
 STAMP = ".medfig_install.json"
 
 EXCLUDED_DIR_NAMES = {"__pycache__", ".pytest_cache", ".git"}
 EXCLUDED_SUFFIXES = {".pyc", ".pyo"}
+EXCLUDED_ROOT_DIRS = {"tests", "evals"}
+EXCLUDED_PATHS = {("legacy_add_table.txt",)}
 # Generated dirs: any `out` / `data` dir below an `examples` dir.
 EXAMPLE_GENERATED = {"out", "data"}
 
@@ -57,12 +61,24 @@ def is_excluded(rel_parts: tuple[str, ...]) -> bool:
     """True if a path (relative to a skill dir) must not be installed."""
     if rel_parts and rel_parts[-1] == STAMP:
         return True
+    if rel_parts and rel_parts[0] in EXCLUDED_ROOT_DIRS:
+        return True
+    if rel_parts in EXCLUDED_PATHS:
+        return True
     for i, part in enumerate(rel_parts):
         if part in EXCLUDED_DIR_NAMES:
             return True
         if part in EXAMPLE_GENERATED and "examples" in rel_parts[:i] and i < len(rel_parts) - 1:
             return True
-    return Path(rel_parts[-1]).suffix in EXCLUDED_SUFFIXES if rel_parts else False
+    if not rel_parts:
+        return False
+    name = rel_parts[-1]
+    # Development tests live in the root tests/ or scripts/test_*.py. A runnable
+    # asset (e.g. assets/synthetic/evaluate_test.py) is part of the runtime, even
+    # when its name contains "test". Preserve source tests; filter only payloads.
+    if len(rel_parts) == 2 and rel_parts[0] == "scripts" and name.startswith("test_") and name.endswith(".py"):
+        return True
+    return Path(name).suffix in EXCLUDED_SUFFIXES
 
 
 def iter_files(skill_dir: Path) -> list[str]:
@@ -95,6 +111,29 @@ def manifest_hash(man: dict[str, str]) -> str:
     for rel in sorted(man):
         h.update(f"{rel}\t{man[rel]}\n".encode("utf-8"))
     return h.hexdigest()
+
+
+def resolve_dependencies(skills) -> tuple[str, ...]:
+    """Stable dependency-first traversal, rejecting missing nodes and cycles."""
+    resolved, visiting, done = [], [], set()
+
+    def visit(skill):
+        if skill not in SKILLS:
+            raise ValueError(f"Unknown dependency: {skill}")
+        if skill in visiting:
+            raise ValueError("Dependency cycle: " + " -> ".join([*visiting, skill]))
+        if skill in done:
+            return
+        visiting.append(skill)
+        for dependency in SKILL_DEPENDENCIES.get(skill, ()):
+            visit(dependency)
+        visiting.pop()
+        done.add(skill)
+        resolved.append(skill)
+
+    for skill in skills:
+        visit(skill)
+    return tuple(resolved)
 
 
 def verify(src_skill: Path, dest_skill: Path) -> list[str]:
@@ -147,10 +186,7 @@ class Installer:
             raise ValueError('Select one or more known skills')
         # Install/verify dependencies before their parent. Uninstall uses only
         # the explicit selection, preserving independently usable dependencies.
-        self.required_skills = tuple(dict.fromkeys(
-            required for skill in self.skills
-            for required in (*SKILL_DEPENDENCIES.get(skill, ()), skill)
-        ))
+        self.required_skills = resolve_dependencies(self.skills)
         self.targets = [Path(t).expanduser().resolve() for t in targets]
         src = Path(src_root).resolve()
         for t in self.targets:
