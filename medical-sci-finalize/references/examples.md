@@ -1,22 +1,29 @@
-# 保守判断示例
+# 证据保留的润色示例
 
-以下是规则示例，不是某项研究的新发现。
+以下为虚构研究及数据，不是某个真实项目的改稿模板。示例只说明判断，实际编辑须绑定本稿来源、候选、分析归属与双语映射。
 
-| 改前 | 可接受改后 | 理由 |
-|---|---|---|
-| Unfortunately, the single-run estimate was 0.781. | The single-run estimate was 0.781. | 删除情绪评价；估计、数字、single-run 保留 |
-| We must admit that the 95% CI crossed zero and the result was not conclusive. | The 95% CI crossed zero and the result was not conclusive. | 删道歉式铺垫；CI 跨零与非定论不能删 |
-| We first tried several ways of describing the same completed analysis. | 保留实际分析，仅删除与科学内容无关的写稿过程叙述。 | 若涉及正文承诺、注册或结论相关的实际执行、失败或未完成分析，须公开保留必要信息；内部备用实验进度留在过程记录 |
-| The method achieved a groundbreaking improvement. | 先列作者裁决，不能在没有已报告比较时补一个优势。 | 去夸张不授权改事实或补比较 |
+## 共同范围可以支配连续论断
 
-不可接受：`single evaluated seed`→`seeds`；`95% CI crossed zero`→`95% CI excluded zero`；`0.962`→`0.963`；`5 mm`→`5 cm`；`not conclusive`→`conclusive`；将 Cohort B 不利结果整句删掉；删去正文承诺但未执行的分析；以“更自然”为由把 clinical group 改成 patient；把描述性关联改为因果。
+> The sensitivity analyses below used one trained model on the held-out test partition. Removing the auxiliary score changed sensitivity by −0.02 (95% CI, −0.05 to 0.01) (Fig. 2a). Specificity was 0.91 with the score and 0.90 without it (Table 2).
+>
+> The largest sensitivity loss occurred in low-quality examinations (−0.08; 95% CI, −0.13 to −0.03) (Fig. 2b).
 
-局限段、失败队列、类内覆盖不足、重要次要指标较低、定位未确立、单种子及同目标队列拟合评估均属于应保留的证据，不是需要清除的“AI 味”。非显著不能改成等效，“not independent”不能删成 independent。原句读起来准确自然就保留，不要求每句都改。
+共同声明可同时支配两段，无须逐句重复。证据记录映射声明、论断及例外；若后文改为三模型汇总，应重新说明。独立摘要和每张图/表注仍需自行交代读者所需范围，不能只靠 Methods 覆盖。
 
-若两个限定词计数相同却被移到另一分析、两句数值对调、多重集碰巧相等，机械集合检查不能证明口径正确；逐块变更、绑定分析归属的结构审查与双语覆盖共同守门，最终仍须人读证据。
+## 去掉情绪，不改结论
 
+“Unfortunately, the analysis did not establish a reduction in readmission”可改为“The analysis did not establish a reduction in readmission”。阴性结论承担实际信息，不能因 did not establish 被视为防御句而删掉。may、only、not 等按科学作用判断，不设每段一个或全文五次的预算。
 
-## 合并与范围：虚构例子
+## 清晰的主张与有据取舍
 
-- 合法合并：改前 “Analysis A used one run. Its estimate was 0.72. Analysis A was evaluated in one run.” → “In the single evaluated run, Analysis A had an estimate of 0.72.” 同一分析的重复限定去重，数字、评估范围及其证据仍归属 A；中文及已有双语稿同步对应。
-- 危险改写：改前 “In the exploratory subset, the paired difference was 0.02 (95% CI, −0.03 to 0.07).” → “Across all participants, the methods were equivalent.” 将子集换成总体、抹去探索性及区间，并以跨零代替等效检验，均不可接受。合法写法保留子集、差值及 CI，说明未有明确差异证据；没有预设界值与相应设计就不能称等效。
+> Recalibration improved average prediction error in the evaluated hospitals, with no clear improvement in the low-quality subgroup. The subgroup result limits the scope of the average benefit; its cause remains unknown.
+
+主张在前，范围与反例清楚。没有依据时不补机制；同一关键文献可支持不同论点。共享引文要求支持关系无歧义，不规定每段引用篇数或统一段末括号，内部溯源表不能替代读者引用。
+
+## 不可接受的改写
+
+单次结果变为多次运行；将一个效应的 CI 接给另一个估计；扫描数改称患者数；子集范围改为总体；跨零写成等效；未预设阈值写成未做推断；同集拟合评估写成独立验证；删去不利队列或结论相关未执行分析。这些问题不因词数、数值多重集或脚本通过而消失。
+
+## 检查与真实审读
+
+长句或高引用次数可触发内容复核，准确自然时可有据保留。合并、拆分后同步 ZH 和已有 EN_ZH，核对小数字、数词、单位、否定及限定对象。脚手架只生成待审记录；实际审读前不能预填 resolved、科学审查完成或虚构审读者身份。

@@ -1,117 +1,113 @@
-"""Policy contradiction regression only; does not assess generated prose quality."""
+"""Guard against policy contradictions; these tests do not score manuscript prose.
+
+Scientific preservation and scope behavior are tested by the evidence-edit suites.
+This file checks that maintained instructions do not reintroduce audited mechanical
+writing requirements or contradict the common policy through a second entrypoint.
+"""
 from pathlib import Path
+import re
 import unittest
+
 ROOT = Path(__file__).resolve().parents[1]
+WRITING = tuple(f"medical-sci-{name}" for name in (
+    "methods", "results", "legends", "introduction", "discussion", "abstract",
+))
+
+
+def active_documents():
+    for skill in (*WRITING, "medical-sci-finalize"):
+        yield ROOT / skill / "SKILL.md"
+        names = ("polish-rules.md", "journal-style.md", "examples.md") if skill.endswith("finalize") else (
+            "writing-rules.md", "journal-style.md", "examples.md",
+        )
+        for name in names:
+            yield ROOT / skill / "references" / name
+
+
 class LanguageContract(unittest.TestCase):
-    def test_no_forced_paragraph_endings(self):
-        for p in ROOT.glob("medical-sci-*/references/journal-style.md"):
-            self.assertNotIn("段末句引出下一节点", p.read_text(encoding="utf-8"), str(p))
-    def test_abstract_core_priority(self):
-        s=(ROOT/"medical-sci-abstract/references/journal-style.md").read_text(encoding="utf-8")
-        self.assertNotIn("族不能让",s)
-        self.assertNotIn("其余族分句级简述",s)
-        self.assertIn("不得省略会改变主结论的不利结果",s)
-    def test_final_delivery_freshness_and_small_counts(self):
-        s=(ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["SHA256","小于10","历史失败与当前候选失败分开报告","carried-forward"]:
-            self.assertIn(phrase,s)
-    def test_claim_strength_protected(self):
-        s=(ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["no clear reduction","observed-class BACC","独有计数"]:
-            self.assertIn(phrase,s)
+    def assert_no_policy(self, paths, patterns):
+        for path in paths:
+            text = path.read_text(encoding="utf-8")
+            for pattern in patterns:
+                with self.subTest(path=path.relative_to(ROOT), pattern=pattern):
+                    self.assertIsNone(re.search(pattern, text, flags=re.I), "Conflicting policy in " + str(path))
 
-    def test_review_version_binding(self):
-        s=(ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["版本未核实", "已修复", "正式源稿未接入", "不得据此判定 AI 来源"]:
-            self.assertIn(phrase, s)
-        entry=(ROOT/"medical-sci-finalize/SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("版本绑定与处置", entry)
+    def test_entrypoints_route_to_one_existing_common_policy(self):
+        for skill in (*WRITING, "medical-sci-finalize"):
+            path = ROOT / skill / "SKILL.md"
+            targets = re.findall(r"\]\(([^)]+positioning\.md)(?:#[^)]*)?\)", path.read_text(encoding="utf-8"))
+            with self.subTest(skill=skill):
+                self.assertTrue(targets, "Missing shared policy route")
+                for target in targets:
+                    self.assertEqual((path.parent / target).resolve(), (ROOT / "medpaper-pipeline/references/positioning.md").resolve())
+                    self.assertTrue((path.parent / target).is_file())
 
-    def test_abstract_checker_guidance_matches_priority(self):
-        s=(ROOT/"medical-sci-abstract/scripts/check_abstract.py").read_text(encoding="utf-8")
-        self.assertNotIn("whole families must not be dropped", s)
-        self.assertIn("decisive adverse findings", s)
-        self.assertIn("internal coverage table", s)
+    def test_archived_prompts_are_not_runtime_read_requirements(self):
+        for skill in WRITING:
+            path = ROOT / skill / "SKILL.md"
+            text = path.read_text(encoding="utf-8")
+            with self.subTest(skill=skill):
+                self.assertIsNone(re.search(r"^\d+\. .*\]\(references/original-", text, re.M))
+                self.assertRegex(text, r"原始提示词[^\n]*历史[^\n]*不是运行指令")
+        self.assert_no_policy(active_documents(), (r"逐条对照原始提示词的要求",))
 
-    def test_headline_first_and_meta_jargon_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["Headline-First", "structured method", "method carrier", "Highlights"]:
-            self.assertIn(phrase, polish)
-        abstract_rules = (ROOT/"medical-sci-abstract/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("Highlights 必须随摘要和正文同步重写打磨", abstract_rules)
-        results_rules = (ROOT/"medical-sci-results/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("合并至单元或句末共享引用", results_rules)
-        discussion_rules = (ROOT/"medical-sci-discussion/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("requiring prospective validation", discussion_rules)
+    def test_generic_style_counts_are_not_hard_gates(self):
+        self.assert_no_policy(active_documents(), (
+            r"(?:硬上限|硬顶)[^\n]{0,12}60\s*词",
+            r"目标平均\s*18[–-]28",
+            r"散文分号[^\n]{0,30}(?:为\s*ERROR|须清零)",
+            r"散文分号链\s*0\s*处",
+            r"保持[^\n]{0,20}平均句长[^\n]{0,20}18[–-]28",
+        ))
 
-    def test_cycle2_cross_cohort_structural_and_localization_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["Cross-Cohort & Classwise Audit", "append_only_author_files", "bilingual_sync_only"]:
-            self.assertIn(phrase, polish)
-        sr = (ROOT/"medical-sci-finalize/references/structural-review.md").read_text(encoding="utf-8")
-        for phrase in ["heading_edits", "bilingual_sync_only", "append_only_author_files"]:
-            self.assertIn(phrase, sr)
-        results_rules = (ROOT/"medical-sci-results/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("跨队列与逐类别数据核对清单", results_rules)
-        self.assertNotIn("不设机械引用密度或降幅配额", results_rules)
-        for phrase in ["优先采用去重后的独立队列分母", "citation-adjacent-repeat", "citation-redundant-parent"]:
-            self.assertIn(phrase, results_rules)
+    def test_citation_counts_do_not_override_support_mapping(self):
+        self.assert_no_policy(active_documents(), (
+            r"严禁单段[^\n]*引用[^\n]*≥\s*[234]",
+            r"同一文献全文一般只[^\n]*一次",
+            r"同一文献一般只在最相关处引一次",
+            r"一个论断引\s*1[–-]3\s*篇",
+        ))
 
-    def test_cycle3_parent_heading_atomic_review_and_zh_hygiene_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["performs on par", "five of six independent cohort groups", "seed-0", "atomic `facts`/`provenance` pairs", "所有可修复的 `WARN`"]:
-            self.assertIn(phrase, polish)
-        abstract_rules = (ROOT/"medical-sci-abstract/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["descriptively lower", "remained unresolved", "five of six independent cohort groups"]:
-            self.assertIn(phrase, abstract_rules)
-        discussion_rules = (ROOT/"medical-sci-discussion/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("seed-0", discussion_rules)
+    def test_panel_case_comes_from_the_actual_figure(self):
+        self.assert_no_policy(active_documents(), (
+            r"panel\s*字母一律大写",
+            r"本项目成图(?:用|为)[^\n]*(?:小写|大写)",
+        ))
 
-    def test_cycle4_mixed_seed_table_and_sentence_hygiene_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["分列标明", "Coverage point estimates exceed target...", "Stage-1", "18–28", "retrospective", "绝不按裸 `.` 截断小数"]:
-            self.assertIn(phrase, polish)
-        results_rules = (ROOT/"medical-sci-results/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["分列标明种子范围", "Stage-1", "AURC", "≥4 次"]:
-            self.assertIn(phrase, results_rules)
-        discussion_rules = (ROOT/"medical-sci-discussion/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["in the single evaluated seed", "sentence-average"]:
-            self.assertIn(phrase, discussion_rules)
+    def test_scope_does_not_require_a_frozen_english_phrase(self):
+        self.assert_no_policy(active_documents(), (
+            r"(?:必须|须)[^\n]{0,80}(?:明确)?写出\s*`?in the single evaluated seed",
+            r"单\s*(?:seed|种子)[^\n]{0,40}(?:口径|范围)写在句内",
+        ))
 
-    def test_cycle5_single_seed_split_mapping_and_all_legends_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["在唯一接受评价的种子中", "不得只跑 `Figure_Legends`", "[para_1, para_2]", "without a prespecified inferential threshold"]:
-            self.assertIn(phrase, polish)
-        sr = (ROOT/"medical-sci-finalize/references/structural-review.md").read_text(encoding="utf-8")
-        for phrase in ["[para_1, ..., para_k]", "in the single evaluated seed"]:
-            self.assertIn(phrase, sr)
+    def test_abstract_content_is_not_selected_by_sentence_or_failure_quotas(self):
+        paths = [ROOT / "medical-sci-abstract" / name for name in (
+            "SKILL.md", "references/writing-rules.md", "references/journal-style.md",
+        )]
+        self.assert_no_policy(paths, (
+            r"严格保持\s*4[–-]6",
+            r"保持\s*`results-sentences`\s*在\s*4[–-]6",
+            r"including all underperforming classes/cohorts",
+            r"全部低于名义目标的诊断类别",
+            r"若[^\n]*无预设统计检验[^\n]*须保留[^\n]*descriptively",
+        ))
 
-    def test_cycle9_column_mapping_all_subnominal_and_highlight_contract(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["02_figures/out/tables/*.md", "pooled AURC", "0.5 像素 非劣效界值", "logit", "bootstrap", "Safe/clinical deployment requires prospective..."]:
-            self.assertIn(phrase, polish)
-        abstract_rules = (ROOT/"medical-sci-abstract/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["Abstract_EN_ZH.md", "Safe/clinical deployment requires prospective..."]:
-            self.assertIn(phrase, abstract_rules)
-        legends_rules = (ROOT/"medical-sci-legends/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["*.source.json", "pooled AURC", "and outline"]:
-            self.assertIn(phrase, legends_rules)
+    def test_verified_full_text_and_text_only_results_are_not_prohibited(self):
+        self.assert_no_policy(active_documents(), (
+            r"摘要没有的数字不写",
+            r"表格中也没有时，不写入正文",
+            r"没有任何图表显示时不写",
+        ))
 
-    def test_cycle10_abstract_nouns_all_strata_and_merged_legend_scope(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["negative differences with intervals crossing zero", "ST09.csv", "transport conditions", "learned_per_row.parquet"]:
-            self.assertIn(phrase, polish)
-        abstract_rules = (ROOT/"medical-sci-abstract/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("negative differences with intervals crossing zero", abstract_rules)
-        legends_rules = (ROOT/"medical-sci-legends/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("(c, d)", legends_rules)
+    def test_local_document_links_resolve(self):
+        for path in active_documents():
+            text = path.read_text(encoding="utf-8")
+            for target in re.findall(r"\]\(([^)]+\.md)(?:#[^)]*)?\)", text):
+                if re.match(r"^[a-z]+://", target, flags=re.I):
+                    continue
+                with self.subTest(path=path.relative_to(ROOT), target=target):
+                    self.assertTrue((path.parent / target).is_file(), "Broken local document link")
 
-    def test_cycle11_point_estimate_modifier_scope_and_panel_attribution(self):
-        polish = (ROOT/"medical-sci-finalize/references/polish-rules.md").read_text(encoding="utf-8")
-        for phrase in ["same-backbone", "点估计", "前置统领修饰语"]:
-            self.assertIn(phrase, polish)
-        abstract_rules = (ROOT/"medical-sci-abstract/references/writing-rules.md").read_text(encoding="utf-8")
-        for phrase in ["coverage point estimates exceeded 0.900", "总体 X 以及 [队列]的 Y", "同骨干"]:
-            self.assertIn(phrase, abstract_rules)
-        legends_rules = (ROOT/"medical-sci-legends/references/writing-rules.md").read_text(encoding="utf-8")
-        self.assertIn("stacked-bar panel", legends_rules)
+
+if __name__ == "__main__":
+    unittest.main()

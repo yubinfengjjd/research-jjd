@@ -108,7 +108,7 @@
 
 **章节自检（section = methods / legends / results / introduction / discussion / abstract）** `scripts/manuscript_check.py <methods|legends|results|introduction|discussion|abstract> <EN 稿> [--zh ZH 稿] [--results Results_en 稿]`：检查词数、句长、禁用词、模板句频次、引用格式与 PMID 数、中英 PMID 与数字一致性、稿件数字能否在 Results 中找到、panel 字母大小写等可数规则；ERROR 必须修掉。纯风格计数只提供线索，代理按具体上下文修改或说明保留依据，不将所有WARN升级为作者问题。实质叙事问题由全稿审阅逐项处置；论证质量和引用支持关系不在脚本范围内。篇幅不设通用最低值，明确限制按[篇幅配置](writing-limits.md)执行。
 
-Abstract 模式正文默认≤250词，Keywords/Highlights 不计入正文词数，但参与强度词与数字核对；默认不带引用、图表号或引用占位。指定期刊篇幅可用 `--max-words`，明确要求引用时才用 `--allow-abstract-references`。四段结构、Results 4–6句（或按字数自然分句），不得用分号链压缩和证据核对按 medical-sci-abstract 执行；脚本不验证统计定义、CI归属和所有中英单位。
+Abstract 模式正文默认≤250词，Keywords/Highlights 不计入正文词数，但参与强度词与数字核对；默认不带引用、图表号或引用占位。指定期刊篇幅可用 `--max-words`，明确要求引用时才用 `--allow-abstract-references`。四段结构与证据核对按medical-sci-abstract执行；Results句数和分号只作诊断，按信息覆盖和自然逻辑分句，不为达到句数或标点配额改写；脚本不验证统计定义、CI归属和所有中英单位。
 
 - 关键计数行的“数值”或“规范写法”列必须写成“数字 + 单位”，单位需在脚本已知集合内（临床组、重复组件/组件、受试者簇、扫描、图像）；只有数字没有可识别单位的行只做出处核对，稿件侧不检查。
 - 改动这两个脚本后运行 `scripts/test_checks.py`（11 项回归测试，无需网络、不读项目）。
@@ -130,8 +130,8 @@ Abstract 模式正文默认≤250词，Keywords/Highlights 不计入正文词数
 
 各写作技能 journal-style 的同名节采用开发计划 §2 原文。`manuscript_check.py` 与 `medical-sci-abstract/scripts/check_abstract.py` 使用两个字节一致的 `style_check.py` 副本；复制更新时必须同步并重跑语义一致性测试。`medical-sci-finalize/scripts/check_finalize.py` 直接复用 pipeline 副本，不另实现第三套解析。
 
-英语散文按空白分词，保留统计记号；移除标题、Markdown 表格行、代码围栏和加粗图表标题，panel 标签不计词。正文软换行合并；空段、标题、图表注边界与列表项重置短句连跑。小数、常见缩写、括号与引号感知分句；非常见缩写、不成对括号、公式与引文含句点的复杂情形仍需人工复核。结构性分号识别缩写-释义清单、统计括号和引用列表（包括本文图表引用），普通括号与 Notes 标签不会整体豁免；结构性分号仍计入句长，不免除 60 词硬顶。缩写清单识别全大写缩写，以及至少含两个大写字母的混合大小写缩写（如 eGFR、t-SNE）；其余非常见写法需人工复核。
+英语散文按空白分词，保留统计记号；移除标题、Markdown 表格行、代码围栏和加粗图表标题，panel 标签不计词。正文软换行合并；空段、标题、图表注边界与列表项重置短句连跑。小数、常见缩写、括号与引号感知分句；非常见缩写、不成对括号、公式与引文含句点的复杂情形仍需人工复核。结构性分号识别缩写-释义清单、统计括号和引用列表（包括本文图表引用），普通括号与 Notes 标签不会整体豁免；结构性分号仍计入句长诊断；默认不存在60词硬门。缩写清单识别全大写缩写，以及至少含两个大写字母的混合大小写缩写（如 eGFR、t-SNE）；其余非常见写法需人工复核。
 
-检查器输出散文分号链 ERROR、任何 >60 词 ERROR、>45 词句占比 >10% WARN、平均句长不在 18–28 WARN、同一段连续 ≥3 个 <8 词短句 WARN。每项附节名、句序号、一基行号、零基字符偏移、首词、前 80 字符、当前值、阈值和拆句/连词/紧凑并列提示；聚合项的 locations 列表列出涉及的长句或短句。平均值与占比基于当前输入的全部散文句，不跨文件拼接短句连跑。
+检查器默认对散文分号链、>60词句、>45词句占比>10%、平均句长不在18–28、同段连续≥3个<8词短句发WARN。每项保留节名、句序号、行号、字符偏移、首词、上下文、当前值及诊断阈值，供语境审读，不要求为清零提示拆句或连接短句。聚合项的locations列出涉及句子；平均值与占比基于当前输入全部散文句，不跨文件拼接短句连跑。只有明确传入作者/期刊要求的`required_limits`字段才为对应限制发ERROR，见[篇幅配置](writing-limits.md)。
 
-`analyze_style(text, section)` 供本地复用，返回 statistics / sentences / findings；`manuscript_check.py --json` 仍返回既有 findings 列表，旧字段和非风格检查维持原义。连接词的逻辑恰当性、单分号是否为同一命题补充，以及连续相同起句由人工按 journal-style 复核；计数器不验证科学含义或把改写建议自动应用到稿件。
+`analyze_style(text, section, required_limits=None)` 供本地复用，返回 statistics / sentences / findings；`manuscript_check.py --json` 仍返回既有 findings 列表，旧字段和非风格检查维持原义。连接词的逻辑恰当性、单分号是否为同一命题补充，以及连续相同起句由人工按 journal-style 复核；计数器不验证科学含义或把改写建议自动应用到稿件。

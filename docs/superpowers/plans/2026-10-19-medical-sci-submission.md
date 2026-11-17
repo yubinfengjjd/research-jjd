@@ -1,5 +1,7 @@
 # Medical SCI submission Implementation Plan
 
+> Historical implementation plan, archived in place. Checkbox state is a record of the original work session, not the current product status or an instruction to rerun development. Use the maintained skill and version-bound validation records for current behavior.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development or executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Add an evidence-grounded journal-adaptation skill and integrate it as pipeline stage 13, with an independent standalone entry.

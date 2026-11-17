@@ -1,6 +1,6 @@
 """Render a checked ``outline.yaml`` into 写作大纲.docx + 写作大纲.md and copy each subsection's files into its own
 folder (figures / tables / captions / code), outside the project. Refuses to build when outline_check reports
-issues. Only copies; never modifies the project.
+blocking issues. Narrative WARN diagnostics are returned without blocking. Only copies; never modifies the project.
 
 Usage: python outline_build.py outline.yaml --project <root> --out <dir outside root> [--figkit-toml <toml>]
 """
@@ -410,8 +410,9 @@ def build(outline_path, project, out, figkit_toml=None):
     if out == root or root in out.parents:
         raise ValueError(f"output {out} must be outside the project {root}")
     issues = outline_check.check(outline_path, root, figkit_toml)
-    if issues:
-        raise RuntimeError("outline_check reported issues:\n" + "\n".join(issues))
+    blockers = outline_check.blocking_issues(issues)
+    if blockers:
+        raise RuntimeError("outline_check reported issues:\n" + "\n".join(blockers))
     o = yaml.safe_load(Path(outline_path).read_text(encoding="utf-8"))
     o["_coverage"] = outline_check.coverage(o, root)
     out.mkdir(parents=True, exist_ok=True)
@@ -430,7 +431,7 @@ def build(outline_path, project, out, figkit_toml=None):
                 _copy_section(root, o, sec, results, dest)
             else:
                 dest.mkdir(parents=True, exist_ok=True)
-    return dict(docx=str(dx), md=str(md), out=str(out))
+    return dict(docx=str(dx), md=str(md), out=str(out), diagnostics=issues)
 
 
 def main(argv=None):

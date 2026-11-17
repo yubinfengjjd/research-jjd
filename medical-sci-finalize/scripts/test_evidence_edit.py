@@ -87,6 +87,10 @@ def fixture(root, combined=True):
                   summary='Whole Results read for flow and preserved adverse evidence.', issues=[dict(id='N1', kind='repetition',
                   source=[span(en, EN_OLD)], candidate=[span(en, EN_NEW)], decision='resolved', central=False,
                   reviewed_by='Author', reason='Repeated cohort qualifier merged within Results; adverse result retained.')]))
+    review['review_status'] = dict(state='reviewed', reviewed_by='Author',
+        rationale='Synthetic explicit inventory review, not real scientific approval.',
+        facts=[dict(claim='C1', source=review['claims'][0]['source'], candidate=review['claims'][0]['candidate'],
+                    reason='Synthetic unique adverse finding and count explicitly inventoried.')])
     review_path = root/'review.json'
     review_path.write_text(json.dumps(review, ensure_ascii=False), encoding='utf-8')
     changes = root/'changes.json'
@@ -121,6 +125,22 @@ class StructuralTests(unittest.TestCase):
         self.assertEqual(len(result['applied']), 3)
         self.assertEqual((self.before/'Results/Results_EN.md').read_text(encoding='utf-8'), EN_NEW)
         self.assertEqual((Path(result['archive'])/'Results/Results_EN.md').read_text(encoding='utf-8'), EN_OLD)
+
+    def test_legacy_comparison_retains_mechanics_but_apply_needs_inventory_attestation(self):
+        del self.review['review_status']
+        self.save()
+        self.assertEqual(self.compare()['errors'], [])
+        self.changes.write_text(json.dumps({'schema_version': 1, 'review_sha256': digest(self.review_path), 'decisions': ['N1']}), encoding='utf-8')
+        self.decisions.write_bytes(self.changes.read_bytes())
+        result = edit.apply_edit(self.before, self.after, self.review_path, self.changes, self.decisions, self.before.parent, '2026-11-05')
+        self.assertIn('legacy comparison alone', str(result['errors']))
+        self.assertFalse((self.before.parent/'_archive').exists())
+
+    def test_legacy_generated_placeholder_identities_are_not_actual_review(self):
+        del self.review['review_status']
+        self.review['reviewers'] = dict(editor='Scientific Editor', scientific='Scientific Reviewer', bilingual='Bilingual Reviewer')
+        self.save()
+        self.assertIn('generated placeholders', str(self.compare()['errors']))
 
     def test_stale_source_and_candidate_hashes(self):
         for side in [self.before, self.after]:
@@ -469,7 +489,7 @@ class StructuralTests(unittest.TestCase):
         self.assertEqual(edit._tokens('Fig. 4a and a regression'), edit._tokens('Fig. 4a'))
         self.assertEqual(edit._named_scopes('Estimated in seed-0.'), {'run': {'seed 0'}})
         self.assertEqual(edit._named_scopes('Estimated in seed 0.'), {'run': {'seed 0'}})
-        self.assertTrue(edit._evidence_equal(
+        self.assertFalse(edit._evidence_equal(
             edit._tokens('Showed without consistent advantage in descriptive scans.'),
             edit._tokens('Did not show consistent advantage in descriptive scans; exploratory check.')))
         self.assertFalse(edit._evidence_equal(
@@ -480,10 +500,10 @@ class StructuralTests(unittest.TestCase):
         self.assertEqual(edit._tokens('In stage-1 evaluation, coverage ran on Fig. 8C.'),
                          {(3, 'fig 8c')})
         self.assertEqual(edit._tokens('Evaluated in seed-0.'), edit._tokens('Evaluated in seed 0.'))
-        self.assertTrue(edit._evidence_equal(
+        self.assertFalse(edit._evidence_equal(
             edit._tokens('### 3.7.2 Error capture varies, while utility analyses remain descriptive'),
             edit._tokens('### 3.7.2 Error ordering reverses; utility is not established')))
-        self.assertTrue(edit._evidence_equal(
+        self.assertFalse(edit._evidence_equal(
             edit._tokens('Retained as descriptive estimates.'),
             edit._tokens('Reported without a prespecified inferential threshold.')))
         self.assertFalse(edit._evidence_equal(
@@ -491,6 +511,53 @@ class StructuralTests(unittest.TestCase):
             edit._tokens('Utility analyses showed gain.')))
         self.assertEqual(edit._named_scopes('differs by cohort\n\nRepresentation-stage comparison'), {})
         self.assertEqual(edit._named_scopes('seed Jensen–Shannon disagreement'), {})
+
+    def test_inferential_statuses_are_not_collapsed(self):
+        non_inferential = edit._tokens('Non-inferential curves were reported.')
+        no_threshold = edit._tokens('Curves were reported without a prespecified inferential threshold.')
+        descriptive = edit._tokens('Descriptive curves were reported.')
+        self.assertNotEqual(non_inferential, no_threshold)
+        self.assertNotEqual(non_inferential, descriptive)
+        self.assertFalse(edit._evidence_equal(non_inferential, no_threshold))
+        self.assertFalse(edit._evidence_equal(non_inferential, descriptive))
+        states = [non_inferential, no_threshold, descriptive,
+                  edit._tokens('Curves were reported without inferential testing.'),
+                  edit._tokens('Curves were reported without an inferential test.'),
+                  edit._tokens('Curves were reported without inferential comparison.'),
+                  edit._tokens('A benefit was not established.')]
+        self.assertEqual(states[3], states[4])
+        for i, before in enumerate(states):
+            for j, after in enumerate(states):
+                if i != j and {i, j} != {3, 4}:
+                    self.assertFalse(edit._evidence_equal(before, after), (i, j))
+        self.assertEqual(edit._tokens('Non inferential curves.'), edit._tokens('Non-inferential curves.'))
+        for noun in ('test', 'testing', 'comparison', 'ranking', 'threshold'):
+            self.assertFalse(edit._evidence_equal(edit._tokens('without a prespecified inferential '+noun),
+                                                 edit._tokens('without an inferential '+noun)), noun)
+            self.assertEqual(edit._tokens('no inferential '+noun), edit._tokens('without inferential '+noun))
+            self.assertEqual(edit._tokens('no prespecified inferential '+noun),
+                             edit._tokens('without a prespecified inferential '+noun))
+            self.assertFalse(edit._evidence_equal(edit._tokens('no prespecified inferential '+noun),
+                                                 edit._tokens('no inferential '+noun)), noun)
+        self.assertFalse(edit._evidence_equal(edit._tokens('no inferential testing'),
+                                             edit._tokens('no inferential comparison')))
+        self.assertFalse(edit._evidence_equal(edit._tokens('first score 0.72'), edit._tokens('2nd score 0.72')))
+        self.assertFalse(edit._evidence_equal(edit._tokens('one evaluated seed score 0.72'), edit._tokens('two evaluated seeds score 0.72')))
+
+    def test_qualifier_repetition_is_not_a_scientific_count_invariant(self):
+        one = edit._tokens('In the single evaluated seed, Analysis A had MAE 0.72 px.')
+        repeated = edit._tokens('In the single evaluated seed, in the single evaluated seed, Analysis A had MAE 0.72 px.')
+        self.assertTrue(edit._evidence_equal(one, repeated))
+        self.assertTrue(edit._evidence_equal(repeated, one))
+        self.assertFalse(edit._evidence_equal(edit._tokens('Analysis A had MAE 0.72 px.'), one))
+        # Repetition alone is not evidence change. The extra verbal statement
+        # still requires a genuine inventory review; tokens cannot certify it.
+        self.assertTrue(edit._evidence_equal(
+            edit._tokens('In the single evaluated seed, coverage was 0.90.'),
+            edit._tokens(
+                'In the single evaluated seed, coverage was 0.90. '
+                'The same single evaluated seed supported the calibration result.'
+            )))
         self.assertEqual(edit._tokens('0.5 像素与 3.87 µm/像素'), edit._tokens('0.5 px and 3.87 µm/px'))
         self.assertEqual(edit._canonical_translated_anchor('Fig. 6A'),
                          edit._canonical_translated_anchor('图 6A'))

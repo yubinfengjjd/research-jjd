@@ -1,36 +1,35 @@
-# 摘要判断示例
+# 判断示例
 
-以下数据都是说明规则的虚构例子，不得作为真实手稿证据。
+以下摘要及数据完全虚构，只说明信息选择与范围归属；不得作为真实研究证据。
 
-## 前置不足
+## 自然分句与结论相关性
 
-输入只有 Methods、Results、图注和 Introduction，Discussion 尚未完成。处理：列出 Discussion 缺项及 `medical-sci-discussion` 建议，停止。不提供“可先用的摘要草稿”，也不先写 Keywords/Highlights。完整文件内容若项目状态为 `需返工`，同样先解决状态和返工。
+### Background
 
-## 效应与不确定性
+A diagnostic score may retain discrimination after transfer while its absolute risk estimates change. We evaluated whether recalibration reduced prediction error in external hospitals.
 
-原文报告 Brier score 由 0.182 降至 0.160，配对差值 -0.022（95% CI，-0.035 至 -0.009）。摘要可同时给两个点估计、差值及其 CI，说明差值为校准后减去校准前。若只报告两组各自 CI，则不能把它们拼成差值 CI，不能自己计算相对改善。
+### Methods
 
-## 多次运行的描述性汇总与推断
+We retrospectively evaluated 1,200 examinations from two hospitals. Recalibration was fitted on a separate calibration partition, and paired differences in Brier score were estimated on held-out examinations using one trained model.
 
-主终点报告多次训练的均值和运行范围，未计算均值的合并 CI；同一主要比较另有每次运行的配对效应与 CI。可以给描述性均值/范围，再给明确标注某次运行的效应与对应 CI，并说明其他运行方向或区间的不一致。不能把单次比较 CI 接在多次运行均值之后，不能以单次阳性宣布总体优势，也不能把逐次 CI 外包络写成合并 CI。没有同一主终点的合法 CI 时仍须报告缺口；其他指标的 CI 不算补齐。
+### Results
 
-## 重要例外
+The Brier score difference after recalibration was −0.018 (95% confidence interval, −0.029 to −0.007). Prediction error did not clearly decrease in the low-quality subgroup (difference, −0.003; 95% confidence interval, −0.015 to 0.009).
 
-总体指标改善，但低质量图像亚组没有改善。Results 至少一句保留亚组例外；Conclusions 的范围只能覆盖总体评价，不写“在所有分层中均表现良好”。没有亚组 CI 或检验时不称其显著变差。
+### Conclusions
 
-## 贡献强度
+Recalibration improved average prediction error in these retrospective cohorts, with no clear improvement in low-quality examinations.
 
-回顾性、一个留出设备、没有患者结局。合适贡献：提供关于设备迁移时校准表现的证据，并提示需要进一步跨设备验证。越界贡献：“首次证明提高患者结局，可立即临床部署”。前者的具体内容仍须从本稿 Discussion 与 Results 取得，不能搬用本示例。
+本例 Results 两句即可承载主要效应及决定性例外，不补到四句。单模型范围在摘要方法中声明并支配其结果；不能假定主文 Methods 自动覆盖摘要。没有独立摘要证据支持时，不为 Highlights 新增贡献。
 
-## 关键冲突
+## 主终点与 CI
 
-Results 和图注明确报告不同的主终点效应，没有源数据或作者已有裁决。列双方值、CI 和出处并停止；不能挑更有利的图注值、做均值或宣称已经核验。补充权威证据后按一致性防线解决，再恢复摘要。
+多次运行均值可以与明确标注归属的逐次效应和 CI 并列，但单次 CI 不能接在多次运行均值后。区间跨零不等于等效。未报告合法主终点 CI 时按现行规则登记缺口，不能借其他终点的区间填补。
 
-## 字数取舍
+## 取舍与范围
 
-超出 250 词时，先删泛背景和次要方法细节；不删主终点 CI、验证性质或限制结论的关键例外。不能把这些只挪到 Highlights，再把四段正文称作完整摘要。
+与主结论无关的次要描述分析可省略，内部覆盖表记录理由；会改变主要结论的失败亚组必须保留。结论若声称存在类别差异，Results 要给相应类别证据；这不要求列尽所有未达目标的分层。未做检验、未预设阈值、事后推断及未显著分别核对，不强制用某个限定短语。
 
+## 前置与冲突
 
-## 次要分析的合理省略
-
-主要问题由预设终点、验证范围和一个关键失败亚组回答；另有与主要结论无关的次要描述分析。摘要保留前者，可省略后者。内部覆盖表登记被省略分析的来源、次要性质和不影响结论的理由，由代理完成选择；不能以同样理由省略决定性失败亚组。
+缺 Discussion 或其内容实质未完成时，列缺项并停止，不先写可用初稿、关键词或 Highlights。主终点在 Results 与图注冲突且无权威证据裁定时保留双方值并解决冲突，不挑更有利数字。

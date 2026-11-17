@@ -56,14 +56,14 @@ def analyze(text, limit=250, headings=DEFAULT_HEADINGS):
     if body_count == limit:
         warnings.append(f'word-limit-margin: Body word count {body_count} equals limit {limit} (0-word margin)')
     if sentence_count > 6:
-        warnings.append(f'results-sentences: Results sentence count estimate is {sentence_count} (recommended 4-6)')
+        warnings.append(f'results-sentences: Results sentence count estimate is {sentence_count}; review natural grouping and information coverage, not a sentence quota')
     results_semis = prose_semicolons(result_body) if result_body else 0
     if results_semis >= 1:
-        warnings.append(f'results-semicolons: Results uses {results_semis} prose semicolon(s); prefer crisp separate sentences')
+        warnings.append(f'results-semicolons: Results uses {results_semis} prose semicolon(s); review logical grouping in context; punctuation count alone does not require rewriting')
     return {'style': style, 'warnings': warnings, 'words_body': body_count, 'words_with_headings': body_count + heading_count,
             'word_limit': limit, 'section_words': {name: len(body.split()) for name, body in sections.items()},
             'results_sentences_estimate': sentence_count, 'errors': errors,
-            'manual_checks': ['Confirm 4-6 Results sentences (or natural sentences within the word limit); no semicolon chains; abbreviations may affect the estimate',
+            'manual_checks': ['Review Results information coverage and natural sentence divisions within the word limit; sentence and punctuation counts are diagnostics; abbreviations may affect the estimate',
                               'Check all facts, numbers, uncertainty, claim strength and EN/ZH alignment against sources',
                               'Confirm that the abstract prioritizes the primary endpoint, key supporting evidence and decisive adverse findings; '
                               'record omitted secondary analyses and their source locations in the internal coverage table']}

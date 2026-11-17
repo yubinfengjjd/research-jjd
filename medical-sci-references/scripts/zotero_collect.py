@@ -152,6 +152,13 @@ def equivalent_local_field(old,data,field,meta,source,column,identifier):
         return True
     return False
 
+def identifier_column(label):
+    """Same writing-stage table contract as citation_stats.identifier_column."""
+    import unicodedata
+    value=re.sub(r'\s+','',unicodedata.normalize('NFKC',label)).casefold()
+    return value.startswith(('标识','正文标识')) or value.endswith('标识')
+
+
 def verify_local_tables(project,ident,meta):
     if not project:return
     # Finalize stores candidate bibliographic fields in a structured manifest.
@@ -173,9 +180,9 @@ def verify_local_tables(project,ident,meta):
         for line in lines:
             if not line.strip().startswith('|'):headers=None;continue
             cells=[x.strip().strip('`*') for x in line.strip().strip('|').split('|')]
-            if any(x in cells for x in ('标识','正文标识')):headers=cells;continue
+            if any(identifier_column(x) for x in cells):headers=cells;continue
             if not headers or len(cells)!=len(headers):continue
-            row=dict(zip(headers,cells));idtext=row.get('标识',row.get('正文标识',''))
+            row=dict(zip(headers,cells));idtext='; '.join(value for label,value in row.items() if identifier_column(label))
             if ident['id'] not in [x['id'] for x in identifiers(idtext)]:continue
             data=meta['data'];diff=[]
             for column,field in (('题名','title'),('期刊','publicationTitle'),('期刊/出处','publicationTitle')):

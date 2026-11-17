@@ -168,14 +168,12 @@ CROSS_REF = re.compile(r"\b(?:(?:Supplementary|Extended Data)\s+)?(?:Fig(?:ure)?
 # are organised by scientific question, so these never reach a figure. Case-insensitive; a project lifts one
 # with [qa] caveat_allow = [key] only when the word is part of a genuine method name.
 DEV_HISTORY = {
-    "pre-registered": r"\bpre-?regist(?:ered|ration)\b",
     "hypothesis status": r"\bhypothes(?:is|es) status\b",
     "closeout": r"\bclose-?out\b",
     "closure": r"\bclosure\b",
     "wave": r"\bwave[- ]?\d\b",
     "earlier version": r"\b(?:earlier|previous|old|legacy|historical) (?:version|model|anchor|pipeline)\b",
     "repair": r"\brepair(?:ed)?\b",
-    "post-outcome": r"\bpost-?outcome\b",
     "reconciliation": r"\breconcil(?:ed|iation)\b",
 }
 

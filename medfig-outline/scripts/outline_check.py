@@ -12,7 +12,7 @@ Methods cite only ``design_assets``; every asset has a 图 / 表 line saying wha
 no plotting / table-building script is listed as code.
 
 Usage: python outline_check.py outline.yaml --project <root> [--figkit-toml <toml>]
-Exit 1 when any issue is found. Only reads.
+Exit 1 for evidence, asset or explicit project-requirement violations; generic narrative diagnostics are WARN. Only reads.
 """
 import argparse
 import ast
@@ -31,7 +31,7 @@ if str(LIB) not in sys.path:
 from figkit import qa  # noqa: E402
 
 # Chinese development-history words (qa.DEV_HISTORY covers English)
-DEV_ZH = {"预注册": r"预注册", "早期版本": r"早期(?:版本|模型)", "修复": r"修复(?:后|前)?的?(?:模型|版本|主线|三分类|决策头)|(?:修复前|修复后)",
+DEV_ZH = {"早期版本": r"早期(?:版本|模型)", "修复": r"修复(?:后|前)?的?(?:模型|版本|主线|三分类|决策头)|(?:修复前|修复后)",
           "重拟合": r"重拟合", "口径裁决": r"口径裁决", "开发阶段": r"开发(?:阶段|日志|日记)"}
 NUM = re.compile(r"(?<![\w./])[+−-]?\d[\d,]*(?:\.\d+)?(?:/\d+)?%?")
 REF = re.compile(r"^(Fig|S)(\d+)([a-z](?:-[a-z])?)?$|^(T\d+|ST\d+)$")
@@ -129,17 +129,19 @@ def _main_figs_in(sec, main):
 def _structure(o, lim):
     """Plan the outline by argument, not one section per figure (outline_format.md section 6)."""
     out = []
+    def add(key, message):
+        out.append(_diagnostic(o, key, message))
     M, R = o.get("methods", []), o.get("results", [])
     main = set(o.get("main_figures", []))
     if len(R) > lim["results_max_sections"]:
-        out.append(f"structure: {len(R)} top-level Results sections (max {lim['results_max_sections']}); group them "
-                   "by the argument and use subsections")
-    if R and len(R) < lim["results_min_sections"] and not str(o.get("results_fewer_sections_reason", "")).strip():
-        out.append(f"structure: only {len(R)} top-level Results sections (aim for {lim['results_min_sections']}-"
-                   f"{lim['results_max_sections']}); split over-merged sections, or state why the study's argument "
-                   "needs fewer in results_fewer_sections_reason")
+        add('results_max_sections', f"structure: {len(R)} top-level Results sections (max {lim['results_max_sections']}); review the argument's grouping")
+    required = (o.get('requirements') or {}).get('outline', {}) if isinstance(o.get('requirements') or {}, dict) else {}
+    required = required if isinstance(required, dict) else {}
+    if R and len(R) < lim["results_min_sections"] and ('results_min_sections' in required or not str(o.get("results_fewer_sections_reason", "")).strip()):
+        add('results_min_sections', f"structure: only {len(R)} top-level Results sections (aim for {lim['results_min_sections']}-"
+                   f"{lim['results_max_sections']}); retain an evidence-complete short argument; record rationale if useful")
     if len(M) == len(R) and len(R) >= 4 and all(len(_main_figs_in(s, main)) == 1 for s in R):
-        out.append("structure: Methods and Results have the same number of sections and every Results section is "
+        out.append("WARN: structure: Methods and Results have the same number of sections and every Results section is "
                    "one figure -- plan Results by the argument (one section may use several figures)")
     for kind, secs in (("Methods", M), ("Results", R)):
         for sec, depth, parents in _tree(secs):
@@ -147,13 +149,12 @@ def _structure(o, lim):
             if parents and not str(sec["id"]).startswith(str(parents[-1]["id"]) + "."):
                 out.append(f"structure: {kind} {sec['id']} is not numbered under {parents[-1]['id']}")
             if len(subs) == 1:
-                out.append(f"structure: {kind} {sec['id']} has a single subsection; merge it into the parent")
+                out.append(f"WARN: structure: {kind} {sec['id']} has a single subsection; review whether it needs a separate heading")
             if not subs:
                 n = (sum(len(b.get("points", [])) for b in sec.get("focus", [])) if kind == "Methods"
                      else sum(len(p.get("points", [])) for p in sec.get("paragraphs", [])))
-                if n < 2:
-                    out.append(f"structure: {kind} {sec['id']} has {n} point(s); a section needs at least 2 "
-                               "(otherwise merge it)")
+                if n < lim['min_section_points']:
+                    add('min_section_points', f"structure: {kind} {sec['id']} has {n} point(s); diagnostic reference {lim['min_section_points']}; do not add filler points")
     return out
 
 
@@ -751,22 +752,52 @@ def check(outline_path, project, figkit_toml=None):
                 if cfg is not None:
                     out += [f"{where}: project code pattern {p!r}" for p in qa.forbidden_in_text(bare, cfg)]
     # ---- style: an outline is writing guidance, not a data dump (references/outline_format.md §5)
-    out += _style(o)
-    out += _structure(o, {**STYLE, **(o.get("style") or {})})
+    try:
+        lim = _limits(o)
+    except ValueError as error:
+        out.append('requirements: ' + str(error))
+        lim = {**STYLE, **(o.get('style') or {})}
+    out += _style(o, lim)
+    out += _structure(o, lim)
     order, first = _order(o, root)
     out += order + _items_and_code(o, first) + _code_found(o, root)
     return out
 
 
 STYLE = dict(point_max_chars=70, point_max_numbers=2, paragraph_max_points=3, paragraph_max_numbers=4,
-             section_max_paragraphs=3, opener_max_repeat=2, results_min_sections=5, results_max_sections=8)
+             section_max_paragraphs=3, opener_max_repeat=2, results_min_sections=5, results_max_sections=8,
+             min_section_points=2)
 OPENER = re.compile(r"^\s*(引用|根据|如|见)\s*(?:Fig|S|ST|T)\s?\d", re.I)
 
 
-def _style(o):
+def _limits(o):
+    requirements = o.get('requirements') or {}
+    if not isinstance(requirements, dict):
+        raise ValueError('requirements must be a mapping')
+    required = requirements.get('outline', {})
+    if (not isinstance(required, dict) or set(required) - set(STYLE)
+            or any(type(v) is not int or v < 1 for v in required.values())):
+        raise ValueError('requirements.outline must map known narrative count keys to positive integers')
+    return {**STYLE, **(o.get('style') or {}), **required}
+
+
+def _diagnostic(o, key, message):
+    requirements = o.get('requirements') or {}
+    required = requirements.get('outline', {}) if isinstance(requirements, dict) else {}
+    return message if isinstance(required, dict) and key in required else 'WARN: ' + message
+
+
+def blocking_issues(issues):
+    """Compatibility: check still returns strings; WARN diagnostics never block a build."""
+    return [issue for issue in issues if not issue.startswith('WARN: ')]
+
+
+def _style(o, lim=None):
     """Length / density / repetition limits; thresholds overridable with a top-level ``style:`` block."""
-    lim = {**STYLE, **(o.get("style") or {})}
+    lim = _limits(o) if lim is None else lim
     out = []
+    def add(key, message):
+        out.append(_diagnostic(o, key, message))
     allow_all = set(o.get("allow_numbers", []))
 
     def nums(t):
@@ -781,30 +812,29 @@ def _style(o):
             blocks = ([(p.get("label", ""), p.get("points", [])) for p in sec.get("paragraphs", [])] if kind == "Results"
                       else [(b.get("topic", ""), b.get("points", [])) for b in sec.get("focus", [])])
             if kind == "Results" and len(blocks) > lim["section_max_paragraphs"]:
-                out.append(f"style: Results {sec['id']} has {len(blocks)} paragraphs (max {lim['section_max_paragraphs']}; "
-                           "merge or move detail to the figure caption)")
+                add('section_max_paragraphs', f"style: Results {sec['id']} has {len(blocks)} paragraphs (max {lim['section_max_paragraphs']}; review narrative density)")
             openers = {}
             for label, pts in blocks:
                 if len(pts) > lim["paragraph_max_points"]:
-                    out.append(f"style: {kind} {sec['id']} {label}: {len(pts)} points (max {lim['paragraph_max_points']})")
+                    add('paragraph_max_points', f"style: {kind} {sec['id']} {label}: {len(pts)} points (max {lim['paragraph_max_points']})")
                 if kind == "Results" and sum(len(nums(t)) for t in pts) > lim["paragraph_max_numbers"]:
-                    out.append(f"style: {kind} {sec['id']} {label}: {sum(len(nums(t)) for t in pts)} numbers "
+                    add('paragraph_max_numbers', f"style: {kind} {sec['id']} {label}: {sum(len(nums(t)) for t in pts)} numbers "
                                f"(max {lim['paragraph_max_numbers']}; keep the key ones, point to the table for the rest)")
                 for t in pts:
                     if len(t) > lim["point_max_chars"]:
-                        out.append(f"style: {kind} {sec['id']} {label}: point is {len(t)} chars (max "
+                        add('point_max_chars', f"style: {kind} {sec['id']} {label}: point is {len(t)} chars (max "
                                    f"{lim['point_max_chars']}; one instruction per point): {t[:30]}…")
                     if kind == "Results" and len(nums(t)) > lim["point_max_numbers"]:
-                        out.append(f"style: {kind} {sec['id']} {label}: {len(nums(t))} numbers in one point (max "
+                        add('point_max_numbers', f"style: {kind} {sec['id']} {label}: {len(nums(t))} numbers in one point (max "
                                    f"{lim['point_max_numbers']}): {t[:30]}…")
                     if OPENER.match(t):
-                        out.append(f"style: {kind} {sec['id']} {label}: point opens with a citation ({t[:12]}…); "
+                        out.append(f"WARN: style: {kind} {sec['id']} {label}: point opens with a citation ({t[:12]}…); "
                                    "start with what to write (说明 / 对比 / 强调 …), put the citation in cites")
                     k = t.strip()[:2]
                     openers[k] = openers.get(k, 0) + 1
             for k, n in openers.items():
                 if n > lim["opener_max_repeat"] + 1:
-                    out.append(f"style: {kind} {sec['id']}: {n} points start with {k!r}; vary the wording")
+                    add('opener_max_repeat', f"style: {kind} {sec['id']}: {n} points start with {k!r}; review repetition in context")
     return out
 
 
@@ -821,8 +851,9 @@ def main(argv=None):
     cited = sum(r[4] in ("cited", "pending") for r in rows)
     print(f"coverage: {cited}/{len(rows)} manuscript assets cited "
           f"({sum(r[4].startswith('excluded') for r in rows)} excluded)")
-    print(f"{len(issues)} issue(s)")
-    return 1 if issues else 0
+    blockers = blocking_issues(issues)
+    print(f"{len(blockers)} issue(s), {len(issues)-len(blockers)} warning(s)")
+    return 1 if blockers else 0
 
 
 if __name__ == "__main__":

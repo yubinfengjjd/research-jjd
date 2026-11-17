@@ -9,6 +9,9 @@ import argparse
 import copy
 import json
 import re
+import shutil
+import subprocess
+import tempfile
 import zipfile
 from pathlib import Path
 from lxml import etree as E, html
@@ -44,7 +47,51 @@ def wrapper(field):
     return result
 
 
-def prepare(source, plan):
+def verify_resources(plan, validation_mode):
+    """Require source-bound local CSL replay for production delivery.
+
+    Explicit legacy/synthetic modes retain structural regression checkability;
+    they never establish delivery readiness, even if their caches look complete.
+    """
+    if validation_mode not in ('production', 'synthetic', 'legacy'):
+        raise ValueError('Unknown CSL validation mode')
+    resources = plan.get('resources')
+    required = {'input', 'processor', 'style', 'locale'}
+    if resources is None and validation_mode != 'production':
+        return None
+    if not isinstance(resources, dict) or set(resources) != required:
+        raise ValueError('CSL resources require input, processor, style and locale hash records')
+    for name in sorted(required):
+        resource = resources[name]
+        if (not isinstance(resource, dict) or not isinstance(resource.get('path'), str)
+                or not re.fullmatch(r'[0-9a-f]{64}', str(resource.get('sha256', '')))):
+            raise ValueError('Invalid CSL resource hash record: ' + name)
+        if not Path(resource['path']).is_absolute():
+            raise ValueError('CSL resource path must be absolute: ' + name)
+        if sha(resource['path']) != resource['sha256']:
+            raise ValueError('CSL input/processor/style/locale changed after rendering: ' + name)
+    if validation_mode == 'production':
+        if not isinstance(plan.get('processor_version'), str) or not plan['processor_version'].strip():
+            raise ValueError('CSL processor version is missing')
+        node = shutil.which('node')
+        if not node:
+            raise ValueError('Node runtime required to replay local CSL proof')
+        with tempfile.TemporaryDirectory(prefix='medsci-csl-proof-') as folder:
+            replay_path = Path(folder) / 'replayed.json'
+            result = subprocess.run([node, str(Path(__file__).with_name('make_csl_plan.cjs')),
+                                     *[resources[k]['path'] for k in ('input','processor','style','locale')],
+                                     str(replay_path)], capture_output=True, text=True,
+                                    encoding='utf-8', timeout=60)
+            if result.returncode != 0 or not replay_path.is_file():
+                raise ValueError('Local CSL replay failed: ' + result.stderr[-1500:])
+            replay = load(replay_path)
+            if any(replay.get(key) != plan.get(key) for key in
+                   ('schema','source_sha256','resources','processor_version','citations','bibliography')):
+                raise ValueError('CSL plan output differs from replay with its bound local resources')
+    return resources
+
+
+def prepare(source, plan, validation_mode='production'):
     if plan.get('schema') != 1 or plan.get('source_sha256') != sha(source):
         raise ValueError('Stale CSL plan or unsupported schema')
     parts = package(source)
@@ -71,13 +118,11 @@ def prepare(source, plan):
         raise ValueError('Incomplete, duplicate or unrelated bibliography items')
     numbers = {item: n for n, entry in enumerate(entries, 1) for item in entry['item_ids']}
     data = {str(i['id']):i['itemData'] for f in citations for i in f['data']['citationItems']}
-    resources = plan.get('resources')
+    resources = verify_resources(plan, validation_mode)
     if resources is not None:
-        for resource in resources.values():
-            if sha(resource['path']) != resource['sha256']:
-                raise ValueError('CSL input/processor/style/locale changed after rendering')
         input_data = load(resources['input']['path'])
-        if input_data['items'] != data or input_data['citations'] != [f['data'] for f in citations]:
+        if (input_data.get('source_sha256') != plan['source_sha256'] or input_data['items'] != data
+                or input_data['citations'] != [f['data'] for f in citations]):
             raise ValueError('CSL input does not match actual native citation metadata')
         props = E.fromstring(parts['docProps/custom.xml'])
         pref = ''.join(n[0].text or '' for n in sorted(props,key=lambda n:n.get('name',''))
@@ -128,11 +173,11 @@ def bibliography_bounds(root, field):
     return body, a, b
 
 
-def render(source, output, plan):
+def render(source, output, plan, *, validation_mode='production'):
     output = Path(output)
     if output.exists() or output.resolve() == Path(source).resolve():
         raise ValueError('Refuse to overwrite source or existing output')
-    parts, root, citations, bib = prepare(source, plan)
+    parts, root, citations, bib = prepare(source, plan, validation_mode)
     for f, cached in zip(citations, plan['citations']):
         parent = f['begin'].getparent()
         if any(r.getparent() is not parent for r in f['runs']):
@@ -177,13 +222,13 @@ def render(source, output, plan):
     with zipfile.ZipFile(output, 'x', zipfile.ZIP_DEFLATED) as z:
         for name, value in parts.items():
             z.writestr(name, value)
-    return check(source, output, plan)
+    return check(source, output, plan, validation_mode=validation_mode)
 
 
-def check(source, candidate, plan):
+def check(source, candidate, plan, *, validation_mode='production'):
     errors = []
     try:
-        srcpack, src, scit, sbib = prepare(source, plan)
+        srcpack, src, scit, sbib = prepare(source, plan, validation_mode)
         dstpack = package(candidate)
         dst = E.fromstring(dstpack['word/document.xml'])
         fs = fields(dst)
@@ -232,12 +277,15 @@ def check(source, candidate, plan):
         changed = [n for n in set(srcpack)|set(dstpack) if n != 'word/document.xml' and srcpack.get(n) != dstpack.get(n)]
         if changed:
             raise ValueError('Non-document package parts changed: '+str(changed))
-    except (ValueError, KeyError, TypeError, IndexError, E.XMLSyntaxError) as e:
+    except (ValueError, KeyError, TypeError, IndexError, OSError, subprocess.SubprocessError, E.XMLSyntaxError) as e:
         errors.append(str(e))
     return {'errors':errors, 'source_sha256':sha(source), 'candidate_sha256':sha(candidate),
             'citation_fields':len(plan.get('citations',[])), 'bibliography_entries':len(plan.get('bibliography',[])),
-            'status':'rendered CSL caches verified' if not errors else 'blocked',
-            'delivery_ready':not errors, 'word_refresh_tested':False}
+            'status':('rendered CSL caches verified' if validation_mode == 'production' else
+                      validation_mode + ' cache structure verified; not delivery') if not errors else 'blocked',
+            'validation_mode':validation_mode,
+            'csl_provenance_verified':not errors and validation_mode == 'production',
+            'delivery_ready':not errors and validation_mode == 'production', 'word_refresh_tested':False}
 
 
 def main():
@@ -247,9 +295,12 @@ def main():
     ap.add_argument('candidate', type=Path)
     ap.add_argument('--plan', type=Path, required=True)
     ap.add_argument('--report', type=Path, required=True)
+    ap.add_argument('--validation-mode', choices=('production','synthetic','legacy'), default='production',
+                    help='Only production verifies CSL provenance and can be delivery_ready')
     args = ap.parse_args()
     plan = load(args.plan)
-    result = render(args.source,args.candidate,plan) if args.mode == 'render' else check(args.source,args.candidate,plan)
+    result = (render(args.source,args.candidate,plan,validation_mode=args.validation_mode) if args.mode == 'render'
+              else check(args.source,args.candidate,plan,validation_mode=args.validation_mode))
     result['plan_sha256'] = sha(args.plan)
     save(args.report,result)
     print(json.dumps(result,ensure_ascii=False))

@@ -10,6 +10,59 @@ sys.path.insert(0, str(Path(__file__).parent))
 import manuscript_check as mc
 
 
+def test_repeated_source_reports_context_without_uniqueness_pressure(tmp_path):
+    path = tmp_path / 'Discussion_EN.md'
+    path.write_text('Prior work motivates the cohort choice (PMID: 12345678).\n\n'
+                    'Its measurement protocol also defines our endpoint (PMID: 12345678).', encoding='utf-8')
+    findings = mc.check('discussion', path)
+    repeated = [f for f in findings if f['rule'] == 'pmid-repeat']
+    assert repeated and repeated[0]['level'] == 'INFO'
+    assert '一般只' not in repeated[0]['msg']
+    assert 'cohort choice' in repeated[0]['context'] and 'measurement protocol' in repeated[0]['context']
+
+
+def test_no_citation_volume_target_is_manufactured(tmp_path):
+    from citation_stats import load_targets, collect
+    targets, warnings = load_targets(tmp_path)
+    assert all(v is None for v in targets['values'].values())
+    assert not [f for f in collect(tmp_path)['warnings'] if f['rule'] == 'citation-quota']
+
+
+def test_style_means_and_generic_counts_are_diagnostic_only():
+    from style_check import analyze_style
+    text = ' '.join(['word'] * 61) + '; a related clause; one final clause.'
+    result = analyze_style(text)
+    assert result['findings'] and all(f['level'] == 'WARN' for f in result['findings'])
+    assert '短句用连词' not in ' '.join(f['hint'] for f in result['findings'])
+
+
+def test_profile_style_severity_matches_emission():
+    diagnostic_rules = {'sentence-opener', 'negative-gap', 'scope-disclaimer', 'agrees-with',
+                        'extends', 'consistent-with', 'contrasts-with', 'would-test',
+                        'negative-boundary', 'we-found-opener'}
+    for profile in mc.PROFILES.values():
+        assert all(level == mc.W for level, rule, *_ in profile['rules'] if rule in diagnostic_rules)
+
+
+def test_explicit_author_style_limits_can_block():
+    from style_check import analyze_style
+    result = analyze_style('One clause; another clause.', required_limits={'prose_semicolons_max':0})
+    assert any(f['level']=='ERROR' and f['rule']=='semicolon-chain' for f in result['findings'])
+    with pytest.raises(ValueError):analyze_style('Clear prose.',required_limits={'sentence_max_words':True})
+
+
+def test_generic_lexical_and_intro_length_heuristics_do_not_block(tmp_path):
+    path=tmp_path/'Introduction_EN.md'
+    path.write_text(('word '*1201)+'\n\nTo our knowledge, this does not prove clinical benefit. '
+                    'To our knowledge, a novel cohort remains relevant.',encoding='utf-8')
+    findings=mc.check('introduction',path)
+    for rule in ('word-count','to-our-knowledge','hype'):
+        assert any(f['rule']==rule and f['level']==mc.W for f in findings)
+    assert not [f for f in findings if f['level']==mc.E]
+    path.write_text('This does not prove that the treatment works.',encoding='utf-8')
+    assert not [f for f in mc.check('discussion',path) if f['rule']=='overclaim' and f['level']==mc.E]
+
+
 @pytest.mark.parametrize('section', ['methods', 'results', 'discussion'])
 def test_short_evidence_complete_section_has_no_generic_minimum(tmp_path, section):
     path = tmp_path / 'Manuscript_EN.md'
@@ -77,7 +130,18 @@ def test_meta_jargon_and_generic_validation_closer_warn_only(tmp_path):
         encoding='utf-8',
     )
     res_rules = {f['rule']: f['level'] for f in mc.check('results', res_path)}
-    assert res_rules.get('descriptive-repeat') == mc.W
+    assert 'descriptive-repeat' not in res_rules
+
+    whereas_path = tmp_path / 'Whereas_EN.md'
+    whereas_path.write_text(
+        '# Results\n\nWhereas cohort A improved, cohort B declined. '
+        'Whereas cohort C improved, cohort D declined. '
+        'Whereas cohort E improved, cohort F declined.\n',
+        encoding='utf-8',
+    )
+    whereas_rules = {f['rule']: f['level'] for f in mc.check('results', whereas_path)}
+    assert 'rather-than' not in whereas_rules
+    assert 'descriptive-repeat' not in whereas_rules
 
 
 def test_cycle2_heading_density_citation_zh_and_abstract_warnings(tmp_path):

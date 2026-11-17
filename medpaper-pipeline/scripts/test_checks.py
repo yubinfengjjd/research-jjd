@@ -85,10 +85,10 @@ class ManuscriptChecks(unittest.TestCase):
     def test_words_ignore_panel_labels(self):
         self.assertEqual(mc.words_of("(a) one two (b) three (a–c) four"), 4)
 
-    def test_sentence_hard_cap(self):
+    def test_generic_sentence_count_is_diagnostic(self):
         en = make_project({"D.md": "**Figure 1. Title.** (a) " + "word " * 61 + "end.\n"}) / "D.md"
         res = mc.check("legends", en)
-        self.assertTrue(any(r["rule"] == "sentence-hard" and r["level"] == mc.E for r in res), res)
+        self.assertTrue(any(r["rule"] == "sentence-hard" and r["level"] == mc.W for r in res), res)
 
     def test_template_cap(self):
         en = make_project({"D.md": "## Discussion\nThis agrees with prior work. That agrees with it. It also agrees with that. X may differ.\n"}) / "D.md"

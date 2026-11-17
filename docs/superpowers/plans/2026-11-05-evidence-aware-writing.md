@@ -1,5 +1,7 @@
 # Evidence-aware medical writing implementation plan
 
+> Historical plan, archived in place. The local-installation gap below was closed for the earlier publication revision by `efa52a4`; its checkbox is retained as historical session state. Later rule and implementation changes require new verification. Current revision: see `docs/writing-scope-validation-20261117.md`.
+
 > Execute the approved design task by task. Use inline execution for coupled integration and independent review before publication.
 
 **Goal:** Permit evidence-preserving structural editing, synchronize bilingual manuscripts, and make narrative review actionable without replacing scientific validation with word counts.
