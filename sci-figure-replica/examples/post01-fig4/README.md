@@ -11,7 +11,7 @@
 在技能目录的 PowerShell 执行：
 
 ```powershell
-$py = 'C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe'
+# $py = config.json 或 config.local.json 里的 python_exe
 & $py -X utf8 examples\post01-fig4\replica.py
 ```
 

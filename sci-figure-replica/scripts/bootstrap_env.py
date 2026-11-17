@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 
-from common import cli_error, load_config
+from common import cli_error, configured_path, load_config
 
 REQUIRED = {'matplotlib': 'matplotlib', 'numpy': 'numpy', 'pandas': 'pandas', 'seaborn': 'seaborn',
             'scipy': 'scipy', 'Pillow': 'PIL', 'fonttools': 'fontTools'}
@@ -130,7 +130,10 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         config = load_config(args.config)
-        executable = args.python_exe or Path(config['python_exe'])
+        if args.python_exe:
+            executable = args.python_exe
+        else:
+            executable = configured_path(config, 'python_exe')
         if not executable.is_file():
             if not args.base_python or not args.base_python.is_file():
                 raise ValueError('Dedicated venv missing; supply an existing --base-python to create it; no packages will be installed')
@@ -139,11 +142,18 @@ def main(argv=None):
             subprocess.run([str(args.base_python), '-X', 'utf8', '-m', 'venv', str(executable.parent.parent)], check=True, timeout=60)
         text, missing = check_python(executable)
         print(text)
-        rscript = args.rscript_exe or Path(config['rscript_exe'])
-        print(f'Rscript: {rscript}; exists={rscript.is_file()} (not required by Python-only T1)')
+        if args.rscript_exe:
+            rscript = args.rscript_exe
+        else:
+            raw_rscript = config.get('rscript_exe', '')
+            rscript = configured_path(config, 'rscript_exe') if isinstance(raw_rscript, str) and raw_rscript.strip() else None
+        if rscript is None:
+            print('Rscript: unset (set rscript_exe to run R; not required by Python-only T1)')
+        else:
+            print(f'Rscript: {rscript}; exists={rscript.is_file()} (not required by Python-only T1)')
         if args.check_r:
-            if not rscript.is_file():
-                raise ValueError(f'Rscript: MISSING {rscript}; check --rscript-exe/config; no packages installed')
+            if rscript is None or not rscript.is_file():
+                raise ValueError('Rscript missing. Set rscript_exe in config.json or pass --rscript-exe. No packages installed.')
             if check_r(rscript):
                 return 1
         return 1 if missing else 0

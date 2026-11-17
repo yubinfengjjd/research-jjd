@@ -15,7 +15,34 @@ def utc_now():
 
 
 def load_config(path=None):
-    return read_json(Path(path) if path else SKILL_ROOT / 'config.json')
+    """Read config.json. The default file also takes keys from config.local.json.
+
+    An explicit ``path`` is used as-is, so a published empty config can be
+    checked without this machine's overlay.
+    """
+    config = read_json(Path(path) if path else SKILL_ROOT / 'config.json')
+    if not isinstance(config, dict):
+        raise ValueError('config must be a JSON object')
+    if path is None:
+        local = SKILL_ROOT / 'config.local.json'
+        if local.is_file():
+            overlay = read_json(local)
+            if not isinstance(overlay, dict):
+                raise ValueError('config.local.json must be a JSON object')
+            config.update(overlay)
+    return config
+
+
+def configured_path(config, key):
+    """Absolute path from config. Empty and relative values fail closed."""
+    raw = config.get(key, '')
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError(
+            f'{key} is empty. Set an absolute path in config.json or config.local.json.')
+    path = Path(raw)
+    if not path.is_absolute():
+        raise ValueError(f'{key} must be an absolute path, got {raw!r}')
+    return path
 
 
 def read_json(path):

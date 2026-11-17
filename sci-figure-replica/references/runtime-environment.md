@@ -2,13 +2,13 @@
 
 ## 解释器与环境检查
 
-本机路径集中 `config.json`，以实际任务书指定路径优先：
+本机路径集中 `config.json`。发布副本的三个路径为空；本机绝对路径写在该文件或同目录的 `config.local.json`（后者覆盖同名键，不进入版本库）。实际任务书指定的路径优先：
 
 | 项 | 路径/规则 |
 |---|---|
-| 专用 Python | `C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe` |
-| Rscript | `D:\R-4.5.0\bin\Rscript.exe`，读取 `rscript_exe` |
-| 正式画廊 | `config.gallery_root`；写入仍必须显式传 `--gallery` |
+| 专用 Python | `python_exe`，Windows `<venv>\Scripts\python.exe` 的绝对路径 |
+| Rscript | `rscript_exe` 的绝对路径；Python 检查可以暂缺，`--check-r` 和 R 渲染必须有 |
+| 正式画廊 | `gallery_root` 的绝对路径；写入仍必须显式传 `--gallery` |
 | 临时画廊 | 独立临时目录，禁止写正式画廊 |
 
 不用 PATH 的 Windows 商店 Python；专用 venv 不复用 `figure-skills` site-packages，不改其他环境。`bootstrap_env.py --config CONFIG [--python-exe PATH] [--check-r] [--rscript-exe PATH]` 检查已有解释器。专用环境不存在时，只有提供 `--base-python` 才能创建；普通环境检查不自动联网安装。缺包列清单、停止报告；未经作者决定不安装。
@@ -20,7 +20,7 @@ R 检查一次 `installed.packages()` 清单（30s）和独立 cairo 能力探�
 ## 执行器与日志
 
 ```powershell
-$py = 'C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe'
+$py = '<config 里的 python_exe>'
 & $py -X utf8 <skill>\scripts\run_code.py --language python --code <entry>\code\replica.py --cwd <entry> --timeout 300
 & $py -X utf8 <skill>\scripts\run_code.py --language r --code <entry>\code\replica.R --cwd <entry> --timeout 300
 ```

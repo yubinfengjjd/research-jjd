@@ -11,7 +11,7 @@ import signal
 import subprocess
 import tempfile
 
-from common import atomic_write, cli_error, json_bytes, load_config, utc_now
+from common import atomic_write, cli_error, configured_path, json_bytes, load_config, utc_now
 
 
 def run_code(code, cwd, timeout=300, config=None, language='python'):
@@ -29,7 +29,8 @@ def run_code(code, cwd, timeout=300, config=None, language='python'):
               'version': None, 'command': [], 'cwd': str(cwd), 'timed_out': False,
               'packages': {}, 'cleanup_errors': []}
     try:
-        executable = Path(load_config(config)['rscript_exe' if language == 'r' else 'python_exe'])
+        key = 'rscript_exe' if language == 'r' else 'python_exe'
+        executable = configured_path(load_config(config), key)
         command = [str(executable), *(['--vanilla'] if language == 'r' else ['-X', 'utf8']), str(code)]
         record.update(executable=str(executable), command=command)
         if language == 'r':

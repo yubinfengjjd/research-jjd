@@ -1,18 +1,22 @@
-# Runtime dependencies for all skills in this repository (medfig-*, scipilot-medimg-figure-skill,
-# medical-sci-* and medpaper-pipeline).
-# Pinned to the versions the full test suite passes with (Python 3.12).
+# Runtime dependencies for every skill in this repository.
+# Pinned to the versions exercised with these scripts on Python 3.12.
 # Install:  pip install -r requirements.txt
 matplotlib==3.9.2
 numpy==1.26.4
 pandas==2.2.2
 scipy==1.13.1
 seaborn==0.13.2
-Pillow==10.4.0          # image panels, medfig-schematic image_check
-plotly==5.24.1
+Pillow==10.4.0          # image panels, medfig-schematic image_check, Word assembly
+fonttools==4.51.0       # medfig-illustrator prepare_geometry_cache (direct import)
+openpyxl==3.1.5         # xlsx inputs: medfig-plan data_health, scipilot profile_data
+lxml==5.2.1             # medical-sci-references field XML
+plotly==5.24.1          # scipilot interactive recipes
 pyarrow==16.1.0         # parquet inputs (figkit Reader.parquet, medfig-plan data_health)
 pypdf==5.1.0            # check_figure: font-embedding check (degrades to a warning if missing)
-PyYAML==6.0.1           # medfig-outline (outline.yaml), medfig-schematic (schematic.yaml), skill tests
-python-docx==1.1.2      # medfig-outline (写作大纲.docx)
+PyYAML==6.0.1           # medfig-outline (outline.yaml), medfig-schematic (schematic.yaml)
+python-docx==1.1.2      # medfig-outline (写作大纲.docx), medical-sci-finalize, medical-sci-references
+scikit-image==0.24.0    # sci-figure-replica example color audit (CIEDE2000)
+tifffile==2026.3.3       # compatible with scikit-image 0.24 and numpy 1.26; newer releases miss this pin
 tomli==2.0.1; python_version < "3.11"   # figkit.toml on Python < 3.11 (3.11+ uses tomllib)
 
 # Optional (skills degrade gracefully when missing):

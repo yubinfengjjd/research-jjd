@@ -6,3 +6,4 @@ medfig-render/examples/minimal/out/
 medfig-render/examples/minimal/data/
 medfig-render/examples/gallery/out/
 tests/leak_strings.local.txt
+sci-figure-replica/config.local.json

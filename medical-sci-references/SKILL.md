@@ -19,7 +19,7 @@ description: "Use when a medical manuscript is ready for submission and needs Zo
 
 Word 验收的时间点：作者在 **apply 之后的新版主稿**上打开、Zotero Refresh 并确认阶段12；本技能**不要求在 apply 前由作者预检候选稿**。Agent 自己若能启动 Word，可在 apply 前顺手打开候选稿做一次无损检查；**启动失败只如实记录“Word 未自动验证”，不构成 apply 的阻断条件**，也不得用 ZIP 可解析冒充 Word 打开实证。
 
-运行 Python 脚本用 `D:\Anaconda\python.exe -X utf8`；缺少时定位真实解释器，不用 Windows 商店空壳。依赖 Python 3.10+、lxml、python-docx；离线测试另需 Pillow。所有临时文件放显式 `_tmp/`；设 `PYTHONDONTWRITEBYTECODE=1`、TEMP/TMP 指向可写 `_tmp/`。
+运行 Python 脚本用真实解释器执行 `python -X utf8`，不用 Windows 商店空壳。依赖 Python 3.10+、lxml、python-docx、Pillow。所有临时文件放显式 `_tmp/`；设 `PYTHONDONTWRITEBYTECODE=1`、TEMP/TMP 指向可写 `_tmp/`。
 
 Zotero 由作者保持运行。**不得自行启动、重启、关闭或改设置。** 连接失败总计试3次、间隔5秒；仍失败记录并继续可离线完成的抽取、快照核对和格式说明，连接依赖步骤列待办。夹具与回归留在本机开发归档，不在本产品仓库或运行时安装包中。不得把连接故障当作整个开发/准备工作的停止条件。实际收集与注入仍须有效库快照。
 

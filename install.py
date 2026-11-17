@@ -42,6 +42,12 @@ SKILL_DEPENDENCIES = {
 SKILL_DEPENDENCIES["medical-sci-finalize"] = ("anti-defensive-writing", "medpaper-pipeline")
 SKILL_DEPENDENCIES["medfig-outline"] = ("medpaper-pipeline", "medfig-render")
 SKILL_DEPENDENCIES["medfig-render"] = ("scipilot-medimg-figure-skill",)
+# These skills read a sibling at runtime: schematic and outline import figkit,
+# orchestrate renders through medfig-render, and plan reads its gallery index
+# plus the pipeline consistency guards.
+SKILL_DEPENDENCIES["medfig-schematic"] = ("medfig-render",)
+SKILL_DEPENDENCIES["medfig-orchestrate"] = ("medfig-render",)
+SKILL_DEPENDENCIES["medfig-plan"] = ("medpaper-pipeline", "medfig-render")
 STAMP = ".medfig_install.json"
 
 EXCLUDED_DIR_NAMES = {"__pycache__", ".pytest_cache", ".git"}

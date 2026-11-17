@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-17 — Portable install
+
+- 运行依赖补上直接导入的 `lxml`、`fonttools`、`openpyxl`，以及示例色差审计用的 `scikit-image`。同时锁定与这组版本相容的 `tifffile==2026.3.3`，避免新环境在更新的 tifffile 上反复回溯。
+- `sci-figure-replica` 的发布配置不再带某一台电脑的 Python、Rscript 和画廊路径。三个键留空；本机绝对路径写入 `config.json` 或不提交的 `config.local.json`。空路径直接停下。
+- 选择性安装补上运行时要读到的相邻技能：`medfig-schematic` 和 `medfig-orchestrate` 带上 `medfig-render`，`medfig-plan` 带上 `medpaper-pipeline` 与 `medfig-render`。默认全量安装仍是 23 个技能。
+
 ## 2026-11-17 — Evidence scope and prose diagnostics
 
 - 按完整写作链路审查结果协调范围声明、统计状态、论点与引文组织，避免用固定短语及词频下降代替编辑判断。

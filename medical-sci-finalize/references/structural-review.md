@@ -134,13 +134,15 @@ When comparing `PROJECT/04_manuscript`, the checker also reads existing `PROJECT
 
 From the repository root, run the structural checker against an external stage. The paths below are illustrative. Synthetic fixtures and regression modules stay in the local development archive; this product tree does not include them, and they are not installed with the skill. A synthetic tree contains no manuscript data and does not assert a real scientific review:
 
+Use the real interpreter as `python -X utf8`. Do not use a Windows Store `python.exe` stub.
+
 ```powershell
-& D:\anaconda\python.exe -X utf8 medical-sci-finalize/scripts/check_finalize.py `
+python -X utf8 medical-sci-finalize/scripts/check_finalize.py `
   --edit-mode structural --before E:\StructuralReviewDemo\project\04_manuscript `
   --after E:\StructuralReviewDemo\stage --review-json E:\StructuralReviewDemo\review.json `
   --changes E:\StructuralReviewDemo\changes.json --report E:\StructuralReviewDemo\comparison.json
 
-& D:\anaconda\python.exe -X utf8 medical-sci-finalize/scripts/check_finalize.py `
+python -X utf8 medical-sci-finalize/scripts/check_finalize.py `
   --edit-mode structural --apply --project-root E:\StructuralReviewDemo\project `
   --before E:\StructuralReviewDemo\project\04_manuscript --after E:\StructuralReviewDemo\stage `
   --review-json E:\StructuralReviewDemo\review.json --changes E:\StructuralReviewDemo\changes.json `
@@ -153,7 +155,7 @@ Apply requires `before = PROJECT/04_manuscript`, a nonoverlapping external stage
 Run `scripts/scaffold_structural_review.py` to generate exact UTF-8 character-offset `review.json`, `changes.json`, and `decisions.json` deterministically without hand-rolling ad-hoc offset builders:
 
 ```powershell
-& D:\anaconda\python.exe -X utf8 medical-sci-finalize/scripts/scaffold_structural_review.py `
+python -X utf8 medical-sci-finalize/scripts/scaffold_structural_review.py `
   --before <BEFORE_04_MANUSCRIPT> --after <AFTER_STAGE> `
   --review-json <REVIEW_JSON> --changes <CHANGES_JSON> --decisions <DECISIONS_JSON> `
   [--rationale-json <RATIONALE_JSON>] --verify

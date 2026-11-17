@@ -4,13 +4,13 @@ Three dev-local reconstructions from read-only `samples/post01/source/article_im
 
 Run each `replica.py` with the configured dedicated Python interpreter. Optional `--out <directory>` directs generated files elsewhere. Each exports `output/replica.png|pdf|svg`, `compare/side_by_side.png`, `figure_spec.json`, `render.log`, and `run.log`. A runner may replace `run.log` with its captured runtime record; `render.log` retains visual iteration history. Image comparison uses equal content height, 24 px gap, 36 px header and 24 px figure/date footer. Sources are never overwritten.
 
-From the development root in PowerShell:
+From the skill directory in PowerShell:
 
 ```powershell
-$py = 'C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe'
-& $py -X utf8 staged\sci-figure-replica\examples\single-panel\bar_inset\replica.py
-& $py -X utf8 staged\sci-figure-replica\examples\single-panel\beeswarm\replica.py
-& $py -X utf8 staged\sci-figure-replica\examples\single-panel\radial\replica.py
+# $py = config.json 或 config.local.json 里的 python_exe
+& $py -X utf8 examples\single-panel\bar_inset\replica.py
+& $py -X utf8 examples\single-panel\beeswarm\replica.py
+& $py -X utf8 examples\single-panel\radial\replica.py
 ```
 
 All CSVs have `provenance=estimated`. A/C transcribe printed numbers; B is a synthetic visual approximation with 192 constructed points per feature after T2 F2. None contains original observations, fitted SHAP results or evidence for statistical inference. The development helper `codex/build_t2_example_data.py` records the initial transcription/fixtures; B's current deterministic generator is `beeswarm/generate_estimated.py`. Renderers only read the committed CSVs. Standalone B matches img07 without an extra colorbar and uses the full plotting width; density remains a visual approximation.

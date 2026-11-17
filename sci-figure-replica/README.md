@@ -4,7 +4,7 @@
 
 在仓库根运行 `python install.py --skill sci-figure-replica --target <技能根> --dry-run`，核对后去掉 `--dry-run` 安装，再用同样参数加 `--verify` 核验。Windows 本机使用作者指定的实际 Python 解释器。
 
-`config.json` 保留原本机的路径设置，仅包含工具与目录路径，不含凭据。换电脑后先按实际环境修改它，尤其是 Python、Rscript 与画廊路径；不要直接运行指向原作者机器的默认值。不要使用 Windows 商店占位 Python。缺包只报告，安装依赖仍需作者授权。
+`config.json` 只放工具与目录路径，不含凭据。发布副本的 Python、Rscript 与画廊路径为空；换电脑后把本机绝对路径写入该文件，或写入同目录、不提交的 `config.local.json`。空路径会停下，不会沿用别的机器。不要使用 Windows 商店占位 Python。缺包只报告，安装依赖仍需作者授权。
 
 `samples/` 提供原始材料的只读输入；独立安装器保留为本目录的 `install.py`。复制技能后，脚本从技能目录定位示例输入。运行产生的文件应写入独立临时目录。
 

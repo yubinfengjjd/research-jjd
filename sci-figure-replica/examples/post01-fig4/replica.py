@@ -270,11 +270,34 @@ def render(out):
     return 0
 
 
+def configured_gallery():
+    """Absolute gallery from config.json, with config.local.json overriding it.
+
+    An empty published path protects nothing. It must not become the working directory.
+    """
+    config = json.loads((SKILL / 'config.json').read_text(encoding='utf-8'))
+    local = SKILL / 'config.local.json'
+    if local.is_file():
+        overlay = json.loads(local.read_text(encoding='utf-8'))
+        if isinstance(overlay, dict):
+            config.update(overlay)
+    raw = config.get('gallery_root', '')
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    path = Path(raw)
+    if not path.is_absolute():
+        raise ValueError(f'gallery_root must be an absolute path, got {raw!r}')
+    return path
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--out', type=Path, default=HERE)
     args = parser.parse_args(argv)
-    protected = [ROOT / 'samples', Path(json.loads((SKILL / 'config.json').read_text(encoding='utf-8'))['gallery_root'])]
+    protected = [ROOT / 'samples']
+    gallery = configured_gallery()
+    if gallery is not None:
+        protected.append(gallery)
     target = args.out.resolve()
     if any(target == p.resolve() or p.resolve() in target.parents for p in protected):
         print('Refusing output in protected samples or real gallery', file=sys.stderr)

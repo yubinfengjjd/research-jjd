@@ -25,10 +25,10 @@ description: Use when 用户要求复刻科研数据图、从文章或代码提�
 
 ## 环境、工具与例子
 
-路径集中在 `config.json`：Python 为 `C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe`，R 为 `D:\R-4.5.0\bin\Rscript.exe`。不要使用 PATH 上的 Windows 商店 Python，不改其他 venv。`bootstrap_env.py --check-r` 检查现有环境；缺包先报告，不自动联网安装。运行器是有界执行器，不是安全沙箱，只运行已审阅且获授权的代码。
+路径集中在 `config.json`。发布副本里的 `python_exe`、`rscript_exe`、`gallery_root` 为空。在本机填写这三个绝对路径，或把同样的键写进不提交的 `config.local.json`，后者覆盖同名键。不要使用 PATH 上的 Windows 商店 Python，不改其他 venv。空路径会直接停下，不会把当前目录当成解释器或画廊。`bootstrap_env.py --check-r` 检查已有环境；缺包先报告，不自动联网安装。运行器是有界执行器，不是安全沙箱，只运行已审阅且获授权的代码。
 
 ```powershell
-$py = 'C:\Users\86186\.codex\venvs\sci-figure-replica\Scripts\python.exe'
+$py = '<config 里的 python_exe>'
 & $py -X utf8 <skill>\scripts\run_code.py --language python --code <entry>\code\replica.py --cwd <entry>
 & $py -X utf8 <skill>\scripts\run_code.py --language r --code <entry>\code\replica.R --cwd <entry>
 ```
