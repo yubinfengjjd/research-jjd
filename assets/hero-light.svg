@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340" role="img" aria-label="MedAI Research Suite (research-jjd) Banner">
+  <defs>
+    <linearGradient id="bg-light" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="55%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EFF6FF"/>
+    </linearGradient>
+    <radialGradient id="glow-blue-l" cx="82%" cy="28%" r="48%">
+      <stop offset="0%" stop-color="#0284C7" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#F8FAFC" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="title-grad-l" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F172A"/>
+      <stop offset="65%" stop-color="#1E293B"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+    <linearGradient id="curve-grad-l" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#059669"/>
+      <stop offset="50%" stop-color="#0891B2"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <pattern id="grid-light" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#E2E8F0" stroke-width="0.8" stroke-opacity="0.8"/>
+    </pattern>
+  </defs>
+
+  <!-- Card frame -->
+  <rect x="6" y="6" width="1188" height="328" rx="22" fill="url(#bg-light)" stroke="#CBD5E1" stroke-width="1.5"/>
+  <rect x="6" y="6" width="1188" height="328" rx="22" fill="url(#grid-light)"/>
+  <rect x="6" y="6" width="1188" height="328" rx="22" fill="url(#glow-blue-l)"/>
+
+  <!-- Top accent bar -->
+  <rect x="56" y="6" width="140" height="3.5" rx="1.5" fill="url(#curve-grad-l)"/>
+
+  <!-- Eyebrow pill -->
+  <rect x="56" y="38" width="296" height="28" rx="14" fill="#E0F2FE" stroke="#7DD3FC" stroke-width="1"/>
+  <circle cx="74" cy="52" r="4" fill="#059669"/>
+  <text x="86" y="57" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="11.5" font-weight="700" letter-spacing="1.1" fill="#0369A1">MEDICAL AI · REPRODUCIBLE SCIENCE</text>
+
+  <!-- Title & subtitle -->
+  <text x="56" y="118" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="-0.8" fill="url(#title-grad-l)">MedAI Research Suite</text>
+  <text x="56" y="152" font-family="'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace" font-size="16" font-weight="600" fill="#0284C7">research-jjd</text>
+  <text x="184" y="152" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="16.5" font-weight="500" fill="#475569">·  23 Installable Skills for Claude Code &amp; Codex</text>
+
+  <!-- Description -->
+  <text x="56" y="194" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="15.5" fill="#334155">From study design &amp; controlled experiments to publication-grade figures,</text>
+  <text x="56" y="219" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="15.5" fill="#334155">evidence-preserving manuscript polish, native Zotero + CSL Word delivery &amp; submission.</text>
+
+  <!-- Feature chips -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif" font-size="12.5" font-weight="600">
+    <rect x="56" y="256" width="154" height="34" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="73" cy="273" r="3.5" fill="#0284C7"/>
+    <text x="85" y="277" fill="#1E293B">23 Modular Skills</text>
+
+    <rect x="222" y="256" width="182" height="34" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="239" cy="273" r="3.5" fill="#059669"/>
+    <text x="251" y="277" fill="#1E293B">Evidence-Preserving</text>
+
+    <rect x="416" y="256" width="184" height="34" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="433" cy="273" r="3.5" fill="#7C3AED"/>
+    <text x="445" y="277" fill="#1E293B">Zotero + CSL Replay</text>
+
+    <rect x="612" y="256" width="156" height="34" rx="8" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1"/>
+    <circle cx="629" cy="273" r="3.5" fill="#D97706"/>
+    <text x="641" y="277" fill="#1E293B">SHA-256 Verified</text>
+  </g>
+
+  <!-- Right scientific telemetry panel -->
+  <g transform="translate(835, 42)">
+    <rect x="0" y="0" width="312" height="256" rx="16" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.2"/>
+    <circle cx="20" cy="20" r="4" fill="#CBD5E1"/>
+    <circle cx="34" cy="20" r="4" fill="#CBD5E1"/>
+    <circle cx="48" cy="20" r="4" fill="#CBD5E1"/>
+    <text x="292" y="24" text-anchor="end" font-family="'SFMono-Regular', Consolas, monospace" font-size="10.5" fill="#64748B">PIPELINE · QA GATED</text>
+    <line x1="16" y1="36" x2="296" y2="36" stroke="#E2E8F0" stroke-width="1"/>
+
+    <line x1="36" y1="54" x2="36" y2="164" stroke="#94A3B8" stroke-width="1.2"/>
+    <line x1="36" y1="164" x2="288" y2="164" stroke="#94A3B8" stroke-width="1.2"/>
+    <line x1="36" y1="82" x2="288" y2="82" stroke="#E2E8F0" stroke-width="0.9" stroke-dasharray="3 4"/>
+    <line x1="36" y1="110" x2="288" y2="110" stroke="#E2E8F0" stroke-width="0.9" stroke-dasharray="3 4"/>
+    <line x1="36" y1="138" x2="288" y2="138" stroke="#E2E8F0" stroke-width="0.9" stroke-dasharray="3 4"/>
+    <line x1="36" y1="164" x2="288" y2="54" stroke="#94A3B8" stroke-width="1" stroke-dasharray="4 4"/>
+    <path d="M 36 164 C 72 95, 130 66, 288 56 L 288 70 C 142 82, 86 112, 36 164 Z" fill="#0284C7" fill-opacity="0.12"/>
+    <path d="M 36 164 C 95 126, 175 95, 288 78" fill="none" stroke="#94A3B8" stroke-width="1.6" stroke-dasharray="5 3"/>
+    <path d="M 36 164 C 76 100, 136 73, 288 62" fill="none" stroke="url(#curve-grad-l)" stroke-width="2.8" stroke-linecap="round"/>
+    <circle cx="96" cy="97" r="4" fill="#059669" stroke="#FFFFFF" stroke-width="1.5"/>
+    <circle cx="172" cy="74" r="4" fill="#0284C7" stroke="#FFFFFF" stroke-width="1.5"/>
+
+    <g transform="translate(18, 184)" font-family="'SFMono-Regular', Consolas, monospace" font-size="10.5" font-weight="600">
+      <rect x="0" y="0" width="48" height="24" rx="6" fill="#E0F2FE" stroke="#7DD3FC"/>
+      <text x="24" y="16" text-anchor="middle" fill="#0369A1">Plan</text>
+      <path d="M 51 12 L 58 12" stroke="#94A3B8" stroke-width="1.2"/>
+
+      <rect x="61" y="0" width="44" height="24" rx="6" fill="#D1FAE5" stroke="#6EE7B7"/>
+      <text x="83" y="16" text-anchor="middle" fill="#047857">Exp</text>
+      <path d="M 108 12 L 115 12" stroke="#94A3B8" stroke-width="1.2"/>
+
+      <rect x="118" y="0" width="44" height="24" rx="6" fill="#E0E7FF" stroke="#A5B4FC"/>
+      <text x="140" y="16" text-anchor="middle" fill="#3730A3">Fig</text>
+      <path d="M 165 12 L 172 12" stroke="#94A3B8" stroke-width="1.2"/>
+
+      <rect x="175" y="0" width="52" height="24" rx="6" fill="#EDE9FE" stroke="#C4B5FD"/>
+      <text x="201" y="16" text-anchor="middle" fill="#5B21B6">Prose</text>
+      <path d="M 230 12 L 237 12" stroke="#94A3B8" stroke-width="1.2"/>
+
+      <rect x="240" y="0" width="38" height="24" rx="6" fill="#FEF3C7" stroke="#FCD34D"/>
+      <text x="259" y="16" text-anchor="middle" fill="#B45309">Sub</text>
+    </g>
+
+    <text x="18" y="236" font-family="'SFMono-Regular', Consolas, monospace" font-size="10.5" fill="#64748B">✓ 600 DPI TIFF · Structural Review · Native CSL</text>
+  </g>
+</svg>
