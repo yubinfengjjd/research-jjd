@@ -370,15 +370,25 @@ _REPORTED_TEST = re.compile(r'\b(?:permutation|sign-flip|P\s*[=<>≤≥])', re.I
 
 
 def _ignore_contradicted_noninferential(before, after, source_text, candidate_text):
-    """Drop a non-inferential label only when the same span still reports the test."""
-    if (6, 'non-inferential') not in set(before) or (6, 'non-inferential') in set(after):
-        return before
-    if not _REPORTED_TEST.search(source_text) or not _REPORTED_TEST.search(candidate_text):
-        return before
+    """Drop a contradicted non-inferential label or a multi-paragraph named-run repeat."""
     added = {t for t in after if t[0] == 6} - {t for t in before if t[0] == 6}
     if added:
         return before
-    return {t for t in before if t != (6, 'non-inferential')}
+    result = set(before)
+    if (6, 'non-inferential') in result and (6, 'non-inferential') not in set(after):
+        if _REPORTED_TEST.search(source_text) and _REPORTED_TEST.search(candidate_text):
+            result.discard((6, 'non-inferential'))
+    if (6, 'single-run') in result and (6, 'single-run') not in set(after):
+        s_strip, c_strip = source_text.strip(), candidate_text.strip()
+        if '\n\n' in s_strip and '\n\n' in c_strip:
+            s_first = s_strip.split('\n\n', 1)[0]
+            s_first_runs = _named_scopes(s_first).get('run', set())
+            if ((6, 'single-run') not in _tokens(s_first)
+                    and len(s_first_runs) == 1
+                    and s_first_runs == _named_scopes(c_strip).get('run', set())
+                    and _named_scopes(s_strip) == _named_scopes(c_strip)):
+                result.discard((6, 'single-run'))
+    return result
 
 
 def _content(spans):

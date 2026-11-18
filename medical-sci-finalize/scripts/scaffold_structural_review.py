@@ -1047,6 +1047,9 @@ def _build_claim_record(
     dest_ni = any((6, 'non-inferential') in h[4] for _, h in flat_dst if h[0] == 6)
     if (not dest_ni and edit._REPORTED_TEST.search(src_join) and edit._REPORTED_TEST.search(dst_join)):
         rem_s = [item for item in rem_s if (6, 'non-inferential') not in item[1][4]]
+    dest_sr = any((6, 'single-run') in h[4] for _, h in flat_dst if h[0] == 6)
+    if not dest_sr and (6, 'single-run') not in b_tok:
+        rem_s = [item for item in rem_s if (6, 'single-run') not in item[1][4]]
     if rem_s or rem_d:
         rs = [_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_d]
         rem_d_toks = {t for _, h in rem_d for t in h[4]}
@@ -1169,7 +1172,7 @@ def _build_claim_record(
             inv = {t for t in edit._tokens('\n'.join(x['text'] for x in ef['source'])) if t[0] in (0, 2, 5)}
             all_ef_toks = edit._tokens('\n'.join(x['text'] for x in ef['source']))
             ls, rs = find_tr_match(inv or all_ef_toks, lambda k: True if ef['kind'] != 'qualifier' else k == 6)
-            if ef['kind'] == 'qualifier' and not ls:
+            if ef['kind'] == 'qualifier':
                 def qualifier_sets(spans):
                     found = []
                     for sp in spans:
@@ -1187,7 +1190,7 @@ def _build_claim_record(
                           if i not in t_used_s and h[0] == 6 and same_fact_state(h)]
                 rem_qd = [j for j, (_, h) in enumerate(td_occ)
                           if j not in t_used_d and h[0] == 6 and same_fact_state(h)]
-                if rem_qs and rem_qd:
+                if (ls and rs and (rem_qs or rem_qd)) or (not ls and rem_qs and rem_qd):
                     for i in rem_qs:
                         t_used_s.add(i)
                         sp, h = ts_occ[i]
@@ -1385,25 +1388,54 @@ def build_review_bundle(
             # Draft proposal: include an unchanged preceding declaration in the
             # same heading rather than silently treating a changed hunk as local.
             # The resulting claim still needs explicit human inventory review.
+            def _compatible_run_fold_scopes(prev_scopes: dict, curr_scopes: dict, is_governing: bool = True) -> bool:
+                if any(len(v) > 1 for v in prev_scopes.values()) or any(len(v) > 1 for v in curr_scopes.values()):
+                    return False
+                prev_non_run = {k: v for k, v in prev_scopes.items() if k != 'run'}
+                curr_non_run = {k: v for k, v in curr_scopes.items() if k != 'run'}
+                if is_governing:
+                    if prev_non_run != curr_non_run:
+                        return False
+                else:
+                    if any(v != curr_non_run.get(k) for k, v in prev_non_run.items()):
+                        return False
+                prev_run = prev_scopes.get('run', set())
+                curr_run = curr_scopes.get('run', set())
+                return curr_run <= prev_run if is_governing else (not prev_run or prev_run == curr_run)
+
             grouped = []
             for ol, nl, changed in raw_hunks:
-                bt, at = edit._tokens('\n'.join(x[2] for x in ol)), edit._tokens('\n'.join(x[2] for x in nl))
+                ol_txt, nl_txt = '\n'.join(x[2] for x in ol), '\n'.join(x[2] for x in nl)
+                bt, at = edit._tokens(ol_txt), edit._tokens(nl_txt)
+                bt = edit._ignore_contradicted_noninferential(bt, at, ol_txt, nl_txt)
                 run_loss = changed and bt - at == {(6, 'single-run')} and not (at - bt)
                 if run_loss and grouped:
-                    current_scopes = edit._named_scopes('\n'.join(x[2] for x in ol))
+                    current_scopes = edit._named_scopes(ol_txt)
                     for i in range(len(grouped) - 1, -1, -1):
                         po, pn, _pc = grouped[i]
                         prev_src = '\n'.join(x[2] for x in po)
                         prev_dst = '\n'.join(x[2] for x in pn)
-                        if edit._named_scopes(prev_src) != current_scopes:
-                            break
+                        prev_scopes = edit._named_scopes(prev_src)
                         prev_bt, prev_at = edit._tokens(prev_src), edit._tokens(prev_dst)
-                        if (6, 'single-run') in prev_at:
-                            grouped[i] = (po + ol, pn + nl, True)
+                        prev_bt = edit._ignore_contradicted_noninferential(prev_bt, prev_at, prev_src, prev_dst)
+                        named_run_gov = (
+                            not current_scopes.get('run')
+                            and len(prev_scopes.get('run', ())) == 1
+                            and prev_scopes == edit._named_scopes(prev_dst)
+                            and (6, 'single-run') not in edit._tokens(po[0][2])
+                        )
+                        if ((6, 'single-run') in prev_at or named_run_gov) and _compatible_run_fold_scopes(prev_scopes, current_scopes, True):
+                            all_po = [b for g in grouped[i:] for b in g[0]] + ol
+                            all_pn = [b for g in grouped[i:] for b in g[1]] + nl
+                            grouped[i:] = [(all_po, all_pn, True)]
                             run_loss = False
                             break
-                        # Keep looking past an earlier same-owner repeat that also only lost the seed.
-                        if prev_bt - prev_at == {(6, 'single-run')} and not (prev_at - prev_bt):
+                        if not _compatible_run_fold_scopes(prev_scopes, current_scopes, False):
+                            break
+                        # Keep looking past an earlier compatible hunk in the same heading.
+                        if edit._evidence_equal(prev_bt, prev_at) or (
+                            prev_bt - prev_at == {(6, 'single-run')} and not (prev_at - prev_bt)
+                        ):
                             continue
                         break
                     if not run_loss:

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-18 — Subsection scope inheritance and structural sentence unpacking
+
+- `medical-sci-finalize` 与各章节写作规则明确同小节（`###` 或无子节的 `##`）及 `Discussion` 全文的非冲突单次运行跨段继承：首次声明单次运行或显式命名运行（如 `seed 0`）后，同小节后续段落切换指标、探针、主/次要终点、队列或病例时不再重复起句，同一自然段内不重复两次单次运行短语。
+- 废除把跨领域句末 `, alongside ...`、句首 `Alongside` 或真实让步从句 `although / though` 机械替换为 `with` 的规则；要求分离跨终点硬接短语、拆分 `Results` 与 `Discussion` 中超过 30–35 词的复合长句、清理泛化的 `whereas` 链，并在 `Introduction` 与 `Discussion` 多文献段落采用“先归纳判断、后分句展开”的组织方式。
+- `scaffold_structural_review.py` 与 `evidence_edit.py` 支持跨越同标题无冲突中间段的单次运行折叠、显式单次命名运行支配后段去重、同段含检验/P 值时联合删去矛盾 `non-inferential` 标签，以及 `ZH`/`EN_ZH` 多段合并时全部同状态限定词的完整归组映射；`lint_manuscript.py --previous` 纳入阶段二自检闭环。
+
 ## 2026-11-17 — Portable install
 
 - 运行依赖补上直接导入的 `lxml`、`fonttools`、`openpyxl`，以及示例色差审计用的 `scikit-image`。同时锁定与这组版本相容的 `tifffile==2026.3.3`，避免新环境在更新的 tifffile 上反复回溯。

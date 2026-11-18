@@ -835,6 +835,96 @@ class ScaffoldStructuralReviewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'LF/CRLF'):
             scaffold.build_review_bundle(self.before, self.after)
 
+    def test_same_heading_folds_across_intervening_paragraph_and_contradicted_noninferential(self):
+        old_en = (
+            '## Discussion\n\n'
+            'In the single evaluated seed, Analysis A preserved boundary accuracy at 0.962 (Fig. 3D).\n\n'
+            'Literature context compared prior transfer methods across cohorts (PMID: 12345678).\n\n'
+            'In the single evaluated seed, Analysis A did not establish a localization advantage in this non-inferential comparison (permutation P = 0.124).\n'
+        )
+        new_en = (
+            '## Discussion\n\n'
+            'In the single evaluated seed, Analysis A preserved boundary accuracy at 0.962 (Fig. 3D).\n\n'
+            'Literature context compared prior transfer methods across cohorts (PMID: 12345678).\n\n'
+            'Analysis A did not establish a localization advantage in this comparison (permutation P = 0.124).\n'
+        )
+        old_zh = (
+            '## 讨论\n\n'
+            '在唯一接受评价的种子中，分析 A 在 0.962 处保持边界准确性（图 3D）。\n\n'
+            '文献背景跨队列比较了既有迁移方法（PMID: 12345678）。\n\n'
+            '在唯一接受评价的种子中，分析 A 在该非推断性比较（non-inferential）中未建立定位优势（permutation P = 0.124）。\n'
+        )
+        new_zh = (
+            '## 讨论\n\n'
+            '在唯一接受评价的种子中，分析 A 在 0.962 处保持边界准确性（图 3D）。\n\n'
+            '文献背景跨队列比较了既有迁移方法（PMID: 12345678）。\n\n'
+            '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。\n'
+        )
+        old_ez = (
+            '## Discussion / 讨论\n\n'
+            'In the single evaluated seed, Analysis A preserved boundary accuracy at 0.962 (Fig. 3D).\n\n'
+            '在唯一接受评价的种子中，分析 A 在 0.962 处保持边界准确性（图 3D）。\n\n'
+            'Literature context compared prior transfer methods across cohorts (PMID: 12345678).\n\n'
+            '文献背景跨队列比较了既有迁移方法（PMID: 12345678）。\n\n'
+            'In the single evaluated seed, Analysis A did not establish a localization advantage in this non-inferential comparison (permutation P = 0.124).\n\n'
+            '在唯一接受评价的种子中，分析 A 在该非推断性比较（non-inferential）中未建立定位优势（permutation P = 0.124）。\n'
+        )
+        new_ez = (
+            '## Discussion / 讨论\n\n'
+            'In the single evaluated seed, Analysis A preserved boundary accuracy at 0.962 (Fig. 3D).\n\n'
+            '在唯一接受评价的种子中，分析 A 在 0.962 处保持边界准确性（图 3D）。\n\n'
+            'Literature context compared prior transfer methods across cohorts (PMID: 12345678).\n\n'
+            '文献背景跨队列比较了既有迁移方法（PMID: 12345678）。\n\n'
+            'Analysis A did not establish a localization advantage in this comparison (permutation P = 0.124).\n\n'
+            '分析 A 在该比较中未建立定位优势（permutation P = 0.124）。\n'
+        )
+        for name, data in [('Discussion_EN.md', old_en), ('Discussion_ZH.md', old_zh), ('Discussion_EN_ZH.md', old_ez)]:
+            (self.before / name).write_bytes(data.encode('utf-8'))
+        for name, data in [('Discussion_EN.md', new_en), ('Discussion_ZH.md', new_zh), ('Discussion_EN_ZH.md', new_ez)]:
+            (self.after / name).write_bytes(data.encode('utf-8'))
+        self._run_verify()
+
+    def test_same_heading_named_seed_governs_following_single_run_paragraph(self):
+        old_en = (
+            '### 3.5.1 Representation probe\n\n'
+            'Representation comparisons in seed 0 showed BACC 0.953 (Fig. 6A).\n\n'
+            'In the same single evaluated seed, source-dataset AUROC was 0.827 (Fig. 6B).\n'
+        )
+        new_en = (
+            '### 3.5.1 Representation probe\n\n'
+            'Representation comparisons in seed 0 showed BACC 0.953 (Fig. 6A).\n\n'
+            'Source-dataset AUROC was 0.827 (Fig. 6B).\n'
+        )
+        old_zh = (
+            '### 3.5.1 表示探针\n\n'
+            '在种子 0 中，表示比较显示 BACC 为 0.953（图 6A）。\n\n'
+            '在同一唯一接受评价的种子中，来源数据集 AUROC 为 0.827（图 6B）。\n'
+        )
+        new_zh = (
+            '### 3.5.1 表示探针\n\n'
+            '在种子 0 中，表示比较显示 BACC 为 0.953（图 6A）。\n\n'
+            '来源数据集 AUROC 为 0.827（图 6B）。\n'
+        )
+        old_ez = (
+            '### 3.5.1 Representation probe\n**3.5.1 表示探针**\n\n'
+            'Representation comparisons in seed 0 showed BACC 0.953 (Fig. 6A).\n\n'
+            '在种子 0 中，表示比较显示 BACC 为 0.953（图 6A）。\n\n'
+            'In the same single evaluated seed, source-dataset AUROC was 0.827 (Fig. 6B).\n\n'
+            '在同一唯一接受评价的种子中，来源数据集 AUROC 为 0.827（图 6B）。\n'
+        )
+        new_ez = (
+            '### 3.5.1 Representation probe\n**3.5.1 表示探针**\n\n'
+            'Representation comparisons in seed 0 showed BACC 0.953 (Fig. 6A).\n\n'
+            '在种子 0 中，表示比较显示 BACC 为 0.953（图 6A）。\n\n'
+            'Source-dataset AUROC was 0.827 (Fig. 6B).\n\n'
+            '来源数据集 AUROC 为 0.827（图 6B）。\n'
+        )
+        for name, data in [('Results_EN.md', old_en), ('Results_ZH.md', old_zh), ('Results_EN_ZH.md', old_ez)]:
+            (self.before / name).write_bytes(data.encode('utf-8'))
+        for name, data in [('Results_EN.md', new_en), ('Results_ZH.md', new_zh), ('Results_EN_ZH.md', new_ez)]:
+            (self.after / name).write_bytes(data.encode('utf-8'))
+        self._run_verify()
+
 
 if __name__ == '__main__':
     unittest.main()
