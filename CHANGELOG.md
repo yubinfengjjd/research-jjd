@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-19 — Lightweight plan–experiment co-evolution refactor (`medimg-experiment` v3)
+
+- 重构 `medimg-experiment` 为轻量化计划书协同内核（`schema_version: 3`），移除过度防御的多 CLI 后台守护进程（`adaptive.py`、`agent_backends.py`、`agent_runner.py`、`review_adapter.py`、`scheduler.py`、`recovery.py`）与 140 行重型双契约模板，统一收口为 9 条简洁 CLI 命令（`init` / `audit` / `run` / `revise` / `status` / `pretest-check` / `freeze` / `test` / `finalize` / `export`）。
+- 解除对二分类 AUROC / `mean_per_case` 的指标硬绑与 `TORCH_HOME`/`HF_HOME` 空目录隔离，全面支持多分类 BACC、Macro-F1、多标签 AUPRC、2D/3D 分割、回归等通用医学影像任务与最小侵入脚本（`result.json`），默认复用本机预训练缓存。
+- 死守三条科学红线（患者划分防泄漏 `audit`、测试前唯一一次独立核查 `pretest-check` + 锁定测试集隔离 `freeze`/`test`、全量真实运行与路线账本），放活探索期路线修订：支持在有界通宵预算（`max_routes`、`max_training_seconds`、`deadline_utc`）内自由调整架构/损失/预处理/消融/对比条目，并自动复用未受影响的 Baseline 结果。
+- 重写计划书协同模块 `plan_sync.py`：彻底取消字节哈希互锁与正文裸 JSON/`<details>` 残骸注入，`00_plan/project-plan.md` 始终保持为唯一干净可读计划书（旧版自动归档至 `_archive/`），定稿收口后仅保留最终唯一路线；同步对齐 `medical-research-plan`、`medpaper-pipeline`、`README.md` 与 `README_EN.md`。
+
 ## 2026-11-18 — Subsection scope inheritance and structural sentence unpacking
 
 - `medical-sci-finalize` 与各章节写作规则明确同小节（`###` 或无子节的 `##`）及 `Discussion` 全文的非冲突单次运行跨段继承：首次声明单次运行或显式命名运行（如 `seed 0`）后，同小节后续段落切换指标、探针、主/次要终点、队列或病例时不再重复起句，同一自然段内不重复两次单次运行短语。

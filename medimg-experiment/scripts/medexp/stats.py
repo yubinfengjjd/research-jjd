@@ -1,35 +1,51 @@
-"""Case-level evidence and paired bootstrap. Standard library only."""
+"""Metric aggregation and optional case-level paired bootstrap CI (stdlib only)."""
+from __future__ import annotations
+
 import json
 import math
+from pathlib import Path
 import random
 import statistics
-from .common import require, number, safe_path
+
+from .common import number, require, safe_path
 
 
-def read_cases(path, statistic):
-    path = safe_path(path)
-    require(path.is_file(), '缺少逐病例记录cases.jsonl')
+def aggregate(values: list[float], mode: str = 'mean', higher: bool = True) -> float:
+    require(bool(values), '聚合值列表不能为空')
+    if mode == 'mean':
+        return statistics.fmean(values)
+    if mode == 'median':
+        return statistics.median(values)
+    if mode == 'worst':
+        return min(values) if higher else max(values)
+    raise ValueError(f'unsupported aggregation mode: {mode}')
+
+
+def seed_sd(values: list[float]) -> float:
+    return statistics.stdev(values) if len(values) >= 2 else 0.0
+
+
+def read_cases(path: Path, statistic: str) -> dict:
+    p = safe_path(path)
+    require(p.is_file(), f'逐病例记录不存在: {p}')
     cases = {}
-    raw = path.read_bytes()
-    require(not raw or raw.endswith(b'\n'), 'cases.jsonl末行不完整')
-    for line in raw.decode('utf-8').splitlines():
+    for line in p.read_text(encoding='utf-8').splitlines():
         if not line.strip():
             continue
-        e = json.loads(line)
-        cid = e.get('case_id')
-        require(isinstance(cid, str) and cid, '逐病例记录缺少case_id')
-        require(cid not in cases, '逐病例记录case_id重复: ' + cid)
+        item = json.loads(line)
+        cid = item.get('case_id')
+        require(isinstance(cid, str) and cid, 'cases.jsonl 缺少 case_id')
+        require(cid not in cases, f'cases.jsonl 存在重复 case_id: {cid}')
         if statistic == 'mean_per_case':
-            cases[cid] = number(e.get('value'), '逐病例指标值')
+            cases[cid] = number(item.get('value'), '逐病例 value')
         else:
-            require(e.get('label') in (0, 1), 'binary_auroc逐病例记录label必须为0/1')
-            cases[cid] = (e['label'], number(e.get('score'), '逐病例score'))
-    require(cases, '逐病例记录为空')
+            require(item.get('label') in (0, 1), 'binary_auroc 逐病例 label 必须为 0/1')
+            cases[cid] = (item['label'], number(item.get('score'), '逐病例 score'))
+    require(bool(cases), 'cases.jsonl 为空')
     return cases
 
 
-def auroc(pairs):
-    # Mann-Whitney with average ranks for ties.
+def auroc(pairs: list[tuple[int, float]]) -> float | None:
     ordered = sorted(pairs, key=lambda x: x[1])
     ranks = [0.0] * len(ordered)
     i = 0
@@ -37,78 +53,67 @@ def auroc(pairs):
         j = i
         while j + 1 < len(ordered) and ordered[j + 1][1] == ordered[i][1]:
             j += 1
+        avg = (i + j) / 2.0 + 1.0
         for k in range(i, j + 1):
-            ranks[k] = (i + j) / 2 + 1
+            ranks[k] = avg
         i = j + 1
     pos = sum(1 for label, _ in ordered if label == 1)
     neg = len(ordered) - pos
     if pos == 0 or neg == 0:
         return None
     rank_sum = sum(r for r, (label, _) in zip(ranks, ordered) if label == 1)
-    return (rank_sum - pos * (pos + 1) / 2) / (pos * neg)
+    return (rank_sum - pos * (pos + 1) / 2.0) / (pos * neg)
 
 
-def compute(statistic, cases, ids):
+def compute(statistic: str, cases: dict, ids: list[str]) -> float | None:
     if statistic == 'mean_per_case':
         return statistics.fmean(cases[i] for i in ids)
     return auroc([cases[i] for i in ids])
 
 
-def check_consistency(statistic, cases, value):
-    full = compute(statistic, cases, list(cases))
-    require(full is not None, '逐病例记录无法计算主要指标（单一类别）')
-    require(math.isclose(full, value, rel_tol=1e-6, abs_tol=1e-9),
-            f'逐病例记录复算主要指标={full}，与报告值{value}不一致')
-
-
-def aggregate(mode, values, higher):
-    if mode == 'mean':
-        return statistics.fmean(values)
-    if mode == 'median':
-        return statistics.median(values)
-    return min(values) if higher else max(values)
-
-
-def paired_bootstrap(statistic, runs_a, runs_b, higher, mode, resamples, level, seed, checkpoint=None):
-    """runs_* are per-seed case dicts. Effect = A better than B (direction-adjusted)."""
-    if checkpoint:checkpoint()
+def paired_bootstrap(statistic: str, runs_a: list[dict], runs_b: list[dict],
+                     higher: bool, resamples: int = 1000, level: float = 0.95,
+                     seed: int = 42, mode: str = 'mean') -> dict:
     ids = sorted(runs_a[0])
     for r in runs_a + runs_b:
-        require(sorted(r) == ids, '配对比较要求所有运行使用同一组病例')
+        require(sorted(r) == ids, '配对比较要求所有运行包含完全一致的病例集合')
     if statistic == 'binary_auroc':
         for r in runs_a + runs_b:
             require(all(r[i][0] == runs_a[0][i][0] for i in ids), '配对比较的病例标签不一致')
 
-    def effect(sample):
-        a = aggregate(mode, [compute(statistic, r, sample) for r in runs_a], higher)
-        b = aggregate(mode, [compute(statistic, r, sample) for r in runs_b], higher)
-        if a is None or b is None:
+    def effect(sample: list[str]) -> float | None:
+        a_vals = [compute(statistic, r, sample) for r in runs_a]
+        b_vals = [compute(statistic, r, sample) for r in runs_b]
+        if any(v is None for v in a_vals + b_vals):
             return None
+        a = aggregate(a_vals, mode=mode, higher=higher)
+        b = aggregate(b_vals, mode=mode, higher=higher)
         return (a - b) if higher else (b - a)
 
     point = effect(ids)
-    require(point is not None, '完整病例集无法计算配对效应')
+    require(point is not None, '无法在完整病例集上计算配对效应')
     rng = random.Random(seed)
     draws, skipped = [], 0
-    for draw in range(resamples):
-        if checkpoint and draw%32==0:checkpoint()
+    for _ in range(resamples):
         sample = [ids[rng.randrange(len(ids))] for _ in ids]
         e = effect(sample)
         if e is None:
             skipped += 1
         else:
             draws.append(e)
-    require(skipped <= resamples * 0.1, 'bootstrap重采样中单一类别过多，病例数不足以估计区间')
-    if checkpoint:checkpoint()
+    require(skipped <= resamples * 0.1, 'bootstrap 重采样中单一类别过多，无法稳定估计区间')
     draws.sort()
-    if checkpoint:checkpoint()
-    alpha = (1 - level) / 2
+    alpha = (1.0 - level) / 2.0
     lo = draws[max(0, math.floor(alpha * len(draws)))]
-    hi = draws[min(len(draws) - 1, math.ceil((1 - alpha) * len(draws)) - 1)]
-    return {'effect': point, 'ci_low': lo, 'ci_high': hi, 'level': level, 'cases': len(ids),
-            'resamples': resamples, 'skipped_resamples': skipped, 'seeds_a': len(runs_a), 'seeds_b': len(runs_b),
-            'method': 'paired case-level percentile bootstrap; per-seed statistic aggregated by contract rule'}
-
-
-def seed_sd(values):
-    return statistics.stdev(values) if len(values) >= 2 else 0.0
+    hi = draws[min(len(draws) - 1, math.ceil((1.0 - alpha) * len(draws)) - 1)]
+    return {
+        'effect': point,
+        'ci_low': lo,
+        'ci_high': hi,
+        'level': level,
+        'cases': len(ids),
+        'resamples': resamples,
+        'skipped_resamples': skipped,
+        'seeds_a': len(runs_a),
+        'seeds_b': len(runs_b),
+    }

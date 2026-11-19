@@ -1,76 +1,123 @@
-"""Codex-facing JSON CLI. Approval/review records do not authenticate a human."""
+"""Lightweight JSON CLI for co-evolving medical imaging experiments (v3)."""
+from __future__ import annotations
+
 import argparse
 import json
+from pathlib import Path
 import sys
+
 from medexp.common import safe_path
-from medexp import engine
-from medexp import adaptive, scheduler
+from medexp import study
 
 
-def main():
-    if hasattr(sys.stdout,'reconfigure'):sys.stdout.reconfigure(encoding='utf-8')
-    p=argparse.ArgumentParser(description='本地医学影像实验控制，先确认再训练')
-    commands=p.add_subparsers(dest='action',required=True)
-    for name in ('adaptive-init','adaptive-step','adaptive-start','adaptive-status','adaptive-pause',
-                 'adaptive-resume','adaptive-correct','adaptive-export','adaptive-reconcile'):
-        sp=commands.add_parser(name);sp.add_argument('--root',required=True)
-        if name=='adaptive-init':
-            sp.add_argument('--contract',required=True);sp.add_argument('--delegation',required=True)
-        if name in ('adaptive-init','adaptive-pause','adaptive-resume'):sp.add_argument('--statement',required=True)
-        if name in ('adaptive-correct','adaptive-reconcile'):sp.add_argument('--record',required=True)
-    for name in ['init','approve','audit','candidate','review','run','test','status','reported','recover','resume','export']:
-        sp=commands.add_parser(name);sp.add_argument('--root',required=True)
-        if name in ('init','resume'):sp.add_argument('--contract',required=True)
-        if name in ('approve','reported','resume'):sp.add_argument('--statement',required=True)
-        if name=='resume':sp.add_argument('--direction',required=True)
-        if name=='candidate':
-            sp.add_argument('--id',required=True);sp.add_argument('--phase',choices=['baseline','explore','verify','matrix'],required=True)
-            sp.add_argument('--command',required=True);sp.add_argument('--description',required=True)
-            sp.add_argument('--entry',default=None)
-        if name=='review':sp.add_argument('--record',required=True)
-        if name=='run':sp.add_argument('--candidate',required=True);sp.add_argument('--seed',type=int,required=True)
-        if name=='test':sp.add_argument('--candidate',required=True);sp.add_argument('--rationale',required=True)
-    args=p.parse_args()
+def _csv_list(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    return [x.strip() for x in raw.split(',') if x.strip()]
+
+
+def main(argv: list[str] | None = None) -> int:
+    if hasattr(sys.stdout, 'reconfigure'):
+        sys.stdout.reconfigure(encoding='utf-8')
+
+    parser = argparse.ArgumentParser(description='医学影像实验与计划书协同控制器（轻量 v3）')
+    sub = parser.add_subparsers(dest='action', required=True)
+
+    p_init = sub.add_parser('init', help='初始化课题并校验环境与轻量配置')
+    p_init.add_argument('--root', required=True)
+    p_init.add_argument('--config', required=True)
+    p_init.add_argument('--authorization', default='')
+
+    p_audit = sub.add_parser('audit', help='执行患者/分组划分防泄漏审计（训练前必过）')
+    p_audit.add_argument('--root', required=True)
+
+    p_run = sub.add_parser('run', help='执行单次受管训练并登记结果与耗时')
+    p_run.add_argument('--root', required=True)
+    p_run.add_argument('--entry', required=True)
+    p_run.add_argument('--seed', type=int, required=True)
+    p_run.add_argument('--phase', choices=('screening', 'formal'), default='formal')
+    p_run.add_argument('--command-json', default=None)
+
+    p_rev = sub.add_parser('revise', help='实验不理想时修订路线、实验条目并同步更新计划书')
+    p_rev.add_argument('--root', required=True)
+    p_rev.add_argument('--summary', required=True)
+    p_rev.add_argument('--entries-json', default=None)
+    p_rev.add_argument('--reference', default=None)
+    p_rev.add_argument('--hypothesis', default=None)
+    p_rev.add_argument('--plan-file', default=None)
+    p_rev.add_argument('--reusable-entries', default='')
+    p_rev.add_argument('--invalidate-entries', default='')
+
+    p_status = sub.add_parser('status', help='查看当前路线、预算余额、有效验证结果与测试状态')
+    p_status.add_argument('--root', required=True)
+
+    p_chk = sub.add_parser('pretest-check', help='冻结测试前登记一次独立只读核查')
+    p_chk.add_argument('--root', required=True)
+    p_chk.add_argument('--reviewer', required=True)
+    p_chk.add_argument('--verdict', choices=('pass', 'block'), required=True)
+    p_chk.add_argument('--summary', required=True)
+    p_chk.add_argument('--checked-files', default='')
+
+    p_frz = sub.add_parser('freeze', help='作者选定最终路线并冻结条目（此后禁止继续探索）')
+    p_frz.add_argument('--root', required=True)
+    p_frz.add_argument('--entries', required=True)
+    p_frz.add_argument('--statement', required=True)
+
+    p_test = sub.add_parser('test', help='对已冻结条目执行锁定测试集评估（仅报告，不回流选型）')
+    p_test.add_argument('--root', required=True)
+    p_test.add_argument('--entry', required=True)
+    p_test.add_argument('--rationale', default='冻结最终路线后统一评估锁定测试集')
+
+    p_fin = sub.add_parser('finalize', help='定稿收口：保留唯一干净最终路线计划书并生成终版报告')
+    p_fin.add_argument('--root', required=True)
+    p_fin.add_argument('--plan-file', default=None)
+    p_fin.add_argument('--no-rework', action='store_true')
+
+    p_exp = sub.add_parser('export', help='导出 report.md 与 report.json')
+    p_exp.add_argument('--root', required=True)
+
+    args = parser.parse_args(argv)
     try:
-        root=safe_path(args.root)
-        if args.action=='adaptive-init':r=adaptive.init(root,args.contract,args.delegation,args.statement)
-        elif args.action=='adaptive-step':r=adaptive.step(root)
-        elif args.action=='adaptive-start':r=scheduler.start(root)
-        elif args.action=='adaptive-status':r=adaptive.status(root)
-        elif args.action=='adaptive-pause':r=adaptive.pause(root,args.statement)
-        elif args.action=='adaptive-resume':r=adaptive.resume(root,args.statement)
-        elif args.action=='adaptive-correct':r=adaptive.correct(root,args.record)
-        elif args.action=='adaptive-export':r=adaptive.export(root)
-        elif args.action=='adaptive-reconcile':r=adaptive.reconcile_review(root,args.record)
-        elif args.action=='init':r=engine.init(root,args.contract)
-        elif args.action=='approve':r=engine.approve(root,args.statement)
-        elif args.action=='audit':r=engine.audit(root)
-        elif args.action=='candidate':r=engine.candidate(root,args.id,args.phase,args.command,args.description,args.entry)
-        elif args.action=='test':r=engine.test(root,args.candidate,args.rationale)
-        elif args.action=='review':r=engine.review(root,args.record)
-        elif args.action=='run':r=engine.run(root,args.candidate,args.seed)
-        elif args.action=='status':r=engine.status(root)
-        elif args.action=='reported':r=engine.reported(root,args.statement)
-        elif args.action=='recover':r=engine.recover(root)
-        elif args.action=='resume':r=engine.resume(root,args.contract,args.direction,args.statement)
-        else:r=engine.export(root)
-        summaries={'awaiting_confirmation':'等待用户确认契约与预算，尚未训练','ready':'当前阶段可按批准范围继续',
-                   'running':'受管训练运行中，后台不生成新候选','queued':'当前训练已提交，等待后台检查与执行',
-                   'verification_required':'探索结果达标，仍需完成正式复核','accepted':'当前契约的正式复核已通过，实际研究有效性另行验证',
-                   'awaiting_report':'异常已停止并保全，先向用户汇报再回退','reported':'已登记汇报，接下来执行受管回退与失败记录',
-                   'awaiting_direction':'失败处理完成，等待用户选择方向与确认新契约','budget_exhausted':'预算或无改善上限已达，目标尚未达成',
-                   'testing':'锁定测试集评估运行中；结果只报告，不用于选择','matrix_complete':'实验矩阵全部条目完成复核，可做锁定测试与导出',
-                   'stopped':'自动流程已停止；查看报告中的原因，不可继续训练或测试',
-                   'paused':'自动流程已暂停；等待明确恢复，原预算和截止时间保留',
-                   'awaiting_human':'自动流程已停止，等待报告所列的具体人工决定',
-                   'completed':'自动流程交付已完成；测试结果只报告，不回流方法选择'}
-        r['summary_zh']=summaries.get(r.get('status'), '受管操作完成；请结合返回的候选、审查或报告路径检查结果')
-        if args.action=='audit':r['summary_zh']='划分审计通过：分组单位跨划分无重叠；标签质量与重复图像仍需审查'
-        print(json.dumps(r,ensure_ascii=False,allow_nan=False))
+        root = safe_path(args.root)
+        if args.action == 'init':
+            res = study.init(root, Path(args.config), args.authorization)
+        elif args.action == 'audit':
+            res = study.audit(root)
+        elif args.action == 'run':
+            res = study.run_entry(
+                root, args.entry, args.seed, args.phase,
+                Path(args.command_json) if args.command_json else None,
+            )
+        elif args.action == 'revise':
+            res = study.revise_route(
+                root, args.summary,
+                entries_json=Path(args.entries_json) if args.entries_json else None,
+                reference=args.reference,
+                hypothesis=args.hypothesis,
+                plan_file=Path(args.plan_file) if args.plan_file else None,
+                reusable_entries=_csv_list(args.reusable_entries),
+                invalidate_entries=_csv_list(args.invalidate_entries),
+            )
+        elif args.action == 'status':
+            res = study.status(root)
+        elif args.action == 'pretest-check':
+            res = study.pretest_check(root, args.reviewer, args.verdict, args.summary,
+                                      _csv_list(args.checked_files))
+        elif args.action == 'freeze':
+            res = study.freeze(root, _csv_list(args.entries), args.statement)
+        elif args.action == 'test':
+            res = study.run_test(root, args.entry, args.rationale)
+        elif args.action == 'finalize':
+            res = study.finalize_study(root, Path(args.plan_file) if args.plan_file else None,
+                                       mark_rework=not args.no_rework)
+        else:
+            res = study.export_report(root)
+        print(json.dumps(res, ensure_ascii=False, allow_nan=False, indent=2))
         return 0
-    except Exception as e:
-        print(json.dumps({'error':type(e).__name__,'summary_zh':str(e)},ensure_ascii=False))
+    except Exception as exc:
+        print(json.dumps({'error': type(exc).__name__, 'message': str(exc)}, ensure_ascii=False))
         return 2
 
 
-if __name__=='__main__':sys.exit(main())
+if __name__ == '__main__':
+    raise SystemExit(main())

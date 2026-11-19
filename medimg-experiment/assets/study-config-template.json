@@ -1,0 +1,62 @@
+{
+  "schema_version": 3,
+  "study_id": "example-medimg-study",
+  "task": "multiclass_classification",
+  "hypothesis": "填写当前核心研究假设（路线修订时可随实验反馈更新）",
+  "plan_path": "F:/path/to/project/00_plan/project-plan.md",
+  "project_root": "F:/path/to/project",
+  "code_dir": "F:/path/to/project/01_analysis/src",
+  "primary_metric": {
+    "name": "bacc",
+    "direction": "higher",
+    "target": 0.85
+  },
+  "secondary_metrics": [
+    {"name": "macro_f1", "direction": "higher"}
+  ],
+  "data": {
+    "paths": ["F:/path/to/readonly_dataset"],
+    "group_unit": "patient_id",
+    "labels_source": "填写标签与参考标准来源",
+    "split_reference": "填写冻结的 train/val/test 划分清单路径或说明"
+  },
+  "split_audit": {
+    "command": ["{python}", "audit_split.py", "--output", "{output}"],
+    "timeout_seconds": 120
+  },
+  "test": {
+    "policy": "locked",
+    "reference": "锁定内部/外部测试集说明",
+    "command": ["{python}", "evaluate_test.py", "--run-dir", "{run_dir}", "--output", "{output}"],
+    "timeout_seconds": 600
+  },
+  "reference": "baseline",
+  "entries": [
+    {
+      "id": "baseline",
+      "role": "baseline",
+      "description": "强基线模型（默认复用，避免换路线时重复训练）",
+      "command": ["{python}", "train.py", "--model", "baseline", "--seed", "{seed}", "--output-dir", "{output_dir}"]
+    },
+    {
+      "id": "proposed_v1",
+      "role": "proposed",
+      "description": "初版主方法",
+      "screening_command": ["{python}", "train.py", "--model", "proposed_v1", "--epochs", "5", "--seed", "{seed}", "--output-dir", "{output_dir}"],
+      "command": ["{python}", "train.py", "--model", "proposed_v1", "--epochs", "30", "--seed", "{seed}", "--output-dir", "{output_dir}"]
+    }
+  ],
+  "seeds": [0, 1, 2],
+  "budgets": {
+    "max_training_seconds": 28800,
+    "run_timeout_seconds": 3600,
+    "max_routes": 3,
+    "deadline_utc": null
+  },
+  "environment": {
+    "python": "D:/anaconda/python.exe",
+    "device": "cuda",
+    "inherit_cache": true
+  },
+  "ci": null
+}

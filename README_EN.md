@@ -189,7 +189,7 @@ python install.py --uninstall
 | Skill | Role & Verification Scope | Spec |
 |---|---|---|
 | `medical-research-plan` | Socratic study design, literature anchoring, data/ethics feasibility, hypothesis falsification | [`SKILL.md`](medical-research-plan/SKILL.md) |
-| `medimg-experiment` | Local Windows 2D/3D medical imaging experiments via Codex/Claude Code backends, multi-seed & frozen tests | [`SKILL.md`](medimg-experiment/SKILL.md) |
+| `medimg-experiment` | Lightweight plan–experiment co-evolution engine (v3): general medical imaging tasks/metrics, split-leakage audit, bounded overnight exploration with baseline reuse, single pre-test check, locked test isolation & clean final plan convergence | [`SKILL.md`](medimg-experiment/SKILL.md) |
 | `socratic-project-manager` | Structured Socratic interviews turning complex ideas into crisp requirements & handoffs | [`SKILL.md`](socratic-project-manager/SKILL.md) |
 
 </details>
@@ -275,7 +275,7 @@ python -X utf8 -m unittest medical-sci-finalize/scripts/test_scaffold_structural
 | Figure replication (`sci-figure-replica`) | Set `python_exe`, `rscript_exe`, `gallery_root` in `sci-figure-replica/config.json` or `config.local.json`; R plots require `ggplot2`, `patchwork`, `scales` |
 | Visible Zotero citations (`medical-sci-references`) | Running Zotero 10 (≥ 10.0.5 recommended, local API enabled), Word Zotero plugin & Node.js |
 | Illustrator vector redraw (`medfig-illustrator`) | Windows + Adobe Illustrator CC 2019 (23.x)+ with an open document (`CELL_LCT_PYTHON` if PATH lacks real Python) |
-| Managed experiments (`medimg-experiment`) | Windows + Git + verified Codex or Claude Code CLI, plus project PyTorch/CUDA environment |
+| Co-evolving experiments (`medimg-experiment`) | Real Python interpreter (avoid WindowsApps stub) + project PyTorch/timm/MONAI/nnU-Net stack (inherits local pretrained caches by default) |
 
 For **Codex-only** installations, point `FIGKIT_LIB` and `figkit.toml` to `~/.codex/skills`:
 

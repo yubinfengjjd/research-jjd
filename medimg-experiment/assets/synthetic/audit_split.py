@@ -1,37 +1,31 @@
-"""FROZEN: write the split audit consumed by `controller.py audit`.
+"""Synthetic patient-level split audit demo."""
+from __future__ import annotations
 
-Usage: python audit_split.py --task classification --output PATH
-Lists pseudonymised group IDs and class counts per split. The controller checks
-that groups are disjoint across splits; it does not judge label quality.
-"""
 import argparse
 import json
+from pathlib import Path
 
-import numpy as np
-
-import synth_data
+from synth_data import SPLITS, class_counts
 
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("--task", choices=("classification", "segmentation"), required=True)
-    p.add_argument("--output", required=True)
-    a = p.parse_args()
-    data = synth_data.build(a.task)
-    splits = {}
-    for name, part in data.items():
-        if a.task == "classification":
-            counts = {str(k): int(v) for k, v in zip(*np.unique(part["targets"].astype(int), return_counts=True))}
-        else:
-            fg = part["targets"].reshape(len(part["ids"]), -1).max(axis=1).astype(int)
-            counts = {"with_foreground": int(fg.sum()), "empty": int(len(fg) - fg.sum())}
-        splits[name] = {"group_ids": [str(i) for i in part["ids"]], "class_counts": counts}
-    with open(a.output, "w", encoding="utf-8") as f:
-        json.dump({"group_unit": "patient", "splits": splits,
-                   "note": "synthetic; one image per patient"}, f, indent=2)
-        f.write("\n")
+    p.add_argument('--output', required=True)
+    p.add_argument('--inject-leak', action='store_true')
+    args = p.parse_args()
+
+    splits = {
+        name: {'group_ids': list(ids), 'class_counts': class_counts(name)}
+        for name, ids in SPLITS.items()
+    }
+    if args.inject_leak:
+        splits['val']['group_ids'].append(splits['train']['group_ids'][0])
+
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps({'group_unit': 'patient_id', 'splits': splits}, indent=2) + '\n', encoding='utf-8')
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     raise SystemExit(main())

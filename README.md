@@ -204,7 +204,7 @@ python install.py --uninstall
 | 技能 | 核心能力与门禁 | 入口文档 |
 |---|---|---|
 | `medical-research-plan` | 苏格拉底式逐轮访谈、文献锚点、伦理/数据可行性检查、假设反证与可执行计划 | [`SKILL.md`](medical-research-plan/SKILL.md) |
-| `medimg-experiment` | Windows 本地 2D/3D 医学影像训练与评估；真实调用 Codex / Claude Code、多 seed 消融、负结果驱动修订与冻结测试隔离 | [`SKILL.md`](medimg-experiment/SKILL.md) |
+| `medimg-experiment` | 计划书与实验协同引擎（v3）：通用医学影像 AI（分类/多分类/多标签/2D-3D 分割/回归）、划分防泄漏、最小侵入训练、有界探索与基线复用、测试前独立核查、锁定测试隔离及最终唯一路线收口 | [`SKILL.md`](medimg-experiment/SKILL.md) |
 | `socratic-project-manager` | 用结构化苏格拉底问答推进复杂科研或工程想法至清晰需求与可执行交接 | [`SKILL.md`](socratic-project-manager/SKILL.md) |
 
 </details>
@@ -292,7 +292,7 @@ python -X utf8 -m unittest medical-sci-finalize/scripts/test_scaffold_structural
 | 数据图复刻（`sci-figure-replica`） | 在 `sci-figure-replica/config.json` 或忽略提交的 `config.local.json` 中填入本机 `python_exe`、`rscript_exe`、`gallery_root`；R 渲染需 `ggplot2`、`patchwork`、`scales` |
 | 可见参考文献交付（`medical-sci-references`） | 运行中的 Zotero 10（建议 ≥ 10.0.5，开启本地 API）、Word Zotero 插件、Node.js（用于重放 `citeproc-js`） |
 | AI 矢量重画（`medfig-illustrator`） | Windows + 已打开目标文档的 Adobe Illustrator CC 2019 (23.x)+；若 PATH 无真实 Python，请配置 `CELL_LCT_PYTHON` |
-| 受控自动实验（`medimg-experiment`） | Windows + Git + 已通过真实调用核验的 Codex 或 Claude Code CLI，按课题配置 PyTorch / CUDA |
+| 协同实验引擎（`medimg-experiment`） | 真实 Python 解释器（拒绝 WindowsApps 占位）与课题所需 PyTorch/timm/MONAI/nnU-Net 环境（默认继承本机预训练缓存） |
 
 > [!NOTE]
 > 可选增强包缺失时会自动降级并提示：`Arial` 字体（缺失时回退 DejaVu Sans）、`SciencePlots`、`PyMuPDF`、`kaleido`，以及 R 端的 `svglite`、`ggbeeswarm`。

@@ -1,53 +1,75 @@
-"""Dependency-free checks for the deliberately small skill metadata subset.
+"""Dependency-free package check for medimg-experiment (v3)."""
+from __future__ import annotations
 
-This is NOT the official PyYAML-based quick_validate and does not claim to
-validate arbitrary YAML. It accepts only the simple mappings shipped here.
-"""
 import json
 from pathlib import Path
 import re
 import sys
 
 
-def check(root):
-    root=Path(root).resolve();text=(root/'SKILL.md').read_text(encoding='utf-8')
-    match=re.match(r'^---\n(.*?)\n---\n',text,re.S)
-    if not match:raise ValueError('Missing simple frontmatter')
-    meta={}
+def check(root) -> dict:
+    root = Path(root).resolve()
+    text = (root / 'SKILL.md').read_text(encoding='utf-8')
+    match = re.match(r'^---\n(.*?)\n---\n', text, re.S)
+    if not match:
+        raise ValueError('Missing YAML frontmatter in SKILL.md')
+    meta = {}
     for line in match[1].splitlines():
-        key,sep,value=line.partition(':')
-        if not sep or key not in ['name','description'] or not value.strip():raise ValueError('Unsupported/empty frontmatter field')
-        meta[key]=value.strip()
-    if set(meta)!=set(['name','description']) or meta['name']!='medimg-experiment':raise ValueError('Skill identity mismatch')
-    if not re.fullmatch('[a-z0-9]+(?:-[a-z0-9]+)*',meta['name']) or len(meta['description'])>1024:raise ValueError('Skill metadata invalid')
-    if '[TODO:' in text:raise ValueError('Unfinished entrypoint')
-    files=[root/'SKILL.md',*(root/'references').glob('*.md')]
-    for file in files:
-        for link in re.findall(r'\]\(([^)]+)\)',file.read_text(encoding='utf-8')):
+        key, sep, value = line.partition(':')
+        if not sep or key not in ('name', 'description') or not value.strip():
+            raise ValueError(f'Unsupported or empty frontmatter field: {line}')
+        meta[key] = value.strip()
+    if set(meta) != {'name', 'description'} or meta['name'] != 'medimg-experiment':
+        raise ValueError('Skill identity mismatch')
+    if len(meta['description']) > 1024 or '[TODO:' in text:
+        raise ValueError('Invalid description or unfinished TODO')
+
+    md_files = [root / 'SKILL.md', *(root / 'references').glob('*.md')]
+    for md in md_files:
+        for link in re.findall(r'\]\(([^)]+)\)', md.read_text(encoding='utf-8')):
             if '://' not in link and not link.startswith('#'):
-                path=(file.parent/link.split('#')[0]).resolve()
-                if not path.is_relative_to(root) or not path.exists():raise ValueError('Broken local reference: '+link)
-    yaml=(root/'agents'/'openai.yaml').read_text(encoding='utf-8')
-    for line in yaml.splitlines():
-        if not line.strip() or line.lstrip().startswith('#'):continue
-        if not re.fullmatch(r'(?:interface|policy):|  (?:display_name|short_description|default_prompt): ".*"|  allow_implicit_invocation: true',line):
-            raise ValueError('Unsupported generated metadata line: '+line)
-    if '$medimg-experiment' not in yaml or 'allow_implicit_invocation: true' not in yaml:raise ValueError('Invocation metadata missing')
-    json.loads((root/'assets'/'contract-template.json').read_text(encoding='utf-8'))
-    json.loads((root/'assets'/'adaptive-contract-template.json').read_text(encoding='utf-8'))
-    for name in ['controller.py','worker.py','medexp/process.py','medexp/stats.py',
-                 'medexp/adaptive.py','medexp/agent_runner.py','medexp/agent_backends.py','medexp/scheduler.py','medexp/projection.py','medexp/recovery.py','medexp/review_adapter.py']:
-        if not (root/'scripts'/name).is_file():raise ValueError('Missing runtime file: '+name)
-    for name in ['synth_data.py','audit_split.py','evaluate_test.py','model.py','train.py']:
-        if not (root/'assets'/'synthetic'/name).is_file():raise ValueError('Missing demo file: '+name)
-    for name in ['synth_data.py','audit_split.py','evaluate_test.py','model.py','train.py',
-                 'torch_runtime.py','sampler.py','validate_resume.py','verify_run.py','README.md']:
-        if not (root/'assets'/'gpu_synthetic'/name).is_file():raise ValueError('Missing GPU fixture file: '+name)
-    if not (root/'tests'/'run_gpu_acceptance.py').is_file():raise ValueError('Missing GPU acceptance driver')
-    return {'valid':True,'validator':'dependency-free generated-metadata subset + resource links; not official quick_validate',
-            'name':meta['name'],'references_checked':len(files),'implicit_discovery':True}
+                target = (md.parent / link.split('#')[0]).resolve()
+                if not target.is_relative_to(root) or not target.exists():
+                    raise ValueError(f'Broken local reference in {md.name}: {link}')
+
+    yaml_text = (root / 'agents' / 'openai.yaml').read_text(encoding='utf-8')
+    if '$medimg-experiment' not in yaml_text or 'allow_implicit_invocation: true' not in yaml_text:
+        raise ValueError('agents/openai.yaml missing invocation metadata')
+
+    cfg_tpl = json.loads((root / 'assets' / 'study-config-template.json').read_text(encoding='utf-8'))
+    if cfg_tpl.get('schema_version') != 3:
+        raise ValueError('study-config-template.json must use schema_version=3')
+
+    required_scripts = [
+        'controller.py',
+        'check_package.py',
+        'medexp/__init__.py',
+        'medexp/common.py',
+        'medexp/config.py',
+        'medexp/process.py',
+        'medexp/stats.py',
+        'medexp/plan_sync.py',
+        'medexp/study.py',
+    ]
+    for name in required_scripts:
+        if not (root / 'scripts' / name).is_file():
+            raise ValueError(f'Missing runtime file: scripts/{name}')
+
+    for name in ('synth_data.py', 'audit_split.py', 'train.py', 'evaluate_test.py'):
+        if not (root / 'assets' / 'synthetic' / name).is_file():
+            raise ValueError(f'Missing synthetic demo file: assets/synthetic/{name}')
+
+    return {
+        'valid': True,
+        'name': meta['name'],
+        'schema_version': 3,
+        'references_checked': len(md_files),
+    }
 
 
-if __name__=='__main__':
-    try:print(json.dumps(check(sys.argv[1]),ensure_ascii=False))
-    except Exception as e:print(json.dumps({'valid':False,'error':str(e)},ensure_ascii=False));sys.exit(1)
+if __name__ == '__main__':
+    try:
+        print(json.dumps(check(sys.argv[1]), ensure_ascii=False))
+    except Exception as exc:
+        print(json.dumps({'valid': False, 'error': str(exc)}, ensure_ascii=False))
+        sys.exit(1)
