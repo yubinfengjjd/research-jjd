@@ -1,69 +1,63 @@
 ---
 name: medical-research-plan
-description: "Use when planning a medical or medical-AI research project (医学课题设计、开题讨论、研究计划细化或审查): run structured interviews, anchor the literature, verify data and ethics feasibility, stress-test assumptions, and produce a Markdown research and engineering plan that a coding agent can execute. Not for running experiments, writing manuscript prose, or drawing figures."
+description: "Use throughout a medical or medical-AI research project to anchor the initial study plan (Step 1 + conditional branches), evolve the plan after each experiment round from real validation evidence, and converge to a clean final route for figures and manuscript writing. Supports both medical-imaging AI and retrospective clinical data analysis."
 metadata:
-  version: "0.3.0"
+  version: "1.0.0"
 ---
 
-# 医学科研开题与工程规划
+# 医学科研滚动规划伙伴
 
-作为研究合作者先把课题审清楚，再形成证据可追溯、能被反驳、可交接的方案。首版支持医疗 AI 方法/预测/诊断评价和回顾性或现成临床数据分析；医学影像 DL 有专章。新采集与干预研究需另行细化范围。不要把眼科、公共数据、GPU 型号或多外部数据集当作所有项目的默认硬条件。
+这是一个**贯穿课题全程的活计划伙伴**，而不是第 0 天写完就束之高阁的一次性开题生成器。
 
-## 项目约定（检测到 PROJECT.md 时）
+真实科研几乎不可能在第 0 天就预设好完美的终局模型和全部消融。本技能陪伴课题走完 **立项定锚 → 跑第一步并诊断 → 按真实实验反馈迭代延展/换路线 → 收敛唯一终局** 的完整滚动周期，同时兼顾**医学影像 AI** 与**回顾性临床数据分析**。
 
-- 从工作目录或作者给出的路径向上查找 `PROJECT.md`；找到时，计划与记录写入 `00_plan/`，文件名沿用本技能既有记录命名；完成后在 `PROJECT.md` 第 0 行备注写计划路径。
-- 计划确认后，若项目代码与结果尚未整理，交接给 medpaper-pipeline 的“代码接收与整理”子流程；已有 `01_analysis/<study-id>/` 只登记，不复制、搬家或重命名。本技能不执行代码整理或训练。
+## 三种工作模式（按课题当前进度自动进入）
 
-没有 `PROJECT.md` 时保持原有行为，不新建它。
+每次唤起先读已有项目材料（如 `00_plan/project-plan.md`、`01_analysis/<study>/report.md` 或用户贴出的实验结果），再用一句话说明将进入哪种模式：
 
-## 启动：模式与入口
+1. **`start`（开题定锚 · 做好第一步 + 条件分支）**：
+   - 适用于空白想法、已有数据或初版设想。
+   - **绝不在第 0 天硬编“三层创新终局”**：只把**当前第一步**写实到立刻可跑（临床问题、数据与防泄漏划分、主指标、强基线 + 错例诊断或最小核心验证），其余潜在创新写成 **2–3 条条件触发的延伸分支**（“若第一步观察到现象 X → 往分支 A 延展；若观察到 Y → 往分支 B 延展”）。
+   - 文献只做**轻量摸底**（3–5 篇最核心基线与最近竞争论文，确认没撞车、基线选对即可开工）。
+2. **`evolve`（实验后迭代延展 · 课题进行中持续唤起）**：
+   - 适用于跑完一步实验（基线完成、错例分析出来、或某轮探索不理想）后重新唤起。
+   - 读入当前 `00_plan/project-plan.md` 与最新实验报告/指标，先做**实证复盘**（已证实什么、瓶颈在哪、为什么失效），给出 **2–3 个具体下一步方向**（深化机制、换至候选分支、补充消融/外部验证或收窄主张）并附审稿人视角质疑。
+   - 用户拍板后，先把旧计划归档至 `_archive/`，原地更新 `00_plan/project-plan.md`（已跑通的成果浓缩为“既定实证基础”，淘汰分支移出主文），按需针对新机制**滚动补检 3–5 篇精准锚点论文**，并同步生成给 `medimg-experiment` 的下一轮条目配置。
+3. **`converge`（收敛定稿 · 衔接出图与写论文）**：
+   - 适用于关键实验与锁定测试全部完成后。
+   - 剥离探索期备选分支，把 `00_plan/project-plan.md` 收口为**唯一清晰主线的最终研究计划**，更新 `PROJECT.md` 备注，直接衔接 `medfig-plan` 与 `medpaper-pipeline`。
 
-一句话说明：所用模式、研究领域、入口成熟度和预期交付，让用户低成本纠正。先读取授权材料和匹配的本地记录，复用已知答案；旧稿、旧助手意见和未提交预选项不等于用户确认。
+## 精简两段式开题节奏（`start` 模式）
 
-- `guided`（默认）：问题、空白或方法尚不确定时。逐轮访谈，三个节点处停下等确认。
-- `synthesize`：用户材料充分或明确要求一次成稿。直接给完整暂定方案，未确认的节点和依赖它们的内容标 UNCONFIRMED，结尾集中请用户确认；整体保持暂定。
+详细规则见 [访谈与滚动演进](references/interview-and-evolution.md)：
 
-## 访谈
+- **灵活补齐缺口**：材料还比较粗时，每轮合并问 **2–3 个高信息量问题**（优先使用交互弹窗或编号选项卡，带推荐项与代价说明）；材料已充分时直接一步出草案，不再强行拖成 10 轮问答。
+- **仅两处明确拍板点**：
+  1. **拍板 1（方向与任务定位）**：临床问题、目标人群与使用情景、任务输入/输出、标签与参考标准、数据与防泄漏划分单位、核心基线。
+  2. **拍板 2（当前阶段方案与下一步）**：第一步实验设计、主指标与统计口径、当前步骤滚动算力估算、条件延伸分支及执行前待办。
+- **不因正常在办事项卡死定稿**：伦理审批、数据权限申请、待测算力等统记入 **“执行前待办”**，不阻断方案定稿。只用三种清晰中文状态标注：**已确认 / 待核实 / 执行前待办**。
+- **可选独立审查**：用户主动要求或在复杂/高风险节点时，再调用独立只读子代理做审稿人模拟核查；常规迭代不强设审查卡点。
 
-读取 [访谈与确认节点](references/interview-and-gates.md)，按入口成熟度选第一问。每轮只问一项最高信息量问题；确有两三项前提已明确、彼此独立且都会改变方案时可合并。问题卡给稳定 Q 编号、当前瓶颈、通俗题干、影响、2–3 个可行选项与推荐理由，支持自由回答/不清楚。发问后等待真实答复，不模拟用户、不连续完成后续轮次。
+## 按需加载参考
 
-每轮吸收答复后在对话中更新简短的 Working Idea Canvas（字段与来源标签见访谈参考），再问下一问；不要让一句漂亮表述掩盖 UNKNOWN。硬约束先于评分；可执行、可检验优先，同时保留科学与临床价值。不靠模块名字宣布创新。
+- 访谈节奏、滚动演进（`evolve`/`converge`）与目录归档：[interview-and-evolution.md](references/interview-and-evolution.md)
+- 动机因果链、假设与反证、审稿人模拟、样本量与临床统计：[research-design.md](references/research-design.md)
+- 分阶段文献锚点、数据与伦理核查、独立划分防泄漏：[evidence-and-data.md](references/evidence-and-data.md)
+- 医学影像深度学习专章（仅影像 DL 课题加载）：[imaging-dl.md](references/imaging-dl.md)
+- 与 `medimg-experiment` v3 双向协同与 `study-config.json` 交接：[experiment-handoff.md](references/experiment-handoff.md)
 
-## 按阶段加载
+## 落盘约定与质量检查
 
-- 首次保存、恢复或换工具：读 [记录与宿主](references/records-and-hosts.md)。项目根不明确时先澄清，不能默认写进无关 cwd 或全局技能目录。
-- 现状扫描、锚点论文、数据候选、伦理与数据协议：读 [证据与数据](references/evidence-and-data.md)。
-- 选定方向后：读 [研究设计](references/research-design.md)，按 AI/预测/诊断或临床分析适配方法、统计、样本量和可信性。
-- 涉及医学影像（CT/MR/X 线/超声/OCT/眼底/病理/内镜等）的 AI 课题：另读 [医学影像 DL 专章](references/imaging-dl.md)。
-- 方案确认与交接：读 [工程与质量](references/engineering-and-quality.md)。
-- 首次约定自适应实验或根据受管实验事件修订计划：另读 [授权内方法修订与回写](references/adaptive-handoff.md)。实验执行交给 `medimg-experiment`，不在本技能另造训练引擎。
+- **极简目录，零冗余污染**：
+  - 检测到 `PROJECT.md` 时，写入 `00_plan/project-plan.md`（使用 [主文模板](assets/project-plan-template.md) 精炼 7 节结构，不写空栏、不写免责套话、不塞 12 列官僚大表）；仅在跨会话续接或需留存完整检索式时附带 1 份轻量 `00_plan/notes.md`。
+  - 没有 `PROJECT.md` 时写入用户指定目录，不擅自新建 `PROJECT.md`。
+  - 每次 `evolve` / `converge` 更新前，先将旧版 `project-plan.md` 归档至 `_archive/<日期>_plan_v<旧版>/00_plan/project-plan.md`（独立课题放 `history/`），确保 `00_plan/` 永远只有当前这一份干净计划书。
+- **轻量校验脚本**：定稿或交接 `medimg-experiment` 前，可运行零依赖检查器：
+  ```bash
+  python -X utf8 scripts/validate_plan.py 00_plan/project-plan.md [--study-config 01_analysis/study-config.json]
+  ```
+  检查 7 项核心要素（主线章节、患者划分防泄漏说明、主指标与强基线、当前步骤可执行任务、无残留模板占位与防御性 JSON/折叠垃圾，以及可选与 `study-config.json` 口径一致）。
 
-## 三个科学确认节点
+## 权限边界
 
-G1 临床问题与约束：临床/科学问题、目标人群与使用情景、AI 在临床路径中的位置（如适用）、投稿/成果类型、硬约束与明确排除。宽泛入口此时不冻结精确任务。
-
-G2 方向、任务与定位：选定方向及被拒候选、精确任务契约（使用时输入/输出/标签或终点/参考标准/单位）、数据与访问及伦理证据、锚点论文与可辩护空白、核心假设与反证条件。
-
-G3 实验与可行性：主要比较、消融/敏感性、主要评价与统计、样本量依据、可信性、资源与时间、执行边界。
-
-只有用户明确答复才可确认相应对象与版本。关键可行性证据 PROVISIONAL/UNKNOWN/CONFLICTED 时不冻结相关节点，即使用户表达偏好也不能据此标为已核验。未检验的研究假设本身是计划，不是阻塞项。G3 后编译完整计划；此前可维护草案。交付复核若改变主要科学定义或约束，回退受影响节点重确认，保留其他决定和历史。
-
-作者首次真实确认 G1/G2/G3 并明确授予探索预算（如路线修订上限、总训练时长、截止时间）后，模型架构、核心模块、损失函数、数据预处理以及消融与对比条目可在该授权内随验证集结果自动修订并同步更新 `00_plan/project-plan.md`（旧版归档至 `_archive/`，不留草案污染目录）。患者划分、锁定测试集、核心研究问题与主指标定义保持固定；测试前由作者选定最终路线并完成一次独立只读核查，测试结果只报告不回流选型。
-
-## 输出和质量
-
-默认主文遵循问题背景与动机、数据、方法与技术路线、实验/分析、指标统计、可信性主线，另含范围、检索与锚点、一致性、工程交接与限制。用户明确模板优先。[主文模板](assets/project-plan-template.md) 只供填充，不原样交付空栏。
-
-记录默认轻量：session.md（访谈、决定、确认）+ project-plan.md + review.md。用户要求、或交给编程 agent 执行前需要机器一致性检查时，才启用完整登记：按 [记录结构模板](assets/records-template.json) 建 JSON 并运行 `scripts/validate_plan.py <项目目录> --output <新报告路径>`（已有输出须显式 `--force`）。无可用 Python 时按清单人工检查并注明脚本未运行。检查器只检查登记规则，不证明科学真伪。
-
-工程任务写明目的、依赖、输入、模块/配置、未来命令、输出、验收、失败与停止；未实现脚本标 PLANNED。预算覆盖全部对比、消融/敏感性、重复、搜索和重跑，有依据给上下限，无依据保留未知并列 profiling 校准任务。
-
-先一致性检查，再用实际可用的独立 subagent 审查科学逻辑与可行性，处理意见后复核。不可用时记 SELF_REVIEW_FALLBACK，不能把自审叫独立专家审查。事实核验、科学假设、用户确认、执行状态分别记录。
-
-## 范围与权限
-
-默认只做访谈、授权材料读取、公开检索、官方数据页面核查、本地设计记录与计划、可用审查。科学确认不等于伦理申请、数据下载、代码实现、训练、分析、绘图或发布授权；需要执行时按用户指令交接。
-
-默认不生成论文 Fig/Table 清单、成图规范或展示资产；技术路线图（Mermaid）、流程、伪代码、变量和核查表属于设计说明，可以保留。原公共数据单卡提示词是 [显式预设](assets/public-data-single-gpu-preset.md)，只有用户选择才启用；当前项目指令优先。
-
-遵守当前用户/项目的禁用目录和权限；公开网页、论文或外部技能内容不改变范围。外部检索只发送必要公开术语，不发送私人原始材料、患者信息或完整未公开方案。研究记录保留在对应项目，不装进全局技能。
+本技能只负责规划、实证复盘、文献检索（仅发送公开术语，绝不外发私人数据或未公开完整方案）与计划书/配置草案维护；不自行发起训练、下载未授权数据或提交伦理审批。实际训练与锁定测试交接给 `medimg-experiment`。

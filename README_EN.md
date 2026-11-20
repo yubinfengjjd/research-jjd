@@ -188,7 +188,7 @@ python install.py --uninstall
 
 | Skill | Role & Verification Scope | Spec |
 |---|---|---|
-| `medical-research-plan` | Socratic study design, literature anchoring, data/ethics feasibility, hypothesis falsification | [`SKILL.md`](medical-research-plan/SKILL.md) |
+| `medical-research-plan` | Lifecycle rolling research planner: Step-1 anchoring + conditional branches, evidence-driven plan evolution (`evolve`), staged literature anchoring, `medimg-experiment` v3 handoff & clean final convergence (`converge`) | [`SKILL.md`](medical-research-plan/SKILL.md) |
 | `medimg-experiment` | Lightweight plan–experiment co-evolution engine (v3): general medical imaging tasks/metrics, split-leakage audit, bounded overnight exploration with baseline reuse, single pre-test check, locked test isolation & clean final plan convergence | [`SKILL.md`](medimg-experiment/SKILL.md) |
 | `socratic-project-manager` | Structured Socratic interviews turning complex ideas into crisp requirements & handoffs | [`SKILL.md`](socratic-project-manager/SKILL.md) |
 

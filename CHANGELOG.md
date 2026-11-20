@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-21 — Rolling lifecycle refactor (`medical-research-plan` v1.0)
+
+- 重构 `medical-research-plan` 定位为贯穿课题全程的**滚动规划伙伴**（`start` 第 1 步定锚 + 条件延伸分支 → `evolve` 基于真实实验反馈复盘与延展 → `converge` 收敛为唯一干净最终主线），替代原先第 0 天预设终局的一次性瀑布开题模式。
+- 彻底移除占技能 72% 体积的 5 份关系型 JSON 登记系统（`records-template.json`、`record-schema.md`、710 行旧版 `validate_plan.py`）与遗留单卡预设（`public-data-single-gpu-preset.md`），改写为轻量 7 节主计划模板与零依赖 Markdown/交接检查器（`scripts/validate_plan.py` + `scripts/test_validate_plan.py`）。
+- 简化为两段式确认与 3 种清晰中文状态（`已确认` / `待核实` / `执行前待办`），伦理/数据在办不再阻断定稿，文献调研改为第 0 天轻量摸底（3–5 篇）+ 路线跑通后滚动补检，`00_plan/` 默认仅留 `project-plan.md`（按需附 1 份轻量 `notes.md`），并与 `medimg-experiment` v3 的 `study-config.json` 双向无缝对接。
+
 ## 2026-11-19 — Lightweight plan–experiment co-evolution refactor (`medimg-experiment` v3)
 
 - 重构 `medimg-experiment` 为轻量化计划书协同内核（`schema_version: 3`），移除过度防御的多 CLI 后台守护进程（`adaptive.py`、`agent_backends.py`、`agent_runner.py`、`review_adapter.py`、`scheduler.py`、`recovery.py`）与 140 行重型双契约模板，统一收口为 9 条简洁 CLI 命令（`init` / `audit` / `run` / `revise` / `status` / `pretest-check` / `freeze` / `test` / `finalize` / `export`）。

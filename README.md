@@ -203,7 +203,7 @@ python install.py --uninstall
 
 | 技能 | 核心能力与门禁 | 入口文档 |
 |---|---|---|
-| `medical-research-plan` | 苏格拉底式逐轮访谈、文献锚点、伦理/数据可行性检查、假设反证与可执行计划 | [`SKILL.md`](medical-research-plan/SKILL.md) |
+| `medical-research-plan` | 贯穿课题全程的滚动规划伙伴：第 1 步定锚 + 条件延伸分支、基于实验结果的阶段演进（`evolve`）、分阶段文献补检、`medimg-experiment` 配置交接与最终收敛定稿（`converge`） | [`SKILL.md`](medical-research-plan/SKILL.md) |
 | `medimg-experiment` | 计划书与实验协同引擎（v3）：通用医学影像 AI（分类/多分类/多标签/2D-3D 分割/回归）、划分防泄漏、最小侵入训练、有界探索与基线复用、测试前独立核查、锁定测试隔离及最终唯一路线收口 | [`SKILL.md`](medimg-experiment/SKILL.md) |
 | `socratic-project-manager` | 用结构化苏格拉底问答推进复杂科研或工程想法至清晰需求与可执行交接 | [`SKILL.md`](socratic-project-manager/SKILL.md) |
 

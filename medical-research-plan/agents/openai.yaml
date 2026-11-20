@@ -1,6 +1,6 @@
 interface:
   display_name: "medical-research-plan"
-  short_description: "医学与医疗 AI（含影像深度学习）开题访谈、锚点定位、数据与伦理核验及可交接的工程实施计划"
-  default_prompt: "使用 $medical-research-plan，先访谈并逐轮细化我的医学科研课题。"
+  short_description: "贯穿课题全程的医学科研滚动规划伙伴：第1步定锚+条件分支、实验反馈迭代延展、收敛定稿与实验交接"
+  default_prompt: "使用 $medical-research-plan 协助我规划或迭代推进当前医学科研课题。若已有计划书和实验结果，先复盘实证再讨论下一步延展；若刚立项，先定锚第1步可行实验与条件分支，不预设虚假终局。"
 policy:
   allow_implicit_invocation: true
