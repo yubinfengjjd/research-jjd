@@ -53,8 +53,12 @@
 - 只把图号用于该 panel 实际呈现的证据。合法的文本报告结果可不另做图表，但须有可审计的已执行分析来源，并在数字出处表定位；有对应表格时就近引用。不能用无关 panel 为文本数字背书，也不能仅因没有图表而删除有据且与研究问题相关的发现。
 - 不复述方法：分析如何实施交给 Methods。正文中允许的方法信息只限于读者理解该数值所必需的分析单位或数据子集，用短语交代，例如 “in seed 0”“at scan level”“in a principal component analysis fitted on internal scans only”。不写评估或指标的定义、选例规则、统计实现（bootstrap 方案、检验的单双侧、推断分组），不写“汇总矩阵包含重复预测”这类图注式说明，也不写 “as described in Methods”。
 - 句长、分号及重复表达按 journal-style.md「句长、分号与衔接」作内容诊断；不以通用计数决定通过，不为落入区间或清零告警强制拆合句。
-- 单次运行、单种子或子集范围按本小节（`###` 或无子节的 `##`）首次单次运行声明继承：只要仍在同一次运行内，后文即使更换评估指标、中间特征探针、主/次要终点、队列或病例，也直接由新指标或队列名表明测定内容，删去重复的 `in the single evaluated seed` 等起句；同一段内绝不重复两次单次运行短语。前一段已用明确运行编号（如 `in seed 0`）声明单次运行时，同小节紧随其后的段落直接继承，不重复写 `in the same single evaluated seed`。只有中间插入多次运行汇总并再次切回单次运行时才重标一次。
-- 避免用 `whereas` 或 `alongside` 机械串联并列结果，禁止把句首 `Alongside` 机械改成语义含糊的 `With`；超过 30–35 词的复合长句按逻辑拆成两到三个直接清楚的句子。当某一比较在同段内已报告置换检验、符号翻转检验或 `P` 值时，删去该比较上与之矛盾的 `non-inferential` 标签。
+- 单次运行、单种子范围在 `Results` **全章首次进入单次运行分析的段落声明一次**后，后续所有 `###` 子节与段落自动继承该单次运行范围：直接由新指标、探针、终点或队列名表明测定内容，**删去后文各 `###` 子节句首和段中的 `In the single evaluated seed,` / `Evaluated in the single evaluated seed,`**（全章 `single evaluated seed` 控制在 1–2 次以内）；只在同段内直接对比单次与多次运行结果（如 `in seed 0` vs `in seeds 1 and 2`）时用具体种子号区分。
+- 彻底清理 `"instead of"` 滥用、段末免责总结句、句尾分词链与怪异名词搭配：
+  - **禁用 `"A showed/supported/indexed X instead of Y"` 句式**：若 `Y` 是未测量的稻草人（如因果驱动、已验证病变标注、临床工作流获益、独立受试者估计），直接删去 `instead of Y` 尾巴；若 `Y` 是真实对比项，改用主谓否定句（`"The seed 0 advantage did not hold in seeds 1 and 2, so internal BACC was comparable"`）、`", not Y"`（`"reflected distributional differences, not device-specific causal effects"`）或 `"rather than Y"`。
+  - **删去段末零信息增量的总结/免责句**：段落直接以最后一项具体数据结果结束，删去如 `"These probes were representation readouts distinct from model endpoints..."`、`"This algebraic decomposition quantified measured mean concept differences instead of causal drivers..."`、`"Projected distances were neither performance estimates nor direct explanations..."`、`"This gallery remained descriptive without establishing reader utility or workflow benefit."`、`"These non-inferential curves showed lower numerical Edema AP with comparable BACC, without establishing a model ranking"` 这类复述兼免责尾句（若尾句带图号引用，先将图号并入前一句数据句）。
+  - **打散 `, leaving / showing / indicating / representing / distinguishing ... (Fig. X).` 句尾分词链并混入短句**：将句末 `-ing` 分词短语改为主谓分句或直接删去冗余阐释；同源连续句群在首句或核心数据句标出 `(Fig. X)` 后，避免每句都以 `(Fig. X).` 收尾；主动穿插 6–12 词的短句调节节奏，将 >35 词的复合句拆成两到三句。
+  - **用自然动词替代抽象名词堆叠与怪异搭配**：不用 `"admitted an exact decomposition"`（改用 `"decomposed exactly into"`）、不用 `"values indexed"`（改用 `"values reflected"`）、不用 `"near-magnitude reduction"`（改用 `"reduced by a similar amount"`）。当具体数值、区间或检验已明确写出时，删去冗余的 `"descriptive"` / `"non-inferential"` 标签。
 - 少量事件支撑的指标须让读者看清事件数、分析单位与不确定性；是否保留点估计由其信息价值和误导风险决定，不能以样本数阈值机械删去不利结果。
 - 同一舍入值代表两个不同的量（如临床组 BACC 与按成分取平均的 BACC 都是 0.948）时，在每个出现处点明口径（“clinical-group”“component-averaged”），不让读者当成同一个数。
 - 同一指标跨队列报告极值时核对所有队列；唯一最低、并列最低与低值范围要区分。接近但不相等的值不能都称为最低，不能用一个例子替代已知的更差队列。

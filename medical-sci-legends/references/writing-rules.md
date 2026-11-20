@@ -60,7 +60,7 @@
 
 ## 6. 解读边界
 
-- 大纲“措辞边界”与图注相关的条目逐条遵守，是硬约束；必须交代的限定（如轮廓为模型预测而非人工标注）写进对应 panel，不放进讨论式句子。
+- 大纲“措辞边界”与图注相关的条目逐条遵守，是硬约束；必须交代的限定（如轮廓为模型预测而非人工标注）写进对应 panel，用自然地道的 `rather than` 或 `, not`（如 `showing model predictions rather than manual contours`），**严禁滥用不地道的 `"instead of"`（如 `showing model predictions instead of manual contours`），也严禁在各 panel 句首机械重复 `"In the single evaluated seed,"` / `"Evaluated in the single evaluated seed,"`**（单种子范围在图注或表注中至多用一次简洁的 `single-seed` 或由前序声明支配省略）。
 - 显著性及推断结论须由实际执行的相应分析支持；未做检验时可报告 higher、lower 等观测方向，不以 comparable 暗示等效。等效/非劣须有适当设计、预设界值及相应分析；差值区间跨零不能据此认定等效。点估计超过名义目标与区间或检验支持的达标结论须区分；未预设阈值、事后检验、未做推断与未显著不是同义状态。
 - 比较的方向用 positive、negative、higher、lower 描述。不写 favor、favoring、advantage 及其中文对应“偏向、有利于、更优”：不写 “Paired BACC differences favor the proposed model in one seed”（写 “Paired BACC differences are positive in one seed”），不写“差值偏向本模型”（写“差值为正”）。
 - 不写 superior、outperformed、better（无检验支持时），不写因果、机制、临床价值或泛化结论；不把相关、共现、降维分布或解释图写成机制证据；不把代理指标写成真实终点。

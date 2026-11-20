@@ -925,6 +925,102 @@ class ScaffoldStructuralReviewTests(unittest.TestCase):
             (self.after / name).write_bytes(data.encode('utf-8'))
         self._run_verify()
 
+    def test_cross_subsection_same_file_single_run_inheritance_and_owner_guard(self):
+        old_en = (
+            '## 3.1 Representations\n'
+            '### 3.1.2 Feature clustering\n\n'
+            'In the single evaluated seed, backbone features clustered by cohort with score 0.41 (Fig. 2B).\n\n'
+            '## 3.2 Front end\n'
+            '### 3.2.1 Boundary error\n\n'
+            'In the single evaluated seed, the learned front end had lower error at 0.82 px (Fig. 3B).\n'
+        )
+        new_en = (
+            '## 3.1 Representations\n'
+            '### 3.1.2 Feature clustering\n\n'
+            'In the single evaluated seed, backbone features clustered by cohort with score 0.41 (Fig. 2B).\n\n'
+            '## 3.2 Front end\n'
+            '### 3.2.1 Boundary error\n\n'
+            'The learned front end had lower error at 0.82 px (Fig. 3B).\n'
+        )
+        old_zh = (
+            '## 3.1 表示\n'
+            '### 3.1.2 特征聚类\n\n'
+            '在唯一接受评价的种子中，骨干特征按队列聚类，得分为 0.41（图 2B）。\n\n'
+            '## 3.2 前端\n'
+            '### 3.2.1 边界误差\n\n'
+            '在唯一接受评价的种子中，学习型前端误差更低，为 0.82 px（图 3B）。\n'
+        )
+        new_zh = (
+            '## 3.1 表示\n'
+            '### 3.1.2 特征聚类\n\n'
+            '在唯一接受评价的种子中，骨干特征按队列聚类，得分为 0.41（图 2B）。\n\n'
+            '## 3.2 前端\n'
+            '### 3.2.1 边界误差\n\n'
+            '学习型前端误差更低，为 0.82 px（图 3B）。\n'
+        )
+        old_ez = (
+            '## 3.1 Representations\n**3.1 表示**\n'
+            '### 3.1.2 Feature clustering\n**3.1.2 特征聚类**\n\n'
+            'In the single evaluated seed, backbone features clustered by cohort with score 0.41 (Fig. 2B).\n\n'
+            '在唯一接受评价的种子中，骨干特征按队列聚类，得分为 0.41（图 2B）。\n\n'
+            '## 3.2 Front end\n**3.2 前端**\n'
+            '### 3.2.1 Boundary error\n**3.2.1 边界误差**\n\n'
+            'In the single evaluated seed, the learned front end had lower error at 0.82 px (Fig. 3B).\n\n'
+            '在唯一接受评价的种子中，学习型前端误差更低，为 0.82 px（图 3B）。\n'
+        )
+        new_ez = (
+            '## 3.1 Representations\n**3.1 表示**\n'
+            '### 3.1.2 Feature clustering\n**3.1.2 特征聚类**\n\n'
+            'In the single evaluated seed, backbone features clustered by cohort with score 0.41 (Fig. 2B).\n\n'
+            '在唯一接受评价的种子中，骨干特征按队列聚类，得分为 0.41（图 2B）。\n\n'
+            '## 3.2 Front end\n**3.2 前端**\n'
+            '### 3.2.1 Boundary error\n**3.2.1 边界误差**\n\n'
+            'The learned front end had lower error at 0.82 px (Fig. 3B).\n\n'
+            '学习型前端误差更低，为 0.82 px（图 3B）。\n'
+        )
+        for name, data in [('Results_EN.md', old_en), ('Results_ZH.md', old_zh), ('Results_EN_ZH.md', old_ez)]:
+            (self.before / name).write_bytes(data.encode('utf-8'))
+        for name, data in [('Results_EN.md', new_en), ('Results_ZH.md', new_zh), ('Results_EN_ZH.md', new_ez)]:
+            (self.after / name).write_bytes(data.encode('utf-8'))
+        self._run_verify()
+
+        # Conflicting explicit analysis owners across subsections still fail closed
+        conflict_old = (
+            '### 3.1.1 First\n\nIn the single evaluated seed, Analysis A had error 0.41 px.\n\n'
+            '### 3.2.1 Second\n\nIn the single evaluated seed, Analysis B had error 0.82 px.\n'
+        )
+        conflict_new = conflict_old.replace('In the single evaluated seed, Analysis B', 'Analysis B')
+        for p in self.before.iterdir():
+            p.unlink()
+        for p in self.after.iterdir():
+            p.unlink()
+        (self.before / 'Results_EN.md').write_bytes(conflict_old.encode('utf-8'))
+        (self.after / 'Results_EN.md').write_bytes(conflict_new.encode('utf-8'))
+        with self.assertRaises(ValueError):
+            scaffold.build_review_bundle(self.before, self.after)
+
+    def test_instead_of_to_explicit_negation_and_rhetorical_disclaimer_pruning(self):
+        old_en = (
+            'In seed 0, difference was +0.007 (Fig. 4C). '
+            'These values indexed distributional differences instead of device-specific causal effects. '
+            'This gallery remained descriptive without establishing reader utility or workflow benefit.'
+        )
+        new_en = (
+            'In seed 0, difference was +0.007 (Fig. 4C). '
+            'These values reflected distributional differences, not device-specific causal effects.'
+        )
+        old_zh = (
+            '在种子 0 中，差值为 +0.007（图 4C）。'
+            '这些数值反映的是分布差异，而不是设备特异性的因果效应。'
+            '该图集仍为描述性展示，未建立读者效用或工作流获益。'
+        )
+        new_zh = (
+            '在种子 0 中，差值为 +0.007（图 4C）。'
+            '这些数值反映的是分布差异，而非设备特异性的因果效应。'
+        )
+        self._write_qualifier_triplet(old_en, new_en, old_zh, new_zh)
+        self._run_verify()
+
 
 if __name__ == '__main__':
     unittest.main()

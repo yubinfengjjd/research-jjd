@@ -21,9 +21,17 @@ WORD = re.compile(r"[A-Za-z]+(?:['’][A-Za-z]+)?")
 FAMILIES = {
     'scope': re.compile(r'\b(?:single|seeds?)\b', re.I),
     'inference': re.compile(r'\b(?:inferential|descriptive|descriptively|without|unresolved)\b', re.I),
-    'discourse': re.compile(r'\b(?:alongside|whereas|rather\s+than)\b', re.I),
+    'discourse': re.compile(r'\b(?:alongside|whereas|rather\s+than|instead\s+of)\b', re.I),
 }
 FIGURE_GROUP = re.compile(r'\([^)]*\b(?:Fig(?:ure)?s?\.?|Tables?)\s+S?\d+[^)]*\)', re.I)
+FIG_ENDING_RE = re.compile(r'\([^)]*\b(?:Fig(?:ure)?s?\.?|Tables?|PMID)\b[^)]*\)\s*[.!?]["\'”’)]*$', re.I)
+TRAILING_PARTICIPLE_RE = re.compile(
+    r',\s+(?:leaving|showing|indicating|reflecting|confirming|supporting|yielding|spanning|representing|distinguishing|separating|associating|requiring|underscoring|highlighting|demonstrating)\b',
+    re.I,
+)
+INSTEAD_OF_RE = re.compile(r'\binstead\s+of\b', re.I)
+SINGLE_EVAL_SEED_RE = re.compile(r'\bsingle\s+evaluated\s+seed\b', re.I)
+WOULD_FUTURE_RE = re.compile(r'\bwould\s+(?:help|test|clarify|establish|determine|require|distinguish|improve|separate)\b', re.I)
 
 
 def _read_file(path):
@@ -74,18 +82,37 @@ def _measure(documents):
                 count = len(sentence.split())
                 words += count
                 local.append({'file': name, 'line': text.count('\n', 0, offset+local_offset)+1,
-                              'words': count, 'figure_table_parentheses': len(FIGURE_GROUP.findall(sentence))})
+                              'words': count, 'figure_table_parentheses': len(FIGURE_GROUP.findall(sentence)),
+                              'fig_ending': bool(FIG_ENDING_RE.search(sentence.strip())),
+                              'trailing_participles': len(TRAILING_PARTICIPLE_RE.findall(sentence)),
+                              'instead_of': len(INSTEAD_OF_RE.findall(sentence)),
+                              'single_evaluated_seed': len(SINGLE_EVAL_SEED_RE.findall(sentence)),
+                              'would_future': len(WOULD_FUTURE_RE.findall(sentence))})
             if words:
                 paragraphs.append({'file': name, 'line': text.count('\n', 0, offset)+1, 'words': words})
         sentences.extend(local)
         files[name] = {'sentences': len(local), 'words': sum(s['words'] for s in local),
+                       'short_sentences_under_12w': sum(s['words'] < 12 for s in local),
+                       'over_35w_sentences': sum(s['words'] > 35 for s in local),
+                       'fig_ending_sentences': sum(1 for s in local if s['fig_ending']),
+                       'trailing_participles': sum(s['trailing_participles'] for s in local),
+                       'instead_of': sum(s['instead_of'] for s in local),
+                       'single_evaluated_seed': sum(s['single_evaluated_seed'] for s in local),
+                       'would_future': sum(s['would_future'] for s in local),
                        'sha256': hashlib.sha256(text.encode('utf8')).hexdigest()}
     words = sum(s['words'] for s in sentences)
     metrics = {'words': words, 'sentences': len(sentences),
                'mean_sentence_words': words/len(sentences) if sentences else 0,
                'max_sentence_words': max((s['words'] for s in sentences), default=0),
                'max_paragraph_words': max((p['words'] for p in paragraphs), default=0),
+               'short_sentences_under_12w': sum(s['words'] < 12 for s in sentences),
+               'over_35w_sentences': sum(s['words'] > 35 for s in sentences),
                'figure_table_parentheses': sum(s['figure_table_parentheses'] for s in sentences),
+               'fig_ending_sentences': sum(1 for s in sentences if s['fig_ending']),
+               'trailing_participles': sum(s['trailing_participles'] for s in sentences),
+               'instead_of': sum(s['instead_of'] for s in sentences),
+               'single_evaluated_seed': sum(s['single_evaluated_seed'] for s in sentences),
+               'would_future': sum(s['would_future'] for s in sentences),
                'families': {f: {'count': families[f], 'per_1000_words': 1000*families[f]/words if words else 0}
                             for f in FAMILIES}}
     return {'metrics': metrics, 'files': files, 'ngrams': grams, 'terms': singles,

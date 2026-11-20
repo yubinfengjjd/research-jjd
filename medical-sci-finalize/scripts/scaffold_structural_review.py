@@ -835,9 +835,11 @@ def _build_claim_record(
     dst_join = '\n'.join(s['text'] for s in en_dst_spans)
     inherited = inherited or {}
     removed = inherited.get((cid, 'EN'), ())
+    file_pre_s = old[en_src_spans[0]['file']][:min(x['start'] for x in en_src_spans)]
+    file_pre_d = new[en_dst_spans[0]['file']][:min(x['start'] for x in en_dst_spans)]
     b_tok = edit._tokens(edit._content(edit._without_removed(en_src_spans, removed)))
     a_tok = edit._tokens(dst_join)
-    b_tok = edit._ignore_contradicted_noninferential(b_tok, a_tok, src_join, dst_join)
+    b_tok = edit._ignore_contradicted_noninferential(b_tok, a_tok, src_join, dst_join, file_pre_s, file_pre_d)
     if not edit._evidence_equal(b_tok, a_tok):
         miss = sorted(b_tok - a_tok)
         add = sorted(a_tok - b_tok)
@@ -1042,19 +1044,25 @@ def _build_claim_record(
 
     # Remaining qualifier changes must be explicitly paired; scope declarations
     # are not invented here and repeated fixed qualifiers are not auto-generated.
-    rem_s = [flat_src[i] for i in range(len(flat_src)) if i not in used_src and flat_src[i][1][0] == 6]
+    covered_d_q = {t for j in used_dst if flat_dst[j][1][0] == 6 for t in flat_dst[j][1][4]}
+    rem_s = [
+        flat_src[i] for i in range(len(flat_src))
+        if i not in used_src and flat_src[i][1][0] == 6 and ((flat_src[i][1][4] & b_tok) - covered_d_q)
+    ]
     rem_d = [flat_dst[j] for j in range(len(flat_dst)) if j not in used_dst and flat_dst[j][1][0] == 6]
-    dest_ni = any((6, 'non-inferential') in h[4] for _, h in flat_dst if h[0] == 6)
-    if (not dest_ni and edit._REPORTED_TEST.search(src_join) and edit._REPORTED_TEST.search(dst_join)):
-        rem_s = [item for item in rem_s if (6, 'non-inferential') not in item[1][4]]
-    dest_sr = any((6, 'single-run') in h[4] for _, h in flat_dst if h[0] == 6)
-    if not dest_sr and (6, 'single-run') not in b_tok:
-        rem_s = [item for item in rem_s if (6, 'single-run') not in item[1][4]]
     if rem_s or rem_d:
         rs = [_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_d]
         rem_d_toks = {t for _, h in rem_d for t in h[4]}
         if rem_s and rem_d:
             ls = [_span(old, sp['file'], sp['start'] + h[1], sp['start'] + h[2]) for sp, h in rem_s]
+        elif not rem_s and rem_d and rem_d_toks == {(6, 'neg')}:
+            ls = [
+                _span(old, sp['file'], sp['start'] + m.start(), sp['start'] + m.end())
+                for sp in en_src_spans
+                for m in edit._CONTRAST_PHRASE_RE.finditer(sp['text'])
+            ]
+            if not ls:
+                raise ValueError(f'{cid}: unmatched qualifier evidence src={rem_s} dst={rem_d}')
         else:
             raise ValueError(f'{cid}: unmatched qualifier evidence src={rem_s} dst={rem_d}')
         ctxs, _ = find_ctx_for_spans([ls[0]], [rs[0]], en_src_spans, en_dst_spans, scopes)
@@ -1082,8 +1090,10 @@ def _build_claim_record(
         ts_join = '\n'.join(s['text'] for s in t_src_spans)
         td_join = '\n'.join(s['text'] for s in t_dst_spans)
         t_removed = inherited.get((cid, lang), ())
+        t_pre_s = old[t_src_spans[0]['file']][:min(x['start'] for x in t_src_spans)]
+        t_pre_d = new[t_dst_spans[0]['file']][:min(x['start'] for x in t_dst_spans)]
         tb_tok, ta_tok = edit._tokens(edit._content(edit._without_removed(t_src_spans, t_removed))), edit._tokens(td_join)
-        tb_tok = edit._ignore_contradicted_noninferential(tb_tok, ta_tok, ts_join, td_join)
+        tb_tok = edit._ignore_contradicted_noninferential(tb_tok, ta_tok, ts_join, td_join, t_pre_s, t_pre_d)
         if not edit._evidence_equal(tb_tok, ta_tok):
             raise ValueError(
                 f'{cid} {lang} translation evidence mismatch: '
@@ -1199,6 +1209,18 @@ def _build_claim_record(
                         t_used_d.add(j)
                         sp, h = td_occ[j]
                         rs.append(_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
+                elif not ls and not rem_qs and rem_qd and {t for j in rem_qd for t in td_occ[j][1][4]} == {(6, 'neg')}:
+                    c_hits = [
+                        _span(old, sp['file'], sp['start'] + m.start(), sp['start'] + m.end())
+                        for sp in t_src_spans
+                        for m in edit._CONTRAST_PHRASE_RE.finditer(sp['text'])
+                    ]
+                    if c_hits:
+                        ls.extend(c_hits)
+                        for j in rem_qd:
+                            t_used_d.add(j)
+                            sp, h = td_occ[j]
+                            rs.append(_span(new, sp['file'], sp['start'] + h[1], sp['start'] + h[2]))
             if not ls or not rs:
                 if not inv:
                     ls, rs = [t_shared['source']], [t_shared['candidate']]
@@ -1424,7 +1446,12 @@ def build_review_bundle(
                             and prev_scopes == edit._named_scopes(prev_dst)
                             and (6, 'single-run') not in edit._tokens(po[0][2])
                         )
-                        if ((6, 'single-run') in prev_at or named_run_gov) and _compatible_run_fold_scopes(prev_scopes, current_scopes, True):
+                        can_fold_hunk = (
+                            len(ol) == len(nl) == 1
+                            and all(len(g[0]) == len(g[1]) == 1 for g in grouped[i:])
+                            and (bool(prev_scopes.get('analysis')) or (not _pc and len(grouped) - i <= 2))
+                        )
+                        if can_fold_hunk and ((6, 'single-run') in prev_at or named_run_gov) and _compatible_run_fold_scopes(prev_scopes, current_scopes, True):
                             all_po = [b for g in grouped[i:] for b in g[0]] + ol
                             all_pn = [b for g in grouped[i:] for b in g[1]] + nl
                             grouped[i:] = [(all_po, all_pn, True)]

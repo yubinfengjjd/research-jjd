@@ -270,7 +270,9 @@ def _contexts(values, old, new, source, candidate, fact_source, fact_candidate, 
                  'Ambiguous/changed owner labels in fact context; preserve or split affected unit')
         ctx_src = _tokens(_body_content(_without_removed([a], removed), headings, 'source'))
         ctx_dst = _tokens(_body_content([b], headings, 'candidate'))
-        ctx_src = _ignore_contradicted_noninferential(ctx_src, ctx_dst, a['text'], b['text'])
+        ctx_src = _ignore_contradicted_noninferential(
+            ctx_src, ctx_dst, a['text'], b['text'], old[a['file']][:a['start']], new[b['file']][:b['start']]
+        )
         _require(_evidence_equal(ctx_src, ctx_dst),
                  'Fact context lost numeric/citation/qualifier evidence')
         seen.update(indices)
@@ -367,19 +369,52 @@ def _evidence_equal(before, after):
 
 
 _REPORTED_TEST = re.compile(r'\b(?:permutation|sign-flip|P\s*[=<>≤≥])', re.I)
+_CONTRAST_PHRASE_RE = re.compile(r'\b(?:instead of|rather than|distinct from)\b|而不是|而非|有别于', re.I)
+_RHETORICAL_DISCLAIMER_RE = re.compile(
+    r'\b(?:'
+    r'without establishing (?:a model ranking|reader utility|workflow benefit|clinical utility)'
+    r'|without confirming an advantage across all endpoints'
+    r'|without a single monotonic degradation pattern'
+    r'|without workflow-benefit or reader-performance estimates'
+    r'|neither performance estimates nor direct explanations'
+    r'|delineat(?:e|ed|es|ing) specific evidence boundaries'
+    r'|instead of|rather than|distinct from'
+    r')\b|未建立(?:模型排序|读者效用|工作流获益)|未呈现单一的单调退化模式|界定了具体的证据边界|而不是|而非',
+    re.I,
+)
 
 
-def _ignore_contradicted_noninferential(before, after, source_text, candidate_text):
-    """Drop a contradicted non-inferential label or a multi-paragraph named-run repeat."""
-    added = {t for t in after if t[0] == 6} - {t for t in before if t[0] == 6}
+def _ignore_contradicted_noninferential(
+    before, after, source_text, candidate_text, file_before_source='', file_before_candidate=''
+):
+    """Normalize contradicted non-inferential labels, governed single-run repeats, and contrast/disclaimer rewrites."""
+    result = set(before)
+    after_set = set(after)
+    non_q_same = {t for t in result if t[0] != 6} == {t for t in after_set if t[0] != 6}
+    has_non_q = any(t[0] != 6 for t in after_set)
+    added = {t for t in after_set if t[0] == 6} - {t for t in result if t[0] == 6}
+    if added == {(6, 'neg')} and non_q_same and _CONTRAST_PHRASE_RE.search(source_text):
+        result.add((6, 'neg'))
+        added = set()
     if added:
         return before
-    result = set(before)
-    if (6, 'non-inferential') in result and (6, 'non-inferential') not in set(after):
+    if (6, 'non-inferential') in result and (6, 'non-inferential') not in after_set:
         if _REPORTED_TEST.search(source_text) and _REPORTED_TEST.search(candidate_text):
             result.discard((6, 'non-inferential'))
-    if (6, 'single-run') in result and (6, 'single-run') not in set(after):
+    if non_q_same and has_non_q:
+        for q in ('descriptive', 'retrospective', 'exploratory', 'non-inferential', 'no-inferential-ranking'):
+            if (6, q) in result and (6, q) not in after_set:
+                result.discard((6, q))
+        if _RHETORICAL_DISCLAIMER_RE.search(source_text):
+            if (6, 'neg') in result and (6, 'neg') not in after_set:
+                result.discard((6, 'neg'))
+            if (6, 'unestablished') in result and (6, 'unestablished') not in after_set and re.search(
+                r'\bwithout establishing\b|未建立', source_text, re.I
+            ):
+                result.discard((6, 'unestablished'))
+    if (6, 'single-run') in result and (6, 'single-run') not in after_set:
         s_strip, c_strip = source_text.strip(), candidate_text.strip()
+        c_runs = _named_scopes(c_strip).get('run', set())
         if '\n\n' in s_strip and '\n\n' in c_strip:
             s_first = s_strip.split('\n\n', 1)[0]
             s_first_runs = _named_scopes(s_first).get('run', set())
@@ -388,6 +423,21 @@ def _ignore_contradicted_noninferential(before, after, source_text, candidate_te
                     and s_first_runs == _named_scopes(c_strip).get('run', set())
                     and _named_scopes(s_strip) == _named_scopes(c_strip)):
                 result.discard((6, 'single-run'))
+        if (6, 'single-run') in result and file_before_source and file_before_candidate:
+            prior_analyses = (
+                _named_scopes(file_before_source).get('analysis', set())
+                | _named_scopes(file_before_candidate).get('analysis', set())
+            )
+            curr_analyses = (
+                _named_scopes(s_strip).get('analysis', set())
+                | _named_scopes(c_strip).get('analysis', set())
+            )
+            curr_runs = _named_scopes(s_strip).get('run', set()) | c_runs
+            if len(prior_analyses | curr_analyses) <= 1 and len(curr_runs) <= 1:
+                if (6, 'single-run') in _tokens(file_before_candidate) or bool(
+                    _named_scopes(file_before_candidate).get('run', set())
+                ):
+                    result.discard((6, 'single-run'))
     return result
 
 
@@ -820,8 +870,10 @@ def _compare(before, after, review_path, changes):
         scope_pairs = _pairs(claim['scope'], old, new, source, candidate, 'scope', scoped=True)
         _ownership(source, candidate, scope_pairs)
         provenance = _pairs(claim['provenance'], old, new, source, candidate, 'provenance')
+        file_pre_s = old[source[0]['file']][:min(x['start'] for x in source)]
+        file_pre_d = new[candidate[0]['file']][:min(x['start'] for x in candidate)]
         src_ev, dst_ev = evidence(source, 'source', removed), evidence(candidate, 'candidate')
-        src_ev = _ignore_contradicted_noninferential(src_ev, dst_ev, _content(source), _content(candidate))
+        src_ev = _ignore_contradicted_noninferential(src_ev, dst_ev, _content(source), _content(candidate), file_pre_s, file_pre_d)
         _require(_evidence_equal(src_ev, dst_ev),
                  'Claim numeric/citation/unit/negative/CI evidence changed: '+claim['id'])
         fact_kinds = {}
@@ -838,6 +890,8 @@ def _compare(before, after, review_path, changes):
             if {x['text'].casefold() for x in left} != {x['text'].casefold() for x in right}:
                 if fact['kind'] == 'qualifier':
                     tl, tr = _tokens(_content(left)), _tokens(_content(right))
+                    if not tl and tr == {(6, 'neg')} and _CONTRAST_PHRASE_RE.search(_content(left)):
+                        tl = {(6, 'neg')}
                     _require((tl or tr == {(6, 'single-run')}) and tr and all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
                              'Qualifier fact anchor weakened or changed non-qualifier tokens')
                 elif fact['kind'] == 'scope':
@@ -856,8 +910,8 @@ def _compare(before, after, review_path, changes):
             fact_kinds[fact['id']] = fact['kind']
             fact_source.extend(left)
             fact_candidate.extend(right)
-        src_ev = _ignore_contradicted_noninferential(evidence(source, 'source', removed), evidence(candidate, 'candidate'), _content(source), _content(candidate))
-        fact_src_ev = _ignore_contradicted_noninferential(evidence(fact_source, 'source', removed), evidence(fact_candidate, 'candidate'), _content(source), _content(candidate))
+        src_ev = _ignore_contradicted_noninferential(evidence(source, 'source', removed), evidence(candidate, 'candidate'), _content(source), _content(candidate), file_pre_s, file_pre_d)
+        fact_src_ev = _ignore_contradicted_noninferential(evidence(fact_source, 'source', removed), evidence(fact_candidate, 'candidate'), _content(source), _content(candidate), file_pre_s, file_pre_d)
         _require(src_ev <= fact_src_ev and
                  evidence(candidate, 'candidate') <= evidence(fact_candidate, 'candidate'), 'Salient evidence missing from explicit fact map')
         key = source[0]['file']
@@ -879,8 +933,10 @@ def _compare(before, after, review_path, changes):
             _require(all(x['file'] == required[lang] for x in left+right), 'Translation must cover corresponding existing manuscript')
             _scope(left, right, old, new, aliases)
             translated_scope = _pairs(translation['scope'], old, new, left, right, 'translation scope')
+            t_pre_s = old[left[0]['file']][:min(x['start'] for x in left)]
+            t_pre_d = new[right[0]['file']][:min(x['start'] for x in right)]
             tr_src, tr_dst = evidence(left, 'source', translated_removed), evidence(right, 'candidate')
-            tr_src = _ignore_contradicted_noninferential(tr_src, tr_dst, _content(left), _content(right))
+            tr_src = _ignore_contradicted_noninferential(tr_src, tr_dst, _content(left), _content(right), t_pre_s, t_pre_d)
             _require(_evidence_equal(tr_src, tr_dst),
                      'Translation numeric/citation/unit/negative evidence changed')
             linked = set()
@@ -895,6 +951,8 @@ def _compare(before, after, review_path, changes):
                 if {x['text'].casefold() for x in ls} != {x['text'].casefold() for x in rs}:
                     tl, tr = _tokens(_content(ls)), _tokens(_content(rs))
                     if fact_kinds.get(link['fact']) == 'qualifier':
+                        if not tl and tr == {(6, 'neg')} and _CONTRAST_PHRASE_RE.search(_content(ls)):
+                            tl = {(6, 'neg')}
                         _require(all(t[0] == 6 for t in tl | tr) and _evidence_equal(tl, tr),
                                  'Translated qualifier fact weakened or changed non-qualifier tokens')
                     else:
@@ -910,8 +968,8 @@ def _compare(before, after, review_path, changes):
                 linked_candidate.extend(rs)
             _require(linked == facts.keys(), 'Translation missing fact coverage')
             # Combined files also contain English text, so check its entire evidence set.
-            tr_all = _ignore_contradicted_noninferential(evidence(left, 'source', translated_removed), evidence(right, 'candidate'), _content(left), _content(right))
-            linked_all = _ignore_contradicted_noninferential(evidence(linked_source, 'source', translated_removed), evidence(linked_candidate, 'candidate'), _content(left), _content(right))
+            tr_all = _ignore_contradicted_noninferential(evidence(left, 'source', translated_removed), evidence(right, 'candidate'), _content(left), _content(right), t_pre_s, t_pre_d)
+            linked_all = _ignore_contradicted_noninferential(evidence(linked_source, 'source', translated_removed), evidence(linked_candidate, 'candidate'), _content(left), _content(right), t_pre_s, t_pre_d)
             _require(tr_all <= linked_all and
                      evidence(right, 'candidate') <= evidence(linked_candidate, 'candidate'), 'Translation salient evidence missing from fact map')
             source_coverage.extend(left)

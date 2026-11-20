@@ -34,12 +34,12 @@ Discussion 在其他正文全部完成后才写。开始前确认以下四份稿
 
 默认无小标题，连续成段，一般 6–9 段。五个部分按顺序推进，最后加结论段：
 
-1. **总结与背景**（1 段）：第一句直接回答研究问题，再概括主要发现和边界。单种子/单次运行范围在本段（以及专门讨论单次运行设计局限的局限段，或同句直接对比单次与多次运行稳定性的句子）声明即可；其余讨论段落通过同节继承直接省略重复的 `in the single evaluated seed`，不在每段重提运行范围。摘要式总结不得用重复限定词代替主张。
-2. **结果解释**：围绕核心发现说明其证据含义、与已有工作的关系和适用范围。单次运行范围由开篇总结段支配，后文即使讨论不同终点、探针或队列也不重复标注 `in the single evaluated seed`（除非同句直接对比单次运行与多次运行结果）。统计术语必须区分未做推断、做过检验但未达到预设标准、描述性估计和未建立结论；已报告置换检验或 `P` 值的比较不得保留 `non-inferential` 标签，局限与结论段避免使用空泛的 `without inferential confirmation`（可直述 `without confirming an advantage` 等具体结论）。
-3. **文献对比**：按证据关系单独或融合呈现，与最接近、可比的已有工作具体比较，不要求每个发现固定两篇或每段强制一轮比较。加了冒号总起句后若仍是三四篇文献排成一串的超长句，必须拆成两三句；不要在段内反复套用 `X did A (PMID), whereas our Y did B` 句式，改用独立句子分别陈述既有研究条件与本研究的分析区别。局限段（`First / Second / Third`）与结论段中超过 30–35 词的分号/分词长句同样拆分为两到三个简明直接的句子。
+1. **总结与背景**（1 段）：第一句直接回答研究问题，再概括主要发现和边界。单种子/单次运行范围在本段声明 1 次即可；**其余所有讨论段落（包括结果解释、文献对比、局限与结论段）直接省略重复的 `in the single evaluated seed`**，不在后文反复重提。总结段用直接动词（如 `"we separately tested"` 替代 `"separate evaluations assessed"`），不加 `"in non-inferential curves"` 等叠床架屋的对冲标签。
+2. **结果解释**：围绕核心发现说明其证据含义、与已有工作的关系和适用范围。不用 `"Decision transparency was strongest as an algebraic property..."` 等抽象名词堆叠作主题句，改用具体主谓宾（如 `"The linear classifier made concept contributions algebraically transparent, whereas individual concept scores tracked biomarkers selectively"`）。禁止用 `"instead of"` 拼凑稻草人对照（如 `"a methodological parallel concerning explanation properties instead of shared performance across modalities"` 直接删去 `instead of...` 尾巴）。**严禁在每个解释段末尾套用 `"finding → 文献 → would help distinguish / would test / would clarify"` 的机械收尾公式**：将全篇 `Discussion` 的 `"would test / would help / would clarify / would improve"` 严格控制在 1–2 处最关键的未来检验建议以内，其余段落直接结束于具体比较或发现边界。
+3. **文献对比**：按证据关系单独或融合呈现，与最接近、可比的已有工作具体比较。连续介绍三篇及以上文献时，先给一句归纳引导句，再分两三句陈述各研究及其 PMID；不套用 `X did A (PMID), whereas our Y did B` 模板。主动穿插 6–12 词的短句调节句长节奏，打散句尾 `, leaving / showing / indicating ...` 分词链，将超过 30–35 词的分号/分词长句拆分为两到三个简明直接的句子。
 4. **创新与贡献**（1 段，或并入总结段或文献对比段的末尾）：本研究回答了 Introduction 中的哪个空白，补充或改进了什么，对谁、在哪个判断环节有用（第 6 节）。
-5. **局限与未来方向**：集中写影响结论的真实设计与分析局限及必要未来方向，不要求固定开头。重复限定可合并；必要的否定结果、未决状态和 did not establish 式结论按证据保留，不能按句式一律删除。
-6. **结论**：先直接回答研究问题，概括成立的贡献及必要适用条件；不引入新发现、引用或数字。避免用模糊过程标签或重复验证套话代替结论；若主要结果是未建立优势或原因未知，直接准确报告，不以正向措辞改换结论。期刊要求独立 Conclusions 时按其格式处理。
+5. **局限与未来方向**：集中写影响结论的真实设计与分析局限及必要未来方向。重复限定合并，不再重复 `in the single evaluated seed`（可直述 `"Several mechanistic analyses and ablations used a single seed"` 或 `"single-seed"`），也不在句末堆叠 `, requiring separate adaptation and evaluation samples...` 分词尾巴（改为主谓短句）。
+6. **结论**：先直接回答研究问题，概括成立的贡献及必要适用条件；不引入新发现、引用或数字。**严禁在结论段末添加 `"These findings delineate specific evidence boundaries for reviewing model predictions in this retrospective setting."` 这类零信息增量的免责总结句**，直接以核心实证结论收尾。
 
 - 五部分都必须出现，不得缺项；第 3、4 部分可以融合进其他段落，但在核查说明的对应表中要能指出位置。
 - 作者或目标期刊要求小标题时，按要求使用（如 Principal findings、Comparison with previous studies、Strengths and limitations、Conclusions）。
